@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-05-03T16:32:23",
+  "categories": {
+    "Performance": {
+      "score": 59.8,
+      "weight": 20,
+      "metrics": [
+        {
+          "name": "Import time",
+          "score": 0,
+          "detail": "2.799s (lower is better)"
+        },
+        {
+          "name": "Test execution",
+          "score": 100,
+          "detail": "44 tests in 21.0s"
+        },
+        {
+          "name": "TOON compression",
+          "score": 99.0,
+          "detail": "49.5% token reduction"
+        },
+        {
+          "name": "LLM providers",
+          "score": 40,
+          "detail": "['local', 'opencode']"
+        }
+      ]
+    },
+    "Code Quality": {
+      "score": 69.0,
+      "weight": 20,
+      "metrics": [
+        {
+          "name": "Code size",
+          "score": 74.5,
+          "detail": "2554 lines, 108185 chars"
+        },
+        {
+          "name": "Functions",
+          "score": 30.4,
+          "detail": "38 callable functions"
+        },
+        {
+          "name": "Classes",
+          "score": 100,
+          "detail": "41 classes"
+        },
+        {
+          "name": "Docstrings",
+          "score": 100,
+          "detail": "130 docstrings found"
+        },
+        {
+          "name": "Error handling",
+          "score": 40,
+          "detail": "20 try/except blocks"
+        }
+      ]
+    },
+    "Security": {
+      "score": 69.0,
+      "weight": 20,
+      "metrics": [
+        {
+          "name": "Hardcoded keys",
+          "score": 100,
+          "detail": "0 hardcoded API keys found (0=good)"
+        },
+        {
+          "name": "Input sanitization",
+          "score": 50,
+          "detail": "2 sanitization functions"
+        },
+        {
+          "name": "Error logging",
+          "score": 26,
+          "detail": "26 logged error points"
+        },
+        {
+          "name": "Git hygiene",
+          "score": 100,
+          "detail": ".env in .gitignore"
+        }
+      ]
+    },
+    "Features": {
+      "score": 84.0,
+      "weight": 20,
+      "metrics": [
+        {
+          "name": "MCP tools",
+          "score": 90,
+          "detail": "18 registered tools"
+        },
+        {
+          "name": "MCP resources",
+          "score": 100,
+          "detail": "5 registered resources"
+        },
+        {
+          "name": "MCP prompts",
+          "score": 90,
+          "detail": "6 registered prompts"
+        },
+        {
+          "name": "Design templates",
+          "score": 100,
+          "detail": "5 DESIGN.md templates"
+        },
+        {
+          "name": "Provider count",
+          "score": 40,
+          "detail": "['local', 'opencode']"
+        }
+      ]
+    },
+    "Schema Compliance": {
+      "score": 100.0,
+      "weight": 20,
+      "metrics": [
+        {
+          "name": "WCAG AAA detection",
+          "score": 100,
+          "detail": "White on dark: 17.06:1 (AAA=pass)"
+        },
+        {
+          "name": "WCAG AA detection",
+          "score": 100,
+          "detail": "Gray on dark: 8.13:1 (AA=pass)"
+        },
+        {
+          "name": "Schema validation",
+          "score": 100,
+          "detail": "Pass: []"
+        }
+      ]
+    }
+  },
+  "overall": 76.3
+}

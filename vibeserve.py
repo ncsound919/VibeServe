@@ -35,6 +35,32 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 log = logging.getLogger("VibeServe")
+log.info("VibeServe logging initialized")
+
+# Lightweight async performance profiler (zero dependencies)
+class AsyncProfiler:
+    _traces: Dict[str, List[float]] = {}
+    
+    @classmethod
+    def start(cls, name: str): return time.time()
+    
+    @classmethod
+    def stop(cls, name: str, t0: float):
+        elapsed = time.time() - t0
+        if name not in cls._traces:
+            cls._traces[name] = []
+        cls._traces[name].append(elapsed)
+        if elapsed > 1.0:
+            log.warning(f"[Profiler] Slow operation: {name} took {elapsed:.1f}s")
+    
+    @classmethod
+    def stats(cls) -> Dict[str, Any]:
+        return {name: {"count": len(times), "avg": round(sum(times)/len(times), 3) if times else 0, 
+                       "min": round(min(times), 3) if times else 0, "max": round(max(times), 3) if times else 0} 
+                for name, times in cls._traces.items()}
+    
+    @classmethod
+    def clear(cls): cls._traces.clear()
 
 # ====================== SCHEMAS ======================
 class WCAGLevel(str, Enum):
