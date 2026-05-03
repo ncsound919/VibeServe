@@ -652,9 +652,9 @@ def test_version_resource():
     from vibeserve import resource_version
     result = resource_version()
     data = json.loads(result)
-    assert data["version"] == "1.0.0"
+    assert data["version"] == "2.0.0"
     assert data["codename"] == "VibeServe"
-    assert data["tools"] == 17
+    assert data["tools"] == 27
     print(f"  ✅ Version resource: v{data['version']} ({data['codename']})")
 
 def test_design_tokens_resource():
