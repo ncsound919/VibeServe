@@ -1017,6 +1017,7 @@ SHOW THE PRODUCT:
 - Asset paths must be relative to deployment root (e.g., docs/ folder uses "logo.png" not "assets/logo.png").
 - All interactive elements need ARIA labels for WCAG AAA compliance.
 - Use current year from system time. Do not hardcode years.
+- PREFER DESIGN TEMPLATES: When a design system template is provided, follow it exactly. It is the source of truth.
 
 IF UNSURE, OMIT. An incomplete but honest page is better than a complete but fabricated one.
 """
@@ -1447,7 +1448,7 @@ def resource_version() -> str:
     return json.dumps({
         "version": "1.0.0",
         "codename": "VibeServe",
-        "tools": 13,
+        "tools": 14,
         "resources": 5,
         "prompts": 6,
         "providers": ["openai", "deepseek", "openrouter", "local", "opencode"],
@@ -1837,6 +1838,150 @@ async def vibe_deploy_tool(
     config_count = len(result.get("configs", {}))
     await ctx.info(f"[deploy] Generated configs for {config_count} target(s)")
     return {"status": "success", "project": project_name, "targets": targets, **result}
+
+
+
+# ====================== DESIGN TEMPLATE SYSTEM ======================
+import random
+
+class TemplateLibrary:
+    """Monte Carlo template system — picks from curated DESIGN.md templates
+    and applies random variations for unique professional builds every time."""
+
+    TEMPLATES = ["linear", "vercel", "stripe", "supabase", "claude"]
+
+    @classmethod
+    def list_templates(cls) -> List[str]:
+        return cls.TEMPLATES
+
+    @classmethod
+    def random_template(cls, name: str = None) -> str:
+        """Pick a template. If name specified, use it. Otherwise Monte Carlo random."""
+        if name and name in cls.TEMPLATES:
+            return cls._load(name)
+        return cls._load(random.choice(cls.TEMPLATES))
+
+    @classmethod
+    def _load(cls, name: str) -> str:
+        path = Path(__file__).parent / "designs" / f"{name}.md"
+        if path.exists():
+            content = path.read_text(encoding="utf-8")
+            return cls._mutate(content, name)
+        return f"# {name.title()} Design System\nUse {{{{colors.primary}}}} for accents."
+
+    @classmethod
+    def _mutate(cls, content: str, name: str) -> str:
+        """Apply Monte Carlo mutations for uniqueness — swap accent colors, adjust spacing, vary fonts."""
+        mutations = random.randint(1, 3)
+        for _ in range(mutations):
+            op = random.choice(["color_variant", "spacing_shift", "font_swap"])
+            if op == "color_variant":
+                content = cls._shift_accent(content)
+            elif op == "spacing_shift":
+                content = cls._vary_spacing(content)
+            elif op == "font_swap":
+                content = cls._swap_font(content)
+        return f"# Design System: {name} (Monte Carlo seed: {random.randint(1000,9999)})\n{content}"
+
+    @staticmethod
+    def _shift_accent(content: str) -> str:
+        """Randomly shift hex accent colors by small amounts for uniqueness."""
+        import re
+        offset = random.randint(-15, 15)
+        def shift_hex(m):
+            h = m.group(1)
+            if len(h) == 6:
+                r = min(255, max(0, int(h[0:2], 16) + offset))
+                g = min(255, max(0, int(h[2:4], 16) + offset))
+                b = min(255, max(0, int(h[4:6], 16) + offset))
+                return f"#{r:02x}{g:02x}{b:02x}"
+            return m.group(0)
+        return re.sub(r'#([0-9a-fA-F]{6})', shift_hex, content)
+
+    @staticmethod
+    def _vary_spacing(content: str) -> str:
+        """Randomly adjust spacing values."""
+        import re
+        factor = random.uniform(0.85, 1.15)
+        def scale_px(m):
+            val = int(m.group(1))
+            new_val = max(4, int(val * factor))
+            new_val = round(new_val / 4) * 4  # Snap to 4px grid
+            return f"{new_val}px"
+        return re.sub(r'(\d+)px', scale_px, content)
+
+    @staticmethod
+    def _swap_font(content: str) -> str:
+        """Swap between similar fonts for variation."""
+        swaps = [
+            ("Inter", random.choice(["Geist Sans", "system-ui", "SF Pro"])),
+            ("system-ui", random.choice(["Inter", "Geist Sans", "SF Pro"])),
+            ("sans-serif", random.choice(["Inter, system-ui, sans-serif", "Geist Sans, system-ui"])),
+        ]
+        for old, new in random.sample(swaps, min(2, len(swaps))):
+            content = content.replace(old, new)
+        return content
+
+
+@mcp_server.tool(
+    name="vibe_design",
+    description="Generate a professional landing page using curated DESIGN.md templates (Linear, Vercel, Stripe, Supabase, Claude). Monte Carlo randomization ensures every build is unique. Specify a template name or leave blank for random selection."
+)
+async def vibe_design_tool(
+    ctx: Context,
+    intent: str,
+    template: Optional[str] = None,
+    constraints: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Generate a professional page from curated design templates with Monte Carlo variation"""
+    constraints = constraints or ["WCAG AAA", "Single HTML file", "Zero fabrication"]
+
+    await ctx.info(f"[design] Selecting template...")
+    design_tokens = TemplateLibrary.random_template(template)
+    selected = template or "random"
+    await ctx.info(f"[design] Template: {selected} ({'Monte Carlo mutated' if 'seed:' in design_tokens else 'Original'})")
+
+    # Feed the design template into vibe_architect as context
+    full_intent = f"""{intent}
+
+USE THIS DESIGN SYSTEM EXACTLY:
+{design_tokens}
+
+CRITICAL: Apply the design system above. Use the exact colors, fonts, spacing, and component specs. No fabrication."""
+    await ctx.report_progress(0, 100, "Architecting with design template...")
+
+    plan_result = await vibe_architect_tool(
+        ctx=ctx,
+        intent=full_intent,
+        constraints=constraints,
+        target_stack="html"
+    )
+
+    await ctx.report_progress(40, 100, "Generating code...")
+    code_result = await vibe_code_tool(
+        ctx=ctx,
+        intent=intent,
+        plan=plan_result.get("plan", {}),
+        constraints=constraints,
+        target_language="html"
+    )
+
+    await ctx.report_progress(80, 100, "Verifying...")
+    verify_result = await vibe_verify_tool(ctx=ctx, files=code_result.get("files", []))
+
+    await ctx.report_progress(100, 100, "Complete!")
+
+    await ctx.info(f"[design] Generated {code_result.get('file_count', 0)} files with {selected} template, "
+                   f"{'PASS' if verify_result.get('all_passed') else 'ISSUES'} quality")
+
+    return {
+        "status": "success",
+        "template": selected,
+        "design_system": design_tokens[:500],
+        "plan": plan_result,
+        "code": code_result,
+        "verify": verify_result
+    }
 
 
 # ====================== CLI / TESTING ======================

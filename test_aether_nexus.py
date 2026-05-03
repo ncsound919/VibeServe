@@ -654,7 +654,7 @@ def test_version_resource():
     data = json.loads(result)
     assert data["version"] == "1.0.0"
     assert data["codename"] == "VibeServe"
-    assert data["tools"] == 13
+    assert data["tools"] == 14
     print(f"  ✅ Version resource: v{data['version']} ({data['codename']})")
 
 def test_design_tokens_resource():
