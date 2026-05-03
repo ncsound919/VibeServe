@@ -1387,7 +1387,7 @@ def resource_version() -> str:
     return json.dumps({
         "version": "5.0.0",
         "codename": "Karpathy",
-        "tools": 11,
+        "tools": 13,
         "resources": 5,
         "prompts": 6,
         "providers": ["openai", "deepseek", "openrouter", "local", "opencode"],
