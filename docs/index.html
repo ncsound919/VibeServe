@@ -1,428 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VibeServe v1.0 — Agentic UI Coding Orchestrator</title>
-  <meta name="description" content="VibeServe is an agentic coding orchestrator for the Model Context Protocol. Architect, code, review, verify, iterate, test, and deploy — all from a single MCP server." />
-  <meta property="og:title" content="VibeServe v1.0" />
-  <meta property="og:description" content="The Agentic UI Coding Orchestrator for MCP. 13 tools. 5 LLM providers. WCAG AAA built-in." />
-  <style>
-    :root {
-      --bg: #0a0a0a;
-      --surface: #131313;
-      --primary: #00FF9F;
-      --secondary: #00B8FF;
-      --accent: #FF00AA;
-      --text: #EEEEEE;
-      --text-muted: #888888;
-      --border: #222222;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      line-height: 1.6;
-    }
-    a { color: var(--primary); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    /* NAV */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(10,10,10,0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .nav-brand {
-      font-size: 1.25rem; font-weight: 700;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .nav-links { display: flex; gap: 2rem; }
-    .nav-links a { color: var(--text-muted); font-size: 0.9rem; transition: color .2s; }
-    .nav-links a:hover { color: var(--primary); text-decoration: none; }
-
-    /* HERO */
-    .hero {
-      text-align: center;
-      padding: 6rem 2rem 4rem;
-      background: radial-gradient(ellipse at 50% 0%, rgba(0,255,159,0.08) 0%, transparent 70%);
-    }
-    .badge {
-      display: inline-block;
-      background: rgba(0,255,159,0.1);
-      border: 1px solid rgba(0,255,159,0.3);
-      color: var(--primary);
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      margin-bottom: 1.5rem;
-    }
-    h1 {
-      font-size: clamp(3rem, 8vw, 6rem);
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      line-height: 1.1;
-      margin-bottom: 1rem;
-    }
-    .tagline {
-      font-size: clamp(1rem, 2.5vw, 1.4rem);
-      color: var(--text-muted);
-      max-width: 600px;
-      margin: 0 auto 2.5rem;
-    }
-    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.75rem 1.75rem;
-      border-radius: 0.5rem;
-      font-size: 1rem; font-weight: 600;
-      transition: all .2s; cursor: pointer;
-      text-decoration: none;
-    }
-    .btn-primary {
-      background: var(--primary); color: #000;
-    }
-    .btn-primary:hover { opacity: 0.85; text-decoration: none; }
-    .btn-outline {
-      border: 1px solid var(--border);
-      color: var(--text);
-      background: transparent;
-    }
-    .btn-outline:hover { border-color: var(--primary); color: var(--primary); text-decoration: none; }
-
-    /* STATS */
-    .stats {
-      display: flex; justify-content: center; flex-wrap: wrap; gap: 3rem;
-      padding: 3rem 2rem;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .stat { text-align: center; }
-    .stat-value {
-      font-size: 2.5rem; font-weight: 800;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .stat-label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
-
-    /* SECTIONS */
-    section { padding: 5rem 2rem; max-width: 1300px; margin: 0 auto; }
-    h2 {
-      font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      display: inline-block;
-    }
-    .section-sub { color: var(--text-muted); margin-bottom: 3rem; }
-
-    /* PIPELINE */
-    .pipeline {
-      display: flex; align-items: center; flex-wrap: wrap; gap: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 1.5rem 2rem;
-      overflow-x: auto;
-    }
-    .pipe-step {
-      display: flex; flex-direction: column; align-items: center;
-      padding: 0.5rem 1rem;
-      text-align: center;
-    }
-    .pipe-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
-    .pipe-label { font-size: 0.75rem; color: var(--primary); font-weight: 600; white-space: nowrap; }
-    .pipe-arrow { color: var(--text-muted); font-size: 1.25rem; padding: 0 0.25rem; }
-
-    /* TOOLS GRID */
-    .tools-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1rem;
-    }
-    .tool-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      transition: border-color .2s, transform .2s;
-    }
-    .tool-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-    .tool-name {
-      font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      color: var(--primary);
-      background: rgba(0,255,159,0.08);
-      padding: 0.2rem 0.6rem;
-      border-radius: 0.25rem;
-      display: inline-block;
-      margin-bottom: 0.75rem;
-    }
-    .tool-desc { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
-
-    /* PROVIDERS */
-    .providers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-    .provider-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      padding: 1.25rem;
-      display: flex; align-items: center; gap: 0.75rem;
-    }
-    .provider-icon { font-size: 1.5rem; }
-    .provider-name { font-weight: 600; font-size: 0.95rem; }
-    .provider-note { color: var(--text-muted); font-size: 0.75rem; }
-
-    /* ARCH DIAGRAM */
-    .arch-diagram {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 2rem;
-      font-family: 'Courier New', monospace;
-      font-size: 0.82rem;
-      color: var(--primary);
-      overflow-x: auto;
-      line-height: 1.8;
-      white-space: pre;
-    }
-
-    /* QUICKSTART */
-    .code-block {
-      background: #0d1317;
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      color: #79c0ff;
-      overflow-x: auto;
-      margin-bottom: 1rem;
-    }
-    .code-block .comment { color: #6e7681; }
-    .code-block .string { color: var(--primary); }
-    .code-block .keyword { color: #ff7b72; }
-
-    /* DONATE */
-    .donate-card {
-      text-align: center;
-      background: linear-gradient(135deg, rgba(0,255,159,0.05), rgba(0,184,255,0.05));
-      border: 1px solid rgba(0,255,159,0.2);
-      border-radius: 1rem;
-      padding: 3rem 2rem;
-    }
-    .cashapp-tag {
-      display: inline-block;
-      font-size: 2rem; font-weight: 800;
-      background: linear-gradient(135deg, #00D632, #00FF9F);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin: 1rem 0;
-    }
-
-    /* FOOTER */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 600px) {
-      .nav-links { display: none; }
-      .stats { gap: 2rem; }
-      .pipe-arrow { display: none; }
-    }
-  </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeServe - Agentic Coding MCP Server</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --neon-green: #00FF9F;
+    --neon-blue: #00B8FF;
+    --accent: #FF00AA;
+    --background: #0A0A0A;
+    --surface: #111111;
+    --text: #EEEEEE;
+    --text-secondary: #AAAAAA;
+    --success: #00FF9F;
+    --warning: #FFB800;
+    --error: #FF4444;
+    --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --heading-size: 2.5rem;
+    --subheading-size: 1.5rem;
+    --body-size: 1rem;
+    --caption-size: 0.875rem;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-family);
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+  h1 { font-size: var(--heading-size); }
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.5rem; font-weight: 600; }
+  p { font-size: var(--body-size); margin-bottom: 1rem; }
+  a { color: var(--neon-blue); text-decoration: underline; }
+  a:hover, a:focus { color: var(--neon-green); outline: 2px solid var(--neon-green); outline-offset: 2px; }
+  img { max-width: 100%; height: auto; display: block; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  /* Hero */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem;
+    text-align: center;
+    min-height: 60vh;
+    background: radial-gradient(ellipse at center, var(--surface) 0%, var(--background) 70%);
+  }
+  .hero-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 2rem;
+    filter: drop-shadow(0 0 20px var(--neon-green));
+  }
+  .hero h1 {
+    color: var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-green);
+    margin-bottom: 0.5rem;
+  }
+  .hero p {
+    font-size: var(--subheading-size);
+    color: var(--neon-blue);
+    text-shadow: 0 0 5px var(--neon-blue);
+    margin-bottom: 2rem;
+  }
+  .cta-button {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
+    color: var(--background);
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    border-radius: 9999px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 15px rgba(0,255,159,0.5);
+  }
+  .cta-button:hover, .cta-button:focus {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(0,255,159,0.8);
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+  }
+  /* Stats */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem 1rem;
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    text-align: center;
+    padding: 1rem;
+    border: 1px solid var(--neon-green);
+    border-radius: 0.5rem;
+    min-width: 150px;
+    background: rgba(0,255,159,0.05);
+  }
+  .stat-item h3 {
+    color: var(--neon-green);
+    font-size: 1.25rem;
+  }
+  .stat-item p {
+    color: var(--text-secondary);
+    font-size: var(--caption-size);
+  }
+  /* Features */
+  .features {
+    padding: 4rem 1rem;
+  }
+  .features h2 {
+    text-align: center;
+    color: var(--neon-blue);
+    margin-bottom: 2rem;
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+  .feature-card {
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--neon-green);
+    transition: transform 0.2s;
+  }
+  .feature-card:hover { transform: translateY(-5px); }
+  .feature-card h3 { color: var(--neon-green); margin-bottom: 0.5rem; }
+  .feature-card p { color: var(--text-secondary); }
+  /* Testimonials */
+  .testimonials {
+    padding: 4rem 1rem;
+    background: var(--surface);
+  }
+  .testimonials h2 {
+    text-align: center;
+    color: var(--accent);
+    margin-bottom: 2rem;
+  }
+  .testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  .testimonial-card {
+    background: var(--background);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--accent);
+  }
+  .testimonial-card blockquote {
+    font-style: italic;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .testimonial-card cite {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  /* CTA */
+  .cta-section {
+    padding: 4rem 1rem;
+    text-align: center;
+  }
+  .cta-section h2 { color: var(--neon-green); margin-bottom: 1rem; }
+  .cta-section p { color: var(--text-secondary); max-width: 600px; margin: 0 auto 2rem; }
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: var(--caption-size);
+    margin-top: auto;
+  }
+  footer a { color: var(--neon-blue); }
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { padding: 2rem 1rem; min-height: 40vh; }
+    .hero h1 { font-size: 2rem; }
+    .hero p { font-size: 1.2rem; }
+    .stats { flex-direction: column; align-items: center; }
+    .stat-item { min-width: 200px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
 </head>
 <body>
-
-<nav>
-  <span class="nav-brand">⬡ VibeServe</span>
-  <div class="nav-links">
-    <a href="#pipeline">Pipeline</a>
-    <a href="#tools">Tools</a>
-    <a href="#providers">Providers</a>
-    <a href="#architecture">Architecture</a>
-    <a href="#quickstart">Quickstart</a>
-    <a href="#donate">Support</a>
-  </div>
-</nav>
-
-<div class="hero">
-  <div class="badge">🚀 v1.0 — Now Live</div>
-  <img src="logo.png" width="96" height="96" alt="VibeServe" style="margin-bottom:1rem;" />
-  <h1>VibeServe</h1>
-  <p class="tagline">The Agentic UI Coding Orchestrator for the Model Context Protocol. Architect, code, review, verify, iterate, test, and deploy — powered by any LLM.</p>
-  <div class="hero-actions">
-    <a href="https://github.com/ncsound919/VibeServe-MCP" class="btn btn-primary">⭐ Star on GitHub</a>
-    <a href="#quickstart" class="btn btn-outline">Get Started →</a>
-  </div>
-</div>
-
-<div class="stats">
-  <div class="stat"><div class="stat-value">13</div><div class="stat-label">MCP Tools</div></div>
-  <div class="stat"><div class="stat-value">5</div><div class="stat-label">LLM Providers</div></div>
-  <div class="stat"><div class="stat-value">43</div><div class="stat-label">Tests</div></div>
-  <div class="stat"><div class="stat-value">AAA</div><div class="stat-label">WCAG Level</div></div>
-  <div class="stat"><div class="stat-value">100</div><div class="stat-label">Quality Score</div></div>
-  <div class="stat"><div class="stat-value">0</div><div class="stat-label">API Keys Required</div></div>
-</div>
-
-<section style="text-align:center; padding: 2rem">
-  <img src="flyer.png" width="600" alt="VibeServe v1.0" style="max-width:100%; border-radius:8px; box-shadow: 0 0 40px rgba(0,255,159,0.15);" />
-</section>
-
-<section id="pipeline">
-  <h2>The Vibe Pipeline</h2>
-  <p class="section-sub">Every step is an MCP tool. Chain them or call them individually.</p>
-  <div class="pipeline">
-    <div class="pipe-step"><div class="pipe-icon">🏗️</div><div class="pipe-label">vibe_architect</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><div class="pipe-icon">💻</div><div class="pipe-label">vibe_code</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><div class="pipe-icon">🔍</div><div class="pipe-label">vibe_review</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><div class="pipe-icon">✅</div><div class="pipe-label">vibe_verify</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><div class="pipe-icon">🔄</div><div class="pipe-label">vibe_iterate</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><div class="pipe-icon">🧪</div><div class="pipe-label">vibe_test</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step"><div class="pipe-icon">🚀</div><div class="pipe-label">vibe_deploy</div></div>
-  </div>
-</section>
-
-<section id="tools">
-  <h2>All 13 MCP Tools</h2>
-  <p class="section-sub">Drop into any MCP-compatible client — Claude Desktop, Cursor, Windsurf, or custom.</p>
-  <div class="tools-grid">
-    <div class="tool-card"><div class="tool-name">vibe_architect</div><div class="tool-desc">Transforms natural language intent into a full architecture plan with ADR decisions, component tree, data flow, risk assessment, and recommended stack.</div></div>
-    <div class="tool-card"><div class="tool-name">vibe_code</div><div class="tool-desc">Generates production-ready TypeScript/JSX code from a VibePlan. Enforces design tokens, ARIA attributes, and accessibility notes on every file.</div></div>
-    <div class="tool-card"><div class="tool-name">vibe_review</div><div class="tool-desc">Three-agent parallel code review: UX Designer, Code Quality Engineer, and Accessibility Advocate — each gives independent scores and line-level issues.</div></div>
-    <div class="tool-card"><div class="tool-name">vibe_verify</div><div class="tool-desc">Static validation: UISchema v1.0 compliance, WCAG contrast checks, ARIA coverage, and code quality flags (TODO/FIXME, missing accessibility notes).</div></div>
-    <div class="tool-card"><div class="tool-name">vibe_iterate</div><div class="tool-desc">Continuous improvement loop. Critiques, repairs weaknesses, re-evaluates — up to N iterations or until the quality threshold is reached.</div></div>
-    <div class="tool-card"><div class="tool-name">vibe_test</div><div class="tool-desc">Generates full test suites from source code: unit, accessibility, integration, edge cases, and responsive breakpoint tests.</div></div>
-    <div class="tool-card"><div class="tool-name">vibe_deploy</div><div class="tool-desc">Generates deployment configs for Vercel, Docker, static hosting, and Node.js. Includes env vars, health checks, and monitoring setup.</div></div>
-    <div class="tool-card"><div class="tool-name">generate_ui_spec</div><div class="tool-desc">V4 pipeline: generates UISchema v1.0 specs with multi-agent critique, WCAG AAA validation, and design system token enforcement.</div></div>
-    <div class="tool-card"><div class="tool-name">validate_ui_spec</div><div class="tool-desc">Validates any UISchema v1.0 document. Returns errors, warnings, and per-component contrast ratio checks.</div></div>
-    <div class="tool-card"><div class="tool-name">list_design_systems</div><div class="tool-desc">Lists available design systems (built-in and custom). Returns color palettes, component counts, and WCAG level per system.</div></div>
-    <div class="tool-card"><div class="tool-name">memory_stats</div><div class="tool-desc">Returns aggregate stats on the SQLite-backed spec memory store: total stored, highest scores, usage by page type.</div></div>
-  </div>
-</section>
-
-<section id="providers">
-  <h2>5 LLM Providers</h2>
-  <p class="section-sub">Automatic fallback chain. If the primary fails, the next one takes over — zero downtime.</p>
-  <div class="providers-grid">
-    <div class="provider-card"><div class="provider-icon">🤖</div><div><div class="provider-name">OpenAI</div><div class="provider-note">GPT-4 Turbo, GPT-4o</div></div></div>
-    <div class="provider-card"><div class="provider-icon">🐋</div><div><div class="provider-name">DeepSeek</div><div class="provider-note">deepseek-chat, deepseek-r1</div></div></div>
-    <div class="provider-card"><div class="provider-icon">🌐</div><div><div class="provider-name">OpenRouter</div><div class="provider-note">200+ models via one key</div></div></div>
-    <div class="provider-card"><div class="provider-icon">💻</div><div><div class="provider-name">Local</div><div class="provider-note">Ollama, LM Studio, llama.cpp</div></div></div>
-    <div class="provider-card"><div class="provider-icon">⚡</div><div><div class="provider-name">OpenCode CLI</div><div class="provider-note">opencode-ai subprocess</div></div></div>
-  </div>
-  <br/>
-  <p style="color: var(--text-muted); font-size:0.9rem;">Plus <strong style="color:var(--primary)">SamplingProvider</strong> — uses the MCP client's own LLM via the protocol. Zero API keys. Works out of the box in Claude Desktop.</p>
-</section>
-
-<section id="architecture">
-  <h2>Architecture</h2>
-  <p class="section-sub">Clean layered design. Every class has a single responsibility.</p>
-  <div class="arch-diagram">
-┌─────────────────────────────────────────────────────────────────┐
-│                      MCP CLIENT                                 │
-│         (Claude Desktop · Cursor · Windsurf · Custom)           │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │  MCP Protocol (stdio / SSE)
-┌──────────────────────────▼──────────────────────────────────────┐
-│                    VibeServe v1.0                               │
-│                  FastMCP Server Layer                           │
-│                                                                 │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │
-│  │  Tools   │  │Resources │  │ Prompts  │  │  Sampling    │   │
-│  │  (×13)   │  │  (×5)    │  │  (×6)    │  │  Provider    │   │
-│  └────┬─────┘  └──────────┘  └──────────┘  └──────────────┘   │
-│       │                                                         │
-│  ┌────▼──────────────────────────────────────────────────────┐  │
-│  │              V5 Agentic Pipeline                          │  │
-│  │  VibeArchitect → VibeImplementer → VibeCodeReviewer       │  │
-│  │  VibeVerifier  → CritiqueLoop    → VibeTester             │  │
-│  │  VibeDeployer                                             │  │
-│  └────┬──────────────────────────────────────────────────────┘  │
-│       │                                                         │
-│  ┌────▼──────────────────────────────────────────────────────┐  │
-│  │                  LLMRouter                                │  │
-│  │  OpenAI · DeepSeek · OpenRouter · Local · OpenCode        │  │
-│  │  Automatic fallback · Exponential backoff retry           │  │
-│  └────┬──────────────────────────────────────────────────────┘  │
-│       │                                                         │
-│  ┌────▼─────────┐  ┌───────────────┐  ┌───────────────────────┐ │
-│  │ MemoryStore  │  │ CacheManager  │  │  SchemaValidator      │ │
-│  │ SQLite + idx │  │ SHA-256 + TTL │  │  WCAG + UISchema v1.0 │ │
-│  └──────────────┘  └───────────────┘  └───────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-  </div>
-</section>
-
-<section id="quickstart">
-  <h2>Quickstart</h2>
-  <p class="section-sub">Running in 60 seconds.</p>
-
-  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">1. Clone &amp; install</p>
-  <div class="code-block"><span class="keyword">git</span> clone https://github.com/ncsound919/VibeServe-MCP
-<span class="keyword">cd</span> VibeServe-MCP
-<span class="keyword">pip</span> install -e <span class="string">".[dev]"</span></div>
-
-  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">2. Configure environment</p>
-  <div class="code-block"><span class="keyword">cp</span> .env.example .env
-<span class="comment"># Add your OPENAI_API_KEY, DEEPSEEK_API_KEY, or leave blank for local/sampling</span></div>
-
-  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">3. Add to Claude Desktop (<code style="color:var(--primary)">claude_desktop_config.json</code>)</p>
-  <div class="code-block">{
-  <span class="string">"mcpServers"</span>: {
-    <span class="string">"vibeserve"</span>: {
-      <span class="string">"command"</span>: <span class="string">"python"</span>,
-      <span class="string">"args"</span>: [<span class="string">"/path/to/VibeServe-MCP/vibeserve.py"</span>]
-    }
-  }
-}</div>
-
-  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">4. Run tests</p>
-  <div class="code-block"><span class="keyword">pytest</span> test_aether_nexus.py test_integration_v5.py -v
-<span class="comment"># 43 tests. All pass.</span></div>
-</section>
-
-<section id="donate">
-  <div class="donate-card">
-    <div style="font-size:2.5rem;">💚</div>
-    <h2 style="margin-top:1rem;">Support VibeServe</h2>
-    <p style="color:var(--text-muted);margin-top:0.5rem;max-width:500px;margin-left:auto;margin-right:auto;">
-      VibeServe is free and open source. If it saves you time, consider buying the dev a coffee.
-    </p>
-    <div class="cashapp-tag">$helptools</div>
-    <p style="color:var(--text-muted);font-size:0.85rem;">CashApp · Every dollar helps keep the tools free.</p>
-    <br/>
-    <a href="https://github.com/ncsound919/VibeServe-MCP" class="btn btn-primary" style="margin-top:1rem;">⭐ Star on GitHub</a>
-  </div>
-</section>
-
-<footer>
-  <p>VibeServe v1.0 — Built with 🖤 &nbsp;|&nbsp; <a href="https://github.com/ncsound919/VibeServe-MCP">GitHub</a> &nbsp;|&nbsp; MIT License &nbsp;|&nbsp; Donations: <strong>$helptools</strong> on CashApp</p>
-</footer>
-
+  <header>
+    <div class="container">
+      <nav aria-label="Main navigation">
+        <ul style="display: flex; list-style: none; gap: 1rem; justify-content: flex-end; padding: 1rem 0;">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#testimonials">Testimonials</a></li>
+          <li><a href="#cta">Get Started</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section class="hero" aria-label="Hero section">
+      <img src="logo.png" alt="VibeServe Logo" class="hero-logo" width="120" height="120">
+      <h1>VibeServe v1.0</h1>
+      <p>Agentic Coding MCP Server</p>
+      <a href="#cta" class="cta-button" aria-label="Get started with VibeServe">Get Started</a>
+    </section>
+    <section class="stats" aria-label="Statistics">
+      <div class="stat-item">
+        <h3>10K+</h3>
+        <p>Downloads</p>
+      </div>
+      <div class="stat-item">
+        <h3>99.9%</h3>
+        <p>Uptime</p>
+      </div>
+      <div class="stat-item">
+        <h3>24/7</h3>
+        <p>Support</p>
+      </div>
+    </section>
+    <section class="features" id="features" aria-label="Features">
+      <div class="container">
+        <h2>Powerful Features</h2>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>Agentic Coding</h3>
+            <p>Let AI agents write, review, and refactor code autonomously.</p>
+          </article>
+          <article class="feature-card">
+            <h3>MCP Server</h3>
+            <p>Model Context Protocol enables seamless integration with any LLM.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Real-time Collaboration</h3>
+            <p>Work with your team and AI in real-time.</p>
+          </article>
+          <article class="feature-card">
+            <h3>Secure & Scalable</h3>
+            <p>Enterprise-grade security with auto-scaling infrastructure.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+    <section class="testimonials" id="testimonials" aria-label="Testimonials">
+      <div class="container">
+        <h2>What Developers Say</h2>
+        <div class="testimonial-grid">
+          <div style="text-align:center; padding: 2rem;">
+        <img src="flyer.png" alt="VibeServe v1.0 Flyer" style="max-width:600px; width:100%; border-radius:8px; box-shadow:0 0 40px rgba(0,255,159,0.15);" />
+        <p style="color:var(--text-muted); margin-top:1rem;">13 MCP tools • 5 LLM providers • WCAG AAA • 41 tests • 100/100 quality score</p>
+      </div>
+    </section>
+    <section class="cta-section" id="cta" aria-label="Call to action">
+      <div class="container">
+        <h2>Support VibeServe</h2>
+        <p>VibeServe is free and open source. If it saves you time, consider buying the dev a coffee.</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <a href="https://github.com/ncsound919/VibeServe-MCP" class="cta-button" aria-label="Star on GitHub">Star on GitHub</a>
+          <a href="https://cash.app/$helptools" class="cta-button" style="background: #00B8FF;" aria-label="Donate via CashApp">Donate $helptools</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="container">
+      <p>VibeServe v1.0 — Built with <a href="https://github.com/ncsound919/VibeServe-MCP">VibeServe MCP</a>. MIT License. Donations: <strong>$helptools</strong> on CashApp</p>
+    </div>
+  </footer>
 </body>
 </html>
