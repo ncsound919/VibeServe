@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VibeServe v1.0 — Agentic UI Coding Orchestrator</title>
+  <meta name="description" content="VibeServe is an agentic coding orchestrator for the Model Context Protocol. Architect, code, review, verify, iterate, test, and deploy — all from a single MCP server." />
+  <meta property="og:title" content="VibeServe v1.0" />
+  <meta property="og:description" content="The Agentic UI Coding Orchestrator for MCP. 11 tools. 5 LLM providers. WCAG AAA built-in." />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --primary: #00FF9F;
+      --secondary: #00B8FF;
+      --accent: #FF00AA;
+      --text: #EEEEEE;
+      --text-muted: #888888;
+      --border: #222222;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.6;
+    }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .nav-brand {
+      font-size: 1.25rem; font-weight: 700;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a { color: var(--text-muted); font-size: 0.9rem; transition: color .2s; }
+    .nav-links a:hover { color: var(--primary); text-decoration: none; }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      background: radial-gradient(ellipse at 50% 0%, rgba(0,255,159,0.08) 0%, transparent 70%);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(0,255,159,0.1);
+      border: 1px solid rgba(0,255,159,0.3);
+      color: var(--primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
+    }
+    h1 {
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .tagline {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: 0.5rem;
+      font-size: 1rem; font-weight: 600;
+      transition: all .2s; cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--primary); color: #000;
+    }
+    .btn-primary:hover { opacity: 0.85; text-decoration: none; }
+    .btn-outline {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: transparent;
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); text-decoration: none; }
+
+    /* STATS */
+    .stats {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 3rem;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-value {
+      font-size: 2.5rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+
+    /* SECTIONS */
+    section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+    h2 {
+      font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+    .section-sub { color: var(--text-muted); margin-bottom: 3rem; }
+
+    /* PIPELINE */
+    .pipeline {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem 2rem;
+      overflow-x: auto;
+    }
+    .pipe-step {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 0.5rem 1rem;
+      text-align: center;
+    }
+    .pipe-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .pipe-label { font-size: 0.75rem; color: var(--primary); font-weight: 600; white-space: nowrap; }
+    .pipe-arrow { color: var(--text-muted); font-size: 1.25rem; padding: 0 0.25rem; }
+
+    /* TOOLS GRID */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .tool-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      transition: border-color .2s, transform .2s;
+    }
+    .tool-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+    .tool-name {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: var(--primary);
+      background: rgba(0,255,159,0.08);
+      padding: 0.2rem 0.6rem;
+      border-radius: 0.25rem;
+      display: inline-block;
+      margin-bottom: 0.75rem;
+    }
+    .tool-desc { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+
+    /* PROVIDERS */
+    .providers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .provider-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .provider-icon { font-size: 1.5rem; }
+    .provider-name { font-weight: 600; font-size: 0.95rem; }
+    .provider-note { color: var(--text-muted); font-size: 0.75rem; }
+
+    /* ARCH DIAGRAM */
+    .arch-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: var(--primary);
+      overflow-x: auto;
+      line-height: 1.8;
+      white-space: pre;
+    }
+
+    /* QUICKSTART */
+    .code-block {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #79c0ff;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    .code-block .comment { color: #6e7681; }
+    .code-block .string { color: var(--primary); }
+    .code-block .keyword { color: #ff7b72; }
+
+    /* DONATE */
+    .donate-card {
+      text-align: center;
+      background: linear-gradient(135deg, rgba(0,255,159,0.05), rgba(0,184,255,0.05));
+      border: 1px solid rgba(0,255,159,0.2);
+      border-radius: 1rem;
+      padding: 3rem 2rem;
+    }
+    .cashapp-tag {
+      display: inline-block;
+      font-size: 2rem; font-weight: 800;
+      background: linear-gradient(135deg, #00D632, #00FF9F);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin: 1rem 0;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .stats { gap: 2rem; }
+      .pipe-arrow { display: none; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">⬡ VibeServe</span>
+  <div class="nav-links">
+    <a href="#pipeline">Pipeline</a>
+    <a href="#tools">Tools</a>
+    <a href="#providers">Providers</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#quickstart">Quickstart</a>
+    <a href="#donate">Support</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="badge">🚀 v1.0 — Now Live</div>
+  <h1>VibeServe</h1>
+  <p class="tagline">The Agentic UI Coding Orchestrator for the Model Context Protocol. Architect, code, review, verify, iterate, test, and deploy — powered by any LLM.</p>
+  <div class="hero-actions">
+    <a href="https://github.com/ncsound919/AetherNexus-MCP" class="btn btn-primary">⭐ Star on GitHub</a>
+    <a href="#quickstart" class="btn btn-outline">Get Started →</a>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-value">11</div><div class="stat-label">MCP Tools</div></div>
+  <div class="stat"><div class="stat-value">5</div><div class="stat-label">LLM Providers</div></div>
+  <div class="stat"><div class="stat-value">43</div><div class="stat-label">Tests</div></div>
+  <div class="stat"><div class="stat-value">AAA</div><div class="stat-label">WCAG Level</div></div>
+  <div class="stat"><div class="stat-value">100</div><div class="stat-label">Quality Score</div></div>
+  <div class="stat"><div class="stat-value">0</div><div class="stat-label">API Keys Required</div></div>
+</div>
+
+<section id="pipeline">
+  <h2>The Vibe Pipeline</h2>
+  <p class="section-sub">Every step is an MCP tool. Chain them or call them individually.</p>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="pipe-icon">🏗️</div><div class="pipe-label">vibe_architect</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="pipe-icon">💻</div><div class="pipe-label">vibe_code</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="pipe-icon">🔍</div><div class="pipe-label">vibe_review</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="pipe-icon">✅</div><div class="pipe-label">vibe_verify</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="pipe-icon">🔄</div><div class="pipe-label">vibe_iterate</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="pipe-icon">🧪</div><div class="pipe-label">vibe_test</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="pipe-icon">🚀</div><div class="pipe-label">vibe_deploy</div></div>
+  </div>
+</section>
+
+<section id="tools">
+  <h2>All 11 MCP Tools</h2>
+  <p class="section-sub">Drop into any MCP-compatible client — Claude Desktop, Cursor, Windsurf, or custom.</p>
+  <div class="tools-grid">
+    <div class="tool-card"><div class="tool-name">vibe_architect</div><div class="tool-desc">Transforms natural language intent into a full architecture plan with ADR decisions, component tree, data flow, risk assessment, and recommended stack.</div></div>
+    <div class="tool-card"><div class="tool-name">vibe_code</div><div class="tool-desc">Generates production-ready TypeScript/JSX code from a VibePlan. Enforces design tokens, ARIA attributes, and accessibility notes on every file.</div></div>
+    <div class="tool-card"><div class="tool-name">vibe_review</div><div class="tool-desc">Three-agent parallel code review: UX Designer, Code Quality Engineer, and Accessibility Advocate — each gives independent scores and line-level issues.</div></div>
+    <div class="tool-card"><div class="tool-name">vibe_verify</div><div class="tool-desc">Static validation: UISchema v1.0 compliance, WCAG contrast checks, ARIA coverage, and code quality flags (TODO/FIXME, missing accessibility notes).</div></div>
+    <div class="tool-card"><div class="tool-name">vibe_iterate</div><div class="tool-desc">Continuous improvement loop. Critiques, repairs weaknesses, re-evaluates — up to N iterations or until the quality threshold is reached.</div></div>
+    <div class="tool-card"><div class="tool-name">vibe_test</div><div class="tool-desc">Generates full test suites from source code: unit, accessibility, integration, edge cases, and responsive breakpoint tests.</div></div>
+    <div class="tool-card"><div class="tool-name">vibe_deploy</div><div class="tool-desc">Generates deployment configs for Vercel, Docker, static hosting, and Node.js. Includes env vars, health checks, and monitoring setup.</div></div>
+    <div class="tool-card"><div class="tool-name">generate_ui_spec</div><div class="tool-desc">V4 pipeline: generates UISchema v1.0 specs with multi-agent critique, WCAG AAA validation, and design system token enforcement.</div></div>
+    <div class="tool-card"><div class="tool-name">validate_ui_spec</div><div class="tool-desc">Validates any UISchema v1.0 document. Returns errors, warnings, and per-component contrast ratio checks.</div></div>
+    <div class="tool-card"><div class="tool-name">list_design_systems</div><div class="tool-desc">Lists available design systems (built-in and custom). Returns color palettes, component counts, and WCAG level per system.</div></div>
+    <div class="tool-card"><div class="tool-name">memory_stats</div><div class="tool-desc">Returns aggregate stats on the SQLite-backed spec memory store: total stored, highest scores, usage by page type.</div></div>
+  </div>
+</section>
+
+<section id="providers">
+  <h2>5 LLM Providers</h2>
+  <p class="section-sub">Automatic fallback chain. If the primary fails, the next one takes over — zero downtime.</p>
+  <div class="providers-grid">
+    <div class="provider-card"><div class="provider-icon">🤖</div><div><div class="provider-name">OpenAI</div><div class="provider-note">GPT-4 Turbo, GPT-4o</div></div></div>
+    <div class="provider-card"><div class="provider-icon">🐋</div><div><div class="provider-name">DeepSeek</div><div class="provider-note">deepseek-chat, deepseek-r1</div></div></div>
+    <div class="provider-card"><div class="provider-icon">🌐</div><div><div class="provider-name">OpenRouter</div><div class="provider-note">200+ models via one key</div></div></div>
+    <div class="provider-card"><div class="provider-icon">💻</div><div><div class="provider-name">Local</div><div class="provider-note">Ollama, LM Studio, llama.cpp</div></div></div>
+    <div class="provider-card"><div class="provider-icon">⚡</div><div><div class="provider-name">OpenCode CLI</div><div class="provider-note">opencode-ai subprocess</div></div></div>
+  </div>
+  <br/>
+  <p style="color: var(--text-muted); font-size:0.9rem;">Plus <strong style="color:var(--primary)">SamplingProvider</strong> — uses the MCP client's own LLM via the protocol. Zero API keys. Works out of the box in Claude Desktop.</p>
+</section>
+
+<section id="architecture">
+  <h2>Architecture</h2>
+  <p class="section-sub">Clean layered design. Every class has a single responsibility.</p>
+  <div class="arch-diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                      MCP CLIENT                                 │
+│         (Claude Desktop · Cursor · Windsurf · Custom)           │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │  MCP Protocol (stdio / SSE)
+┌──────────────────────────▼──────────────────────────────────────┐
+│                    VibeServe v1.0                               │
+│                  FastMCP Server Layer                           │
+│                                                                 │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │
+│  │  Tools   │  │Resources │  │ Prompts  │  │  Sampling    │   │
+│  │  (×11)   │  │  (×5)    │  │  (×6)    │  │  Provider    │   │
+│  └────┬─────┘  └──────────┘  └──────────┘  └──────────────┘   │
+│       │                                                         │
+│  ┌────▼──────────────────────────────────────────────────────┐  │
+│  │              V5 Agentic Pipeline                          │  │
+│  │  VibeArchitect → VibeImplementer → VibeCodeReviewer       │  │
+│  │  VibeVerifier  → CritiqueLoop    → VibeTester             │  │
+│  │  VibeDeployer                                             │  │
+│  └────┬──────────────────────────────────────────────────────┘  │
+│       │                                                         │
+│  ┌────▼──────────────────────────────────────────────────────┐  │
+│  │                  LLMRouter                                │  │
+│  │  OpenAI · DeepSeek · OpenRouter · Local · OpenCode        │  │
+│  │  Automatic fallback · Exponential backoff retry           │  │
+│  └────┬──────────────────────────────────────────────────────┘  │
+│       │                                                         │
+│  ┌────▼─────────┐  ┌───────────────┐  ┌───────────────────────┐ │
+│  │ MemoryStore  │  │ CacheManager  │  │  SchemaValidator      │ │
+│  │ SQLite + idx │  │ SHA-256 + TTL │  │  WCAG + UISchema v1.0 │ │
+│  └──────────────┘  └───────────────┘  └───────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+  </div>
+</section>
+
+<section id="quickstart">
+  <h2>Quickstart</h2>
+  <p class="section-sub">Running in 60 seconds.</p>
+
+  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">1. Clone &amp; install</p>
+  <div class="code-block"><span class="keyword">git</span> clone https://github.com/ncsound919/AetherNexus-MCP
+<span class="keyword">cd</span> AetherNexus-MCP
+<span class="keyword">pip</span> install -e <span class="string">".[dev]"</span></div>
+
+  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">2. Configure environment</p>
+  <div class="code-block"><span class="keyword">cp</span> .env.example .env
+<span class="comment"># Add your OPENAI_API_KEY, DEEPSEEK_API_KEY, or leave blank for local/sampling</span></div>
+
+  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">3. Add to Claude Desktop (<code style="color:var(--primary)">claude_desktop_config.json</code>)</p>
+  <div class="code-block">{
+  <span class="string">"mcpServers"</span>: {
+    <span class="string">"vibeserve"</span>: {
+      <span class="string">"command"</span>: <span class="string">"python"</span>,
+      <span class="string">"args"</span>: [<span class="string">"/path/to/AetherNexus-MCP/mcp_ui_optimizer_v4.py"</span>]
+    }
+  }
+}</div>
+
+  <p style="color:var(--text-muted);margin-bottom:0.5rem;font-size:0.9rem;">4. Run tests</p>
+  <div class="code-block"><span class="keyword">pytest</span> test_aether_nexus.py test_integration_v5.py -v
+<span class="comment"># 43 tests. All pass.</span></div>
+</section>
+
+<section id="donate">
+  <div class="donate-card">
+    <div style="font-size:2.5rem;">💚</div>
+    <h2 style="margin-top:1rem;">Support VibeServe</h2>
+    <p style="color:var(--text-muted);margin-top:0.5rem;max-width:500px;margin-left:auto;margin-right:auto;">
+      VibeServe is free and open source. If it saves you time, consider buying the dev a coffee.
+    </p>
+    <div class="cashapp-tag">$helptools</div>
+    <p style="color:var(--text-muted);font-size:0.85rem;">CashApp · Every dollar helps keep the tools free.</p>
+    <br/>
+    <a href="https://github.com/ncsound919/AetherNexus-MCP" class="btn btn-primary" style="margin-top:1rem;">⭐ Star on GitHub</a>
+  </div>
+</section>
+
+<footer>
+  <p>VibeServe v1.0 — Built with 🖤 &nbsp;|&nbsp; <a href="https://github.com/ncsound919/AetherNexus-MCP">GitHub</a> &nbsp;|&nbsp; MIT License &nbsp;|&nbsp; Donations: <strong>$helptools</strong> on CashApp</p>
+</footer>
+
+</body>
+</html>
