@@ -2549,6 +2549,235 @@ async def vibe_benchmark_tool(ctx: Context, iterations: int = 5) -> Dict[str, An
     }
 
 
+
+# ====================== THIRD-PARTY INTEGRATIONS ======================
+
+class SupabaseConnector:
+    """Supabase REST API + Auth + Storage connector.
+    Zero additional deps — uses httpx (already imported).
+    Set SUPABASE_URL + SUPABASE_KEY env vars."""
+
+    @staticmethod
+    def _headers() -> dict:
+        return {
+            "apikey": os.getenv("SUPABASE_KEY", ""),
+            "Authorization": f"Bearer {os.getenv('SUPABASE_KEY', '')}",
+            "Content-Type": "application/json"
+        }
+
+    @staticmethod
+    async def query(table: str, select: str = "*", filters: dict = None, limit: int = 10) -> dict:
+        """Query Supabase table."""
+        url = f"{os.getenv('SUPABASE_URL', '')}/rest/v1/{table}?select={select}&limit={limit}"
+        if filters:
+            for k, v in filters.items():
+                url += f"&{k}=eq.{v}"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url, headers=SupabaseConnector._headers())
+            return {"status": resp.status_code, "data": resp.json() if resp.status_code == 200 else None}
+
+    @staticmethod
+    async def insert(table: str, data: dict) -> dict:
+        """Insert into Supabase table."""
+        url = f"{os.getenv('SUPABASE_URL', '')}/rest/v1/{table}"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(url, headers=SupabaseConnector._headers(), json=data)
+            return {"status": resp.status_code, "data": resp.json() if resp.status_code in (200, 201) else None}
+
+    @staticmethod
+    async def rpc(function: str, params: dict = None) -> dict:
+        """Call a Supabase RPC function."""
+        url = f"{os.getenv('SUPABASE_URL', '')}/rest/v1/rpc/{function}"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(url, headers=SupabaseConnector._headers(), json=params or {})
+            return {"status": resp.status_code, "data": resp.json() if resp.status_code == 200 else None}
+
+
+class VercelConnector:
+    """Vercel REST API connector. Set VERCEL_TOKEN env var."""
+
+    @staticmethod
+    def _headers() -> dict:
+        return {"Authorization": f"Bearer {os.getenv('VERCEL_TOKEN', '')}", "Content-Type": "application/json"}
+
+    @staticmethod
+    async def list_deployments(limit: int = 5) -> dict:
+        url = f"https://api.vercel.com/v6/deployments?limit={limit}"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url, headers=VercelConnector._headers())
+            return {"status": resp.status_code, "deployments": resp.json().get("deployments", []) if resp.status_code == 200 else []}
+
+    @staticmethod
+    async def list_projects() -> dict:
+        url = "https://api.vercel.com/v9/projects"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url, headers=VercelConnector._headers())
+            return {"status": resp.status_code, "projects": resp.json().get("projects", []) if resp.status_code == 200 else []}
+
+    @staticmethod
+    async def get_env(project_id: str) -> dict:
+        url = f"https://api.vercel.com/v9/projects/{project_id}/env"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url, headers=VercelConnector._headers())
+            return {"status": resp.status_code, "envs": resp.json().get("envs", []) if resp.status_code == 200 else []}
+
+
+class GitHubConnector:
+    """GitHub REST API connector. Set GITHUB_TOKEN env var."""
+
+    @staticmethod
+    def _headers() -> dict:
+        return {"Authorization": f"Bearer {os.getenv('GITHUB_TOKEN', '')}", "Accept": "application/vnd.github+json"}
+
+    @staticmethod
+    async def get_repo(owner: str, repo: str) -> dict:
+        url = f"https://api.github.com/repos/{owner}/{repo}"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url, headers=GitHubConnector._headers())
+            return {"status": resp.status_code, "repo": resp.json() if resp.status_code == 200 else None}
+
+    @staticmethod
+    async def list_issues(owner: str, repo: str, state: str = "open") -> dict:
+        url = f"https://api.github.com/repos/{owner}/{repo}/issues?state={state}&per_page=10"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url, headers=GitHubConnector._headers())
+            return {"status": resp.status_code, "issues": resp.json() if resp.status_code == 200 else []}
+
+    @staticmethod
+    async def trigger_action(owner: str, repo: str, workflow: str, ref: str = "main") -> dict:
+        url = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(url, headers=GitHubConnector._headers(), json={"ref": ref})
+            return {"status": resp.status_code, "triggered": resp.status_code == 204}
+
+
+class CloudflareConnector:
+    """Cloudflare API connector. Set CLOUDFLARE_TOKEN + CLOUDFLARE_ZONE env vars."""
+
+    @staticmethod
+    def _headers() -> dict:
+        return {"Authorization": f"Bearer {os.getenv('CLOUDFLARE_TOKEN', '')}", "Content-Type": "application/json"}
+
+    @staticmethod
+    async def list_dns() -> dict:
+        zone = os.getenv("CLOUDFLARE_ZONE", "")
+        url = f"https://api.cloudflare.com/client/v4/zones/{zone}/dns_records?per_page=20"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url, headers=CloudflareConnector._headers())
+            return {"status": resp.status_code, "records": resp.json().get("result", []) if resp.status_code == 200 else []}
+
+    @staticmethod
+    async def purge_cache() -> dict:
+        zone = os.getenv("CLOUDFLARE_ZONE", "")
+        url = f"https://api.cloudflare.com/client/v4/zones/{zone}/purge_cache"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(url, headers=CloudflareConnector._headers(), json={"purge_everything": True})
+            return {"status": resp.status_code, "purged": resp.status_code == 200}
+
+
+class GoogleConnector:
+    """Google APIs connector (Sheets, Docs). Set GOOGLE_API_KEY env var."""
+
+    @staticmethod
+    async def sheets_read(spreadsheet_id: str, range_: str = "A1:Z100") -> dict:
+        key = os.getenv("GOOGLE_API_KEY", "")
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range_}?key={key}"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(url)
+            return {"status": resp.status_code, "values": resp.json().get("values", []) if resp.status_code == 200 else []}
+
+    @staticmethod
+    async def sheets_write(spreadsheet_id: str, range_: str, values: list) -> dict:
+        key = os.getenv("GOOGLE_API_KEY", "")
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range_}:append?valueInputOption=RAW&key={key}"
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(url, json={"values": values})
+            return {"status": resp.status_code, "updated": resp.status_code == 200}
+
+
+class EditorBridge:
+    """Editor integrations: VSCode tasks, Zed workspace config, Cursor rules."""
+
+    @staticmethod
+    def vscode_task_json(label: str, command: str) -> dict:
+        return {"version": "2.0.0", "tasks": [{"label": label, "type": "shell", "command": command, "group": "build"}]}
+
+    @staticmethod
+    def zed_workspace_config(name: str, python_path: str = ".") -> str:
+        return json.dumps({"name": name, "settings": {"lsp": {"pyright": {"settings": {"python": {"pythonPath": python_path}}}}}}, indent=2)
+
+    @staticmethod
+    def cursor_rules(project_type: str = "mcp-server") -> str:
+        return f"""You are building a {project_type}. 
+- Use type hints everywhere
+- Async/await for I/O operations
+- Environment variables for secrets, never hardcode keys
+- WCAG AAA compliance for any UI output
+- Test coverage: unit + integration + edge cases"""
+
+
+# Integration MCP tools
+@mcp_server.tool(name="supabase_query", description="Query a Supabase table. Set SUPABASE_URL + SUPABASE_KEY env vars.")
+async def supabase_query_tool(ctx: Context, table: str, select: str = "*", filters: Optional[Dict[str, Any]] = None, limit: int = 10) -> Dict[str, Any]:
+    await ctx.info(f"[supabase] Querying {table}...")
+    result = await SupabaseConnector.query(table, select, filters, limit)
+    await ctx.info(f"[supabase] {result['status']} — {'OK' if result['status'] == 200 else 'FAIL'}")
+    return result
+
+@mcp_server.tool(name="supabase_insert", description="Insert a row into a Supabase table.")
+async def supabase_insert_tool(ctx: Context, table: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    await ctx.info(f"[supabase] Inserting into {table}...")
+    result = await SupabaseConnector.insert(table, data)
+    await ctx.info(f"[supabase] {result['status']} — {'OK' if result['status'] in (200, 201) else 'FAIL'}")
+    return result
+
+@mcp_server.tool(name="vercel_deployments", description="List recent Vercel deployments. Set VERCEL_TOKEN env var.")
+async def vercel_deployments_tool(ctx: Context, limit: int = 5) -> Dict[str, Any]:
+    await ctx.info("[vercel] Fetching deployments...")
+    result = await VercelConnector.list_deployments(limit)
+    await ctx.info(f"[vercel] {len(result.get('deployments', []))} deployments found")
+    return result
+
+@mcp_server.tool(name="github_repo", description="Get GitHub repo info. Set GITHUB_TOKEN env var.")
+async def github_repo_tool(ctx: Context, owner: str, repo: str) -> Dict[str, Any]:
+    await ctx.info(f"[github] Fetching {owner}/{repo}...")
+    result = await GitHubConnector.get_repo(owner, repo)
+    await ctx.info(f"[github] {result['status']} — {'OK' if result['status'] == 200 else 'FAIL'}")
+    return result
+
+@mcp_server.tool(name="github_issues", description="List GitHub issues. Set GITHUB_TOKEN env var.")
+async def github_issues_tool(ctx: Context, owner: str, repo: str, state: str = "open") -> Dict[str, Any]:
+    await ctx.info(f"[github] Issues for {owner}/{repo}...")
+    result = await GitHubConnector.list_issues(owner, repo, state)
+    await ctx.info(f"[github] {len(result.get('issues', []))} issues")
+    return result
+
+@mcp_server.tool(name="cloudflare_dns", description="List Cloudflare DNS records. Set CLOUDFLARE_TOKEN + CLOUDFLARE_ZONE.")
+async def cloudflare_dns_tool(ctx: Context) -> Dict[str, Any]:
+    await ctx.info("[cloudflare] Fetching DNS records...")
+    result = await CloudflareConnector.list_dns()
+    await ctx.info(f"[cloudflare] {len(result.get('records', []))} records")
+    return result
+
+@mcp_server.tool(name="google_sheets", description="Read from a Google Sheet. Set GOOGLE_API_KEY env var.")
+async def google_sheets_tool(ctx: Context, spreadsheet_id: str, range_: str = "A1:Z100") -> Dict[str, Any]:
+    await ctx.info(f"[google] Reading sheet {spreadsheet_id}...")
+    result = await GoogleConnector.sheets_read(spreadsheet_id, range_)
+    await ctx.info(f"[google] {len(result.get('values', []))} rows")
+    return result
+
+@mcp_server.tool(name="editor_config", description="Generate editor config files (VSCode tasks, Zed workspace, Cursor rules).")
+async def editor_config_tool(ctx: Context, editor: str = "vscode", project_name: str = "vibeserve") -> Dict[str, Any]:
+    await ctx.info(f"[editor] Generating {editor} config...")
+    if editor == "vscode":
+        config = EditorBridge.vscode_task_json("VibeServe: Run Server", "python vibeserve.py")
+    elif editor == "zed":
+        config = EditorBridge.zed_workspace_config(project_name)
+    else:
+        config = EditorBridge.cursor_rules("mcp-server")
+    return {"status": "success", "editor": editor, "config": config}
+
+
 # ====================== CLI / TESTING ======================
 
 if __name__ == "__main__":
