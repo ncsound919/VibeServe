@@ -1,0 +1,6 @@
+.env
+.aether_prime_cache/
+.aether_prime_memory/
+__pycache__/
+*.pyc
+.pytest_cache/

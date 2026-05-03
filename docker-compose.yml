@@ -1,0 +1,49 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aether-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        sleep 5
+        ollama pull llama3.2
+        wait
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  aether-nexus:
+    build: .
+    container_name: aether-nexus
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - DEFAULT_LLM_PROVIDER=local
+      - LOCAL_LLM_URL=http://ollama:11434/v1
+      - LOCAL_LLM_MODEL=llama3.2
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mcp_ui_optimizer_v4.py:/app/mcp_ui_optimizer_v4.py:ro
+      - aether_cache:/app/.aether_prime_cache
+      - aether_memory:/app/.aether_prime_memory
+
+volumes:
+  ollama_data:
+  aether_cache:
+  aether_memory:

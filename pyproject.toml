@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aethernexus-mcp"
+version = "5.0.0"
+description = "Agentic coding orchestrator for the Model Context Protocol. Karpathy-inspired vibe coding pipeline: architect, code, review, verify, iterate, test, deploy."
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=0.9.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+]
+license = {text = "MIT"}
+readme = "README.md"
+keywords = ["mcp", "agentic-coding", "vibe-coding", "ui-design", "accessibility", "wcag", "llm", "multi-agent"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: User Interfaces",
+]
+
+[project.urls]
+Homepage = "https://github.com/aethernexus/aethernexus-mcp"
+Documentation = "https://github.com/aethernexus/aethernexus-mcp#readme"
+Repository = "https://github.com/aethernexus/aethernexus-mcp"
+
+[project.scripts]
+aethernexus = "mcp_ui_optimizer_v4:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "pytest-asyncio>=0.23.0", "ruff>=0.4.0", "mypy>=1.10.0"]
+
+[tool.setuptools.packages.find]
+include = ["."]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["test_aether_nexus.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
