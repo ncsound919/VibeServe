@@ -2566,6 +2566,155 @@ async def vibe_benchmark_tool(ctx: Context, iterations: int = 5) -> Dict[str, An
 
 
 
+
+# ====================== DESIGN UPGRADE SYSTEM ======================
+
+DESIGN_UPGRADES = """
+## Production-Grade Enhancements (Senior Dev)
+
+### Responsive (Mobile-First)
+- Mobile <640px: single column, 48px gaps, hamburger nav
+- Tablet 640-1024px: 2-col grids, 64px gaps, compact nav
+- Desktop 1024-1440px: 3-col, 96px gaps, full nav, max-width 1280px
+
+### Accessibility (WCAG AAA)
+- focus-visible: 2px solid outline, 2px offset on all interactive elements
+- Skip-to-content link at top
+- Landmark roles: header, main, nav, footer, sections with aria-label
+- aria-live=\"polite\" for dynamic updates
+- prefers-reduced-motion: disable ALL animations/transitions
+- prefers-contrast: increase border contrast
+- prefers-color-scheme: respect system dark/light
+- Touch targets minimum 44x44px
+
+### Performance
+- font-display: swap on all web fonts (no FOIT)
+- content-visibility: auto on below-fold sections
+- loading=\"lazy\" on images, decoding=\"async\" on hero images
+- Preconnect hints for external origins
+- Explicit width/height on all images (no CLS)
+- Inline critical CSS, defer non-critical
+
+### Animation
+- 150ms micro, 200ms standard, 300ms entrance
+- ease-out for opening, ease-in for closing
+- No animation when prefers-reduced-motion
+
+### SEO
+- Complete meta tags (og:title, og:description, og:image)
+- JSON-LD structured data for SoftwareApplication
+- Canonical URL
+- Descriptive title (brand + keyword)
+
+### Security
+- Content-Security-Policy: frame-ancestors 'none'; script-src 'self'
+- Referrer-Policy: strict-origin-when-cross-origin
+- rel=\"noopener\" on external links"""
+
+
+class DesignUpgrader:
+    """Applies production-grade enhancements to any design template.
+    Inject senior-dev improvements: responsive, a11y, performance, animation, SEO."""
+
+    @staticmethod
+    def upgrade(template_content: str) -> str:
+        """Merge senior-dev upgrades into the template."""
+        return f"{template_content}\n\n{DESIGN_UPGRADES}"
+
+    @staticmethod
+    def upgrade_file(template_name: str) -> str:
+        """Load a template file and apply senior-dev upgrades."""
+        from vibeserve import TemplateLibrary
+        base = TemplateLibrary.random_template(template_name)
+        return DesignUpgrader.upgrade(base)
+
+
+@mcp_server.tool(
+    name="vibe_upgrade_design",
+    description="Upgrade a design template with senior-dev production patterns: responsive breakpoints, WCAG AAA, performance optimization, SEO, security headers, animation tokens. Apply to any DESIGN.md template."
+)
+async def vibe_upgrade_design_tool(
+    ctx: Context,
+    template: Optional[str] = None
+) -> Dict[str, Any]:
+    """Apply professional upgrades to a design template"""
+    name = template or "random"
+    await ctx.info(f"[upgrade] Enhancing {name} with senior-dev patterns...")
+
+    upgraded = DesignUpgrader.upgrade_file(name)
+
+    await ctx.info(f"[upgrade] Template enhanced: responsive + a11y + perf + seo + security")
+
+    return {
+        "status": "success",
+        "template": name,
+        "upgraded_design": upgraded,
+        "enhancements": [
+            "Responsive breakpoints (mobile-first)",
+            "WCAG AAA (focus-visible, landmarks, reduced-motion)",
+            "Performance (content-visibility, lazy loading, font-display)",
+            "Animation tokens (150/200/300ms, prefers-reduced-motion safe)",
+            "SEO (og:meta, JSON-LD, canonical)",
+            "Security (CSP, Referrer-Policy, noopener)"
+        ]
+    }
+
+
+@mcp_server.tool(
+    name="vibe_build_pro",
+    description="Full professional build: upgrade design -> architect -> code -> verify. Uses senior-dev enhanced templates for production-grade output."
+)
+async def vibe_build_pro_tool(
+    ctx: Context,
+    intent: str,
+    template: Optional[str] = None,
+    constraints: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """Full pro build with senior-dev upgrades"""
+    constraints = constraints or ["WCAG AAA", "Single HTML", "Zero fabrication", "Responsive mobile-first"]
+
+    await ctx.info(f"[pro] Building with senior-dev upgraded design...")
+    await ctx.report_progress(0, 100, "Upgrading design template...")
+
+    # Step 1: Upgrade the design
+    upgraded = DesignUpgrader.upgrade_file(template or "supabase")
+    await ctx.info(f"[pro] Design upgraded with 6 production patterns")
+
+    await ctx.report_progress(20, 100, "Architecting...")
+    # Step 2: Architect with upgraded design
+    full_intent = f"""{intent}
+
+USE THIS UPGRADED DESIGN SYSTEM:
+{upgraded}
+
+CRITICAL: Apply ALL production patterns above. Responsive breakpoints, WCAG AAA, SEO meta tags, performance patterns, animation tokens, security headers. No fabrication. Production-grade."""
+    plan = await vibe_architect_tool(ctx=ctx, intent=full_intent, constraints=constraints, target_stack="html")
+
+    await ctx.report_progress(50, 100, "Generating production code...")
+    # Step 3: Code with design tokens in constraints
+    code_constraints = constraints + [f"DESIGN SYSTEM: {upgraded}"]
+    code = await vibe_code_tool(ctx=ctx, intent=intent, plan=plan.get("plan", {}),
+                                 constraints=code_constraints, target_language="html")
+
+    await ctx.report_progress(80, 100, "Verifying...")
+    verify = await vibe_verify_tool(ctx=ctx, files=code.get("files", []))
+
+    await ctx.report_progress(100, 100, "Complete!")
+
+    await ctx.info(f"[pro] Built with {template or 'random'} template, "
+                   f"{code.get('file_count', 0)} files, "
+                   f"{'PASS' if verify.get('all_passed') else 'ISSUES'} quality")
+
+    return {
+        "status": "success",
+        "template": template or "random",
+        "upgrades_applied": 6,
+        "plan": plan,
+        "code": code,
+        "verify": verify
+    }
+
+
 # ====================== THIRD-PARTY INTEGRATIONS ======================
 
 class SupabaseConnector:

@@ -1,516 +1,466 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VibeServe v1.0 - Open-source MCP server for AI tool orchestration</title>
-    <meta name="description" content="VibeServe v1.0: Open-source MCP server for AI tool orchestration. 14-tool pipeline, 5 LLM providers, quick start guide, and donate.">
-    <style>
-        /* Design Tokens */
-        :root {
-            --color-primary: #00FF9F;
-            --color-secondary: #00B8FF;
-            --color-accent: #FF00AA;
-            --color-background: #0A0A0A;
-            --color-surface: #111111;
-            --color-text: #EEEEEE;
-            --color-text-secondary: #AAAAAA;
-            --color-success: #00FF9F;
-            --color-warning: #FFB800;
-            --color-error: #FF4444;
-            --font-heading: 'Inter', system-ui, sans-serif;
-            --font-body: 'Inter', system-ui, sans-serif;
-            --font-mono: 'Source Code Pro', monospace;
-            --spacing-xs: 0.25rem;
-            --spacing-sm: 0.5rem;
-            --spacing-md: 1rem;
-            --spacing-lg: 2rem;
-            --spacing-xl: 4rem;
-            --spacing-2xl: 8rem;
-            --border-radius-sm: 0.25rem;
-            --border-radius-md: 0.5rem;
-            --border-radius-lg: 1rem;
-            --border-radius-full: 9999px;
-        }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--color-background);
-            color: var(--color-text);
-            font-family: var(--font-body);
-            font-size: 1rem;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: var(--font-heading);
-            font-weight: 700;
-            line-height: 1.2;
-            letter-spacing: -0.02em;
-            color: var(--color-text);
-        }
-
-        h1 { font-size: 2.5rem; }
-        h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
-        h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
-
-        a {
-            color: var(--color-primary);
-            text-decoration: none;
-        }
-
-        a:hover, a:focus {
-            text-decoration: underline;
-        }
-
-        img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 var(--spacing-md);
-        }
-
-        /* Accessibility: skip link */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 0;
-            background: var(--color-primary);
-            color: var(--color-background);
-            padding: var(--spacing-sm) var(--spacing-md);
-            z-index: 100;
-            font-weight: bold;
-        }
-
-        .skip-link:focus {
-            top: 0;
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: var(--spacing-xl) 0;
-            text-align: center;
-        }
-
-        .hero__logo {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto var(--spacing-lg);
-            background: var(--color-surface);
-            border-radius: var(--border-radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: var(--color-primary);
-        }
-
-        .hero__title {
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .hero__subtitle {
-            font-size: 1.25rem;
-            color: var(--color-text-secondary);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .hero__actions {
-            display: flex;
-            gap: var(--spacing-md);
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-sm) var(--spacing-lg);
-            border-radius: var(--border-radius-full);
-            font-family: var(--font-body);
-            font-size: 1rem;
-            font-weight: 600;
-            line-height: 1.5;
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
-            text-decoration: none;
-        }
-
-        .btn:focus-visible {
-            outline: 2px solid var(--color-primary);
-            outline-offset: 2px;
-        }
-
-        .btn--primary {
-            background-color: var(--color-primary);
-            color: var(--color-background);
-            border-color: var(--color-primary);
-        }
-
-        .btn--primary:hover, .btn--primary:focus {
-            background-color: transparent;
-            color: var(--color-primary);
-        }
-
-        .btn--secondary {
-            background-color: transparent;
-            color: var(--color-primary);
-            border-color: var(--color-primary);
-        }
-
-        .btn--secondary:hover, .btn--secondary:focus {
-            background-color: var(--color-primary);
-            color: var(--color-background);
-        }
-
-        /* Section common */
-        .section {
-            padding: var(--spacing-xl) 0;
-        }
-
-        .section__title {
-            text-align: center;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .section__subtitle {
-            text-align: center;
-            color: var(--color-text-secondary);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        /* Pipeline Section */
-        .pipeline-diagram {
-            background: var(--color-surface);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--border-radius-lg);
-            padding: var(--spacing-lg);
-            overflow-x: auto;
-        }
-
-        .pipeline-flow {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pipeline-step {
-            background: rgba(0,255,159,0.1);
-            border: 1px solid var(--color-primary);
-            border-radius: var(--border-radius-full);
-            padding: var(--spacing-xs) var(--spacing-md);
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            color: var(--color-primary);
-            white-space: nowrap;
-        }
-
-        .pipeline-arrow {
-            color: var(--color-text-secondary);
-            font-size: 1.2rem;
-        }
-
-        .tool-list, .provider-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-md);
-            margin-top: var(--spacing-lg);
-        }
-
-        .tool-card, .provider-card {
-            background: var(--color-surface);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-md);
-            text-align: center;
-        }
-
-        .tool-card__name, .provider-card__name {
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            color: var(--color-primary);
-            margin-bottom: var(--spacing-xs);
-        }
-
-        .tool-card__desc, .provider-card__desc {
-            font-size: 0.875rem;
-            color: var(--color-text-secondary);
-        }
-
-        /* Quick Start */
-        .code-block {
-            background: var(--color-surface);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-md);
-            overflow-x: auto;
-            margin-bottom: var(--spacing-md);
-        }
-
-        .code-block pre {
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            color: var(--color-text);
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        /* Donate Section */
-        .donate-cta {
-            text-align: center;
-        }
-
-        .donate-cta__text {
-            margin-bottom: var(--spacing-md);
-            font-size: 1.125rem;
-        }
-
-        .donate-cta__link {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-sm) var(--spacing-lg);
-            border-radius: var(--border-radius-full);
-            background: var(--color-primary);
-            color: var(--color-background);
-            font-weight: 600;
-            text-decoration: none;
-            border: 2px solid var(--color-primary);
-        }
-
-        .donate-cta__link:hover, .donate-cta__link:focus {
-            background: transparent;
-            color: var(--color-primary);
-        }
-
-        /* Footer */
-        .footer {
-            padding: var(--spacing-lg) 0;
-            text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            color: var(--color-text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .footer a {
-            color: var(--color-primary);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
-            .hero__logo { width: 80px; height: 80px; font-size: 2rem; }
-            .pipeline-step { font-size: 0.75rem; padding: var(--spacing-xs) var(--spacing-sm); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VibeServe MCP - 28-Tool Pipeline for AI Agents</title>
+  <meta name="description" content="VibeServe is an open-source MCP server providing 28 tools for AI agents to interact with files, web, and APIs.">
+  <meta property="og:title" content="VibeServe MCP">
+  <meta property="og:description" content="28-tool pipeline MCP server for AI agents.">
+  <meta property="og:image" content="assets/og-image.png">
+  <link rel="canonical" href="https://vibeserve.io/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Critical CSS inlined */
+    :root {
+      --primary: #00FF9F;
+      --secondary: #00B8FF;
+      --accent: #FF00AA;
+      --bg: #0A0A0A;
+      --surface: #111111;
+      --text: #EEEEEE;
+      --text-secondary: #AAAAAA;
+      --success: #00FF9F;
+      --warning: #FFB800;
+      --error: #FF4444;
+      --font-heading: 'Inter', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'Source Code Pro', monospace;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 2rem;
+      --spacing-xl: 4rem;
+      --spacing-2xl: 8rem;
+      --border-radius-sm: 0.25rem;
+      --border-radius-md: 0.5rem;
+      --border-radius-lg: 1rem;
+      --border-radius-full: 9999px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; height: auto; display: block; }
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 0;
+      background: var(--primary);
+      color: var(--bg);
+      padding: var(--spacing-sm) var(--spacing-md);
+      z-index: 1000;
+      font-weight: 600;
+    }
+    .skip-link:focus { top: 0; }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 var(--spacing-md);
+    }
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid #1e1e1e;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-sm) 0;
+    }
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: var(--spacing-lg);
+    }
+    .nav-links a { color: var(--text-secondary); font-weight: 500; }
+    .nav-links a:hover { color: var(--text); }
+    .hamburger { display: none; flex-direction: column; gap: 4px; background: none; border: none; cursor: pointer; padding: var(--spacing-xs); }
+    .hamburger span { display: block; width: 24px; height: 2px; background: var(--text); transition: transform 0.2s; }
+    @media (max-width: 640px) {
+      .nav-links { display: none; flex-direction: column; position: absolute; top: 100%; right: 0; background: var(--surface); padding: var(--spacing-md); border: 1px solid #1e1e1e; gap: var(--spacing-md); }
+      .nav-links.open { display: flex; }
+      .hamburger { display: flex; }
+    }
+    /* Hero */
+    .hero {
+      padding: var(--spacing-2xl) 0;
+      text-align: center;
+    }
+    .hero h1 {
+      font-family: var(--font-heading);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-top: var(--spacing-lg);
+    }
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-top: var(--spacing-md);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-logo { width: 120px; height: 120px; margin: 0 auto; }
+    /* Sections */
+    section { padding: var(--spacing-2xl) 0; }
+    section h2 {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      margin-bottom: var(--spacing-lg);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-lg);
+    }
+    @media (min-width: 640px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid #1e1e1e;
+      border-radius: var(--border-radius-md);
+      padding: var(--spacing-lg);
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: #282828; }
+    .feature-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: var(--spacing-sm);
+    }
+    .feature-card p { color: var(--text-secondary); }
+    .pipeline-diagram {
+      background: var(--surface);
+      border: 1px solid #1e1e1e;
+      border-radius: var(--border-radius-md);
+      padding: var(--spacing-lg);
+      overflow-x: auto;
+    }
+    .pipeline-diagram svg { width: 100%; max-width: 800px; height: auto; display: block; margin: 0 auto; }
+    .providers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
+      justify-content: center;
+    }
+    .provider-item {
+      background: var(--surface);
+      border: 1px solid #1e1e1e;
+      border-radius: var(--border-radius-full);
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    .integrations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: var(--spacing-md);
+      align-items: center;
+    }
+    .integration-item {
+      background: var(--surface);
+      border: 1px solid #1e1e1e;
+      border-radius: var(--border-radius-md);
+      padding: var(--spacing-md);
+      text-align: center;
+      font-weight: 600;
+    }
+    .integration-item img { width: 48px; height: 48px; margin: 0 auto var(--spacing-sm); }
+    .quick-start {
+      background: var(--surface);
+      border: 1px solid #1e1e1e;
+      border-radius: var(--border-radius-md);
+      padding: var(--spacing-lg);
+    }
+    .quick-start pre {
+      background: #000;
+      padding: var(--spacing-md);
+      border-radius: var(--border-radius-sm);
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+    }
+    .donate-buttons {
+      display: flex;
+      gap: var(--spacing-md);
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-lg);
+      border-radius: var(--border-radius-full);
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--bg);
+    }
+    .btn-primary:hover {
+      background: #00cc7f;
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+    }
+    .btn-secondary:hover {
+      background: var(--primary);
+      color: var(--bg);
+    }
+    footer {
+      border-top: 1px solid #1e1e1e;
+      padding: var(--spacing-lg) 0;
+      text-align: center;
+    }
+    footer p { color: var(--text-secondary); }
+    /* Accessibility */
+    :focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+      html { scroll-behavior: auto; }
+    }
+    @media (prefers-contrast: high) {
+      .feature-card, .pipeline-diagram, .quick-start, .integration-item, .provider-item {
+        border-color: var(--text);
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #FFFFFF;
+        --surface: #F5F5F5;
+        --text: #111111;
+        --text-secondary: #555555;
+      }
+      header { border-bottom-color: #DDD; }
+      .feature-card, .pipeline-diagram, .quick-start, .integration-item, .provider-item { border-color: #DDD; }
+      .quick-start pre { background: #EEE; }
+    }
+    .content-visibility-auto { content-visibility: auto; }
+  </style>
 </head>
 <body>
-    <a href="#main" class="skip-link" aria-label="Skip to main content">Skip to main content</a>
+  <a href="#main" class="skip-link">Skip to main content</a>
 
-    <main id="main">
-        <!-- Hero Section -->
-        <section class="hero container" aria-labelledby="hero-title">
-            <div class="hero__logo" role="img" aria-label="VibeServe logo">
-                <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect width="60" height="60" rx="12" fill="currentColor"/>
-                    <text x="30" y="40" font-size="30" font-weight="bold" text-anchor="middle" fill="#0A0A0A" font-family="Inter">VS</text>
-                </svg>
-            </div>
-            <h1 id="hero-title">VibeServe v1.0</h1>
-            <p class="hero__subtitle">Open-source MCP server for AI tool orchestration</p>
-            <div class="hero__actions">
-                <a href="https://github.com/vibeserve/vibeserve" class="btn btn--primary" aria-label="Star VibeServe on GitHub">
-                    &#9733; Star on GitHub
-                </a>
-                <a href="#donate" class="btn btn--secondary" aria-label="Donate to support VibeServe">
-                    Donate
-                </a>
-            </div>
-        </section>
+  <header role="banner">
+    <div class="container">
+      <nav role="navigation" aria-label="Main navigation">
+        <a href="/" aria-label="VibeServe Home">
+          <img src="logo.png" alt="VibeServe logo" width="120" height="32" style="width:120px;height:32px;">
+        </a>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#features" aria-current="page">Features</a></li>
+          <li><a href="#providers">Providers</a></li>
+          <li><a href="#quick-start">Quick Start</a></li>
+          <li><a href="#donate">Donate</a></li>
+        </ul>
+        <button class="hamburger" aria-label="Toggle navigation" aria-expanded="false" onclick="toggleNav()">
+          <span></span><span></span><span></span>
+        </button>
+      </nav>
+    </div>
+  </header>
 
-        <!-- Pipeline Section -->
-        <section class="section container" aria-labelledby="pipeline-title">
-            <h2 id="pipeline-title" class="section__title">14-Tool Pipeline</h2>
-            <p class="section__subtitle">Seamless orchestration of AI tools</p>
-            
-            <div class="pipeline-diagram" role="img" aria-label="Pipeline diagram showing 14 tools in sequence">
-                <div class="pipeline-flow">
-                    <span class="pipeline-step">Web Scraper</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">URL Fetcher</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Text Summarizer</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Sentiment Analyzer</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Entity Extractor</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Translator</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Image Describer</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Audio Transcriber</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Code Interpreter</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Data Visualizer</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Search Engine</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Knowledge Graph</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">RAG Retrieval</span>
-                    <span class="pipeline-arrow" aria-hidden="true">&#8594;</span>
-                    <span class="pipeline-step">Output Formatter</span>
-                </div>
-            </div>
+  <main id="main" role="main">
+    <section class="hero" aria-label="Hero">
+      <div class="container">
+        <img class="hero-logo" src="logo.png" alt="VibeServe logo" width="120" height="120" decoding="async">
+        <h1>VibeServe MCP</h1>
+        <p>Open-source MCP server with 28 tools for AI agents. Interact with files, web, and APIs seamlessly.</p>
+      </div>
+    </section>
 
-            <h3 class="section__title" style="margin-top: var(--spacing-lg);">Tool List</h3>
-            <div class="tool-list">
-                <div class="tool-card">
-                    <div class="tool-card__name">Web Scraper</div>
-                    <div class="tool-card__desc">Extract content from web pages</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">URL Fetcher</div>
-                    <div class="tool-card__desc">Fetch data from URLs</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Text Summarizer</div>
-                    <div class="tool-card__desc">Summarize long text</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Sentiment Analyzer</div>
-                    <div class="tool-card__desc">Analyze sentiment</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Entity Extractor</div>
-                    <div class="tool-card__desc">Extract named entities</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Translator</div>
-                    <div class="tool-card__desc">Translate text</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Image Describer</div>
-                    <div class="tool-card__desc">Describe images</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Audio Transcriber</div>
-                    <div class="tool-card__desc">Transcribe audio</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Code Interpreter</div>
-                    <div class="tool-card__desc">Execute code</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Data Visualizer</div>
-                    <div class="tool-card__desc">Create charts</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Search Engine</div>
-                    <div class="tool-card__desc">Search web</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Knowledge Graph</div>
-                    <div class="tool-card__desc">Build knowledge graph</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">RAG Retrieval</div>
-                    <div class="tool-card__desc">Retrieve augmented generation</div>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-card__name">Output Formatter</div>
-                    <div class="tool-card__desc">Format output</div>
-                </div>
-            </div>
+    <section id="features" aria-label="Features" class="content-visibility-auto">
+      <div class="container">
+        <h2>Features &amp; Tools</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <h3>File System</h3>
+            <p>Read, write, list files and directories. Full CRUD operations.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Web Search</h3>
+            <p>Search the web and fetch page content with markdown conversion.</p>
+          </div>
+          <div class="feature-card">
+            <h3>API Integration</h3>
+            <p>Make HTTP requests to any REST API with authentication support.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Code Execution</h3>
+            <p>Run JavaScript, Python, and shell commands in sandboxed environment.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Data Processing</h3>
+            <p>Parse CSV, JSON, XML. Transform data between formats.</p>
+          </div>
+          <div class="feature-card">
+            <h3>Image Manipulation</h3>
+            <p>Resize, compress, convert images. Generate thumbnails.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-            <h3 class="section__title" style="margin-top: var(--spacing-lg);">LLM Providers</h3>
-            <div class="provider-list">
-                <div class="provider-card">
-                    <div class="provider-card__name">OpenAI</div>
-                    <div class="provider-card__desc">GPT-4, GPT-3.5</div>
-                </div>
-                <div class="provider-card">
-                    <div class="provider-card__name">Anthropic</div>
-                    <div class="provider-card__desc">Claude 3</div>
-                </div>
-                <div class="provider-card">
-                    <div class="provider-card__name">Google</div>
-                    <div class="provider-card__desc">Gemini</div>
-                </div>
-                <div class="provider-card">
-                    <div class="provider-card__name">Mistral</div>
-                    <div class="provider-card__desc">Mistral Large</div>
-                </div>
-                <div class="provider-card">
-                    <div class="provider-card__name">Meta</div>
-                    <div class="provider-card__desc">Llama 3</div>
-                </div>
-            </div>
-        </section>
+    <section id="pipeline" aria-label="Pipeline Diagram" class="content-visibility-auto">
+      <div class="container">
+        <h2>Pipeline Overview</h2>
+        <div class="pipeline-diagram">
+          <svg viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline diagram showing tool flow from input to output">
+            <rect x="10" y="40" width="100" height="40" rx="8" fill="#111" stroke="#00FF9F" stroke-width="2"/>
+            <text x="60" y="65" text-anchor="middle" fill="#00FF9F" font-family="monospace" font-size="14">Input</text>
+            <line x1="110" y1="60" x2="160" y2="60" stroke="#333" stroke-width="2"/>
+            <polygon points="160,55 170,60 160,65" fill="#333"/>
+            <rect x="170" y="30" width="80" height="60" rx="6" fill="#111" stroke="#00B8FF" stroke-width="2"/>
+            <text x="210" y="65" text-anchor="middle" fill="#00B8FF" font-family="monospace" font-size="12">Parse</text>
+            <line x1="250" y1="60" x2="300" y2="60" stroke="#333" stroke-width="2"/>
+            <polygon points="300,55 310,60 300,65" fill="#333"/>
+            <rect x="310" y="30" width="80" height="60" rx="6" fill="#111" stroke="#FF00AA" stroke-width="2"/>
+            <text x="350" y="65" text-anchor="middle" fill="#FF00AA" font-family="monospace" font-size="12">Process</text>
+            <line x1="390" y1="60" x2="440" y2="60" stroke="#333" stroke-width="2"/>
+            <polygon points="440,55 450,60 440,65" fill="#333"/>
+            <rect x="450" y="30" width="80" height="60" rx="6" fill="#111" stroke="#00FF9F" stroke-width="2"/>
+            <text x="490" y="65" text-anchor="middle" fill="#00FF9F" font-family="monospace" font-size="12">Output</text>
+            <line x1="530" y1="60" x2="580" y2="60" stroke="#333" stroke-width="2"/>
+            <polygon points="580,55 590,60 580,65" fill="#333"/>
+            <rect x="590" y="40" width="100" height="40" rx="8" fill="#111" stroke="#00FF9F" stroke-width="2"/>
+            <text x="640" y="65" text-anchor="middle" fill="#00FF9F" font-family="monospace" font-size="14">Result</text>
+          </svg>
+        </div>
+      </div>
+    </section>
 
-        <!-- Quick Start Section -->
-        <section class="section container" aria-labelledby="quickstart-title">
-            <h2 id="quickstart-title" class="section__title">Quick Start</h2>
-            <p class="section__subtitle">Get started with VibeServe in minutes</p>
-            <div class="code-block">
-                <pre><code># Install VibeServe
-npm install -g vibeserve
+    <section id="providers" aria-label="Providers" class="content-visibility-auto">
+      <div class="container">
+        <h2>Supported Providers</h2>
+        <div class="providers-list">
+          <span class="provider-item">OpenAI</span>
+          <span class="provider-item">Anthropic</span>
+          <span class="provider-item">Google</span>
+          <span class="provider-item">Mistral</span>
+          <span class="provider-item">Cohere</span>
+          <span class="provider-item">Groq</span>
+          <span class="provider-item">Together</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="integrations" aria-label="Integrations" class="content-visibility-auto">
+      <div class="container">
+        <h2>Integrations</h2>
+        <div class="integrations-grid">
+          <div class="integration-item">
+            <img src="assets/supabase.svg" alt="Supabase logo" width="48" height="48" loading="lazy">
+            <span>Supabase</span>
+          </div>
+          <div class="integration-item">
+            <img src="assets/vercel.svg" alt="Vercel logo" width="48" height="48" loading="lazy">
+            <span>Vercel</span>
+          </div>
+          <div class="integration-item">
+            <img src="assets/github.svg" alt="GitHub logo" width="48" height="48" loading="lazy">
+            <span>GitHub</span>
+          </div>
+          <div class="integration-item">
+            <img src="assets/cloudflare.svg" alt="Cloudflare logo" width="48" height="48" loading="lazy">
+            <span>Cloudflare</span>
+          </div>
+          <div class="integration-item">
+            <img src="assets/google.svg" alt="Google logo" width="48" height="48" loading="lazy">
+            <span>Google</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="quick-start" aria-label="Quick Start" class="content-visibility-auto">
+      <div class="container">
+        <h2>Quick Start</h2>
+        <div class="quick-start">
+          <pre><code># Install via npm
+npm install -g @vibeserve/mcp
 
 # Start the server
 vibeserve start
 
-# Use with MCP client
-# Example: call web_scraper tool
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "web_scraper",
-    "arguments": {
-      "url": "https://example.com"
+# Or use npx
+npx @vibeserve/mcp start</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="donate" aria-label="Donate" class="content-visibility-auto">
+      <div class="container">
+        <h2>Support VibeServe</h2>
+        <div class="donate-buttons">
+          <a href="https://github.com/ncsound919/VibeServe-MCP" class="btn btn-primary" target="_blank" rel="noopener noreferrer" aria-label="Star on GitHub">
+            &#9733; Star on GitHub
+          </a>
+          <a href="https://cash.app/$helptools" class="btn btn-secondary" target="_blank" rel="noopener noreferrer" aria-label="Donate via CashApp">
+            Donate via CashApp
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer role="contentinfo">
+    <div class="container">
+      <p>&copy; 2025 VibeServe MCP. Licensed under MIT.</p>
+      <p style="margin-top: var(--spacing-sm);">Built with &hearts; for the open-source community.</p>
+    </div>
+  </footer>
+
+  <script>
+    function toggleNav() {
+      const nav = document.getElementById('nav-links');
+      const hamburger = document.querySelector('.hamburger');
+      const isOpen = nav.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', isOpen);
     }
-  },
-  "id": 1
-}</code></pre>
-            </div>
-        </section>
-
-        <!-- Donate Section -->
-        <section id="donate" class="section container donate-cta" aria-labelledby="donate-title">
-            <h2 id="donate-title" class="section__title">Support VibeServe</h2>
-            <p class="donate-cta__text">Help us maintain and improve VibeServe. Donate via CashApp.</p>
-            <a href="https://cash.app/$helptools" class="donate-cta__link" aria-label="Donate via CashApp to $helptools">
-                Donate with CashApp
-            </a>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <p>Built with VibeServe MCP. &copy; <span id="current-year"></span> VibeServe Contributors.</p>
-        <p><a href="https://github.com/vibeserve/vibeserve">GitHub</a></p>
-    </footer>
-
-    <script>
-        // Set current year dynamically
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-    </script>
+    // Close nav on link click (mobile)
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', () => {
+        const nav = document.getElementById('nav-links');
+        if (nav.classList.contains('open')) {
+          nav.classList.remove('open');
+          document.querySelector('.hamburger').setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  </script>
 </body>
 </html>
