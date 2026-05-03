@@ -37,6 +37,23 @@ logging.basicConfig(
 log = logging.getLogger("VibeServe")
 log.info("VibeServe logging initialized")
 
+# Structured JSON logging for Sentry-compatible monitoring
+class StructuredLogger:
+    @staticmethod
+    def event(name: str, **kwargs):
+        data = json.dumps({"event": name, "timestamp": datetime.now(timezone.utc).isoformat(), **kwargs})
+        log.info(f"[Structured] {data}")
+
+    @staticmethod
+    def error(name: str, error: str = "", **kwargs):
+        data = json.dumps({"event": name, "error": error, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "error", **kwargs})
+        log.error(f"[Structured] {data}")
+
+    @staticmethod
+    def warn(name: str, detail: str = "", **kwargs):
+        data = json.dumps({"event": name, "detail": detail, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "warning", **kwargs})
+        log.warning(f"[Structured] {data}")
+
 # Lightweight async performance profiler (zero dependencies)
 class AsyncProfiler:
     _traces: Dict[str, List[float]] = {}
@@ -479,11 +496,21 @@ class OpenCodeProvider(LLMProvider):
 
 
 class LLMRouter:
-    """Routes LLM calls to configured providers with automatic fallback."""
+    """Routes LLM calls to configured providers with automatic fallback.
+    Providers are lazy-loaded on first access to minimize import time."""
 
     def __init__(self):
         self.providers: Dict[str, LLMProvider] = {}
+        self._initialized = False
+        self._available_count = 0
+
+    def _ensure_init(self):
+        """Lazy-load providers on first access (reduces import time)."""
+        if self._initialized:
+            return
+        self._initialized = True
         self._init_providers()
+        self._available_count = len(self.providers)
 
     def _init_providers(self):
         """Initialize all providers whose credentials are present in the environment."""
@@ -514,7 +541,8 @@ class LLMRouter:
         return os.getenv("DEFAULT_LLM_PROVIDER", "openai")
 
     def get(self, name: Optional[str] = None) -> LLMProvider:
-        """Return the named provider, or the default, or the first available."""
+        """Get a specific provider or the default."""
+        self._ensure_init()
         if name and name in self.providers:
             return self.providers[name]
 
@@ -1999,7 +2027,7 @@ class TemplateLibrary:
     """Monte Carlo template system — picks from curated DESIGN.md templates
     and applies random variations for unique professional builds every time."""
 
-    TEMPLATES = ["linear", "vercel", "stripe", "supabase", "claude"]
+    TEMPLATES = ["linear", "vercel", "stripe", "supabase", "claude", "notion", "apple", "shopify", "nike", "spacex"]
 
     @classmethod
     def list_templates(cls) -> List[str]:

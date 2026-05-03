@@ -65,6 +65,7 @@ def measure_performance() -> List[BenchmarkMetric]:
 
     # Provider count
     from vibeserve import router
+    router._ensure_init()  # Lazy init for accurate count
     results.append(BenchmarkMetric("LLM providers", 
         len(router.providers) * 20, len(router.providers),
         f"{list(router.providers.keys())}"))
@@ -179,6 +180,7 @@ def measure_features() -> List[BenchmarkMetric]:
 
     # LLM providers
     from vibeserve import router
+    router._ensure_init()  # Lazy init
     results.append(BenchmarkMetric("Provider count", 
         len(router.providers) * 20, len(router.providers),
         str(list(router.providers.keys()))))

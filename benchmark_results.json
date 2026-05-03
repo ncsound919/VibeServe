@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-03T16:37:46",
+  "timestamp": "2026-05-03T16:44:23",
   "categories": {
     "Performance": {
       "score": 59.8,
@@ -8,12 +8,12 @@
         {
           "name": "Import time",
           "score": 0,
-          "detail": "3.047s (lower is better)"
+          "detail": "2.777s (lower is better)"
         },
         {
           "name": "Test execution",
           "score": 100,
-          "detail": "44 tests in 21.1s"
+          "detail": "44 tests in 21.2s"
         },
         {
           "name": "TOON compression",
@@ -33,8 +33,8 @@
       "metrics": [
         {
           "name": "Code size",
-          "score": 73.8,
-          "detail": "2624 lines, 110907 chars"
+          "score": 73.5,
+          "detail": "2652 lines, 112136 chars"
         },
         {
           "name": "Functions",
@@ -44,12 +44,12 @@
         {
           "name": "Classes",
           "score": 100,
-          "detail": "42 classes"
+          "detail": "43 classes"
         },
         {
           "name": "Docstrings",
           "score": 100,
-          "detail": "133 docstrings found"
+          "detail": "134 docstrings found"
         },
         {
           "name": "Error handling",
@@ -59,7 +59,7 @@
       ]
     },
     "Security": {
-      "score": 82.8,
+      "score": 83.2,
       "weight": 20,
       "metrics": [
         {
@@ -74,8 +74,8 @@
         },
         {
           "name": "Error logging",
-          "score": 31,
-          "detail": "31 logged error points"
+          "score": 33,
+          "detail": "33 logged error points"
         },
         {
           "name": "Git hygiene",
@@ -106,7 +106,7 @@
         {
           "name": "Design templates",
           "score": 100,
-          "detail": "5 DESIGN.md templates"
+          "detail": "10 DESIGN.md templates"
         },
         {
           "name": "Provider count",
@@ -137,5 +137,5 @@
       ]
     }
   },
-  "overall": 79.1
+  "overall": 79.2
 }
