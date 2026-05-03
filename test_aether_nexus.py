@@ -654,7 +654,7 @@ def test_version_resource():
     data = json.loads(result)
     assert data["version"] == "1.0.0"
     assert data["codename"] == "VibeServe"
-    assert data["tools"] == 14
+    assert data["tools"] == 17
     print(f"  ✅ Version resource: v{data['version']} ({data['codename']})")
 
 def test_design_tokens_resource():
@@ -786,6 +786,24 @@ def test_contrast_ratio_error_handling():
     assert contrast_ratio("", "#FFF") == 0.0
     print("  ✅ contrast_ratio handles invalid hex gracefully")
 
+def test_playwright_bridge_generates_script():
+    """Verify PlaywrightBridge generates valid test scripts"""
+    from vibeserve import PlaywrightBridge
+    script = PlaywrightBridge.generate_test_script("/tmp/page.html")
+    assert "Playwright" in script or "playwright" in script.lower()
+    assert "page.goto" in script
+    assert "preview.png" in script
+    print("  ✅ PlaywrightBridge generates valid test script")
+
+def test_template_library_list():
+    """Verify TemplateLibrary lists all templates"""
+    from vibeserve import TemplateLibrary
+    templates = TemplateLibrary.list_templates()
+    assert len(templates) >= 5
+    assert "stripe" in templates
+    assert "supabase" in templates
+    print(f"  ✅ TemplateLibrary has {len(templates)} templates")
+
 # ====================== TEST RUNNER ======================
 
 async def run_all_tests():
@@ -835,6 +853,8 @@ async def run_all_tests():
         test_sampling_provider_initialization()
         test_hex_to_rgb_edge_cases()
         test_contrast_ratio_error_handling()
+        test_playwright_bridge_generates_script()
+        test_template_library_list()
         
         # Async tests
         await test_multi_agent_critique()

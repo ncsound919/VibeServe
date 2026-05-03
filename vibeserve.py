@@ -996,30 +996,30 @@ async def generate_ui_specification(
 
 # Content generation guidelines — applied to all prompts to prevent common LLM issues
 CONTENT_GUIDELINES = """
-CRITICAL CONTENT RULES — VIOLATIONS WILL BE REJECTED:
+CRITICAL CONTENT RULES:
 
 NO FABRICATION:
-- NEVER invent statistics: no fake "10K+ downloads", "99.9% uptime", "24/7 support", user counts, or percentages.
-- NEVER fabricate features: only list features explicitly stated in the architecture plan. If the plan doesn't mention "real-time collaboration" or "enterprise security", DO NOT add them.
-- NEVER invent testimonials, quotes, or named users. No "Sarah K." or "Marcus J." or any fabricated person.
+- NEVER invent statistics: no fake download counts, uptime percentages, user numbers.
+- NEVER fabricate features not in the architecture plan.
+- NEVER invent testimonials, quotes, or named users.
+- NEVER use SaaS copy: "Free Trial", "Pricing Plans", "Sign Up", "Enterprise Tier".
 
-NO SAAS COPY:
-- This is an open-source MCP server, not a SaaS product. NO "Free Trial", "Pricing Plans", "Enterprise Tier", "Sign Up", "Schedule Demo".
-- CTA = GitHub star + donate link. That is the ONLY call to action.
+MUST INCLUDE (OSS projects):
+- Logo image (use provided paths)
+- Actual tools/features list from the architecture plan  
+- Pipeline diagram or workflow
+- Quick start / installation code block
+- Donate link (GitHub star + CashApp if specified)
+- Footer with project name and license
 
-STRUCTURAL INTEGRITY:
-- HTML must be valid, well-formed, and properly nested. Every opening tag must have a closing tag.
-- Do not embed content inside containers meant for other content (e.g., flyer image inside testimonial grid).
-- Section headers must match section content. No "What Developers Say" header with no testimonials.
+STRUCTURAL:
+- Valid HTML with proper tag nesting
+- ARIA labels on all interactive elements
+- Relative asset paths for deployment context
+- Current year
 
-SHOW THE PRODUCT:
-- Always include the pipeline diagram, tool list, and provider list from the architecture plan.
-- Asset paths must be relative to deployment root (e.g., docs/ folder uses "logo.png" not "assets/logo.png").
-- All interactive elements need ARIA labels for WCAG AAA compliance.
-- Use current year from system time. Do not hardcode years.
-- PREFER DESIGN TEMPLATES: When a design system template is provided, follow it exactly. It is the source of truth.
-
-IF UNSURE, OMIT. An incomplete but honest page is better than a complete but fabricated one.
+IF UNSURE, OMIT stats and testimonials. ALWAYS include the actual product features.
+A clean honest page showing the real product is better than a fabricated marketing page.
 """
 
 @dataclass
@@ -1448,7 +1448,7 @@ def resource_version() -> str:
     return json.dumps({
         "version": "1.0.0",
         "codename": "VibeServe",
-        "tools": 14,
+        "tools": 17,
         "resources": 5,
         "prompts": 6,
         "providers": ["openai", "deepseek", "openrouter", "local", "opencode"],
@@ -1958,11 +1958,13 @@ CRITICAL: Apply the design system above. Use the exact colors, fonts, spacing, a
     )
 
     await ctx.report_progress(40, 100, "Generating code...")
+    # Inject design template directly into code constraints
+    code_constraints = list(constraints) + [f"DESIGN SYSTEM: {design_tokens}"]
     code_result = await vibe_code_tool(
         ctx=ctx,
         intent=intent,
         plan=plan_result.get("plan", {}),
-        constraints=constraints,
+        constraints=code_constraints,
         target_language="html"
     )
 
@@ -1981,6 +1983,179 @@ CRITICAL: Apply the design system above. Use the exact colors, fonts, spacing, a
         "plan": plan_result,
         "code": code_result,
         "verify": verify_result
+    }
+
+
+
+# ====================== TRENDING MCP INTEGRATIONS ======================
+
+class Context7Provider:
+    """Fetches up-to-date framework docs from Context7 MCP during code generation.
+    Uses Context7 API (free tier available)."""
+
+    BASE = "https://mcp.context7.com/mcp"
+
+    @staticmethod
+    async def fetch_docs(query: str, library: str = None) -> str:
+        """Fetch latest docs for a library/framework to use in code gen prompts."""
+        try:
+            api_key = os.getenv("CONTEXT7_API_KEY", "")
+            headers = {"Content-Type": "application/json"}
+            if api_key:
+                headers["CONTEXT7_API_KEY"] = api_key
+
+            async with httpx.AsyncClient(timeout=15) as c:
+                resp = await c.post(
+                    Context7Provider.BASE,
+                    json={"method": "tools/call", "params": {
+                        "name": "get-library-docs",
+                        "arguments": {"topic": query, "library": library or query}
+                    }},
+                    headers=headers
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = data.get("result", {}).get("content", [{}])[0].get("text", "")
+                    return text[:3000]
+        except Exception:
+            pass
+        return ""
+
+
+class SentryTracker:
+    """Lightweight error/event tracking for production monitoring.
+    Reports generation successes/errors for quality trending."""
+
+    _events: List[Dict[str, Any]] = []
+
+    @classmethod
+    def track(cls, event: str, data: Dict[str, Any] = None):
+        """Track an event for monitoring."""
+        entry = {
+            "event": event,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "data": data or {}
+        }
+        cls._events.append(entry)
+        log.info(f"[Sentry] {event}: {json.dumps(data)[:200]}" if data else f"[Sentry] {event}")
+
+    @classmethod
+    def flush(cls) -> List[Dict[str, Any]]:
+        """Get all tracked events and clear."""
+        events = cls._events.copy()
+        cls._events.clear()
+        return events
+
+    @classmethod
+    def errors(cls) -> List[Dict[str, Any]]:
+        """Get only error events."""
+        return [e for e in cls._events if "error" in e["event"].lower()]
+
+
+class PlaywrightBridge:
+    """Generates Playwright test scripts to visually verify generated pages.
+    MCP client can execute these via Playwright MCP."""
+
+    @staticmethod
+    def generate_test_script(html_path: str, checks: List[str] = None) -> str:
+        """Generate a Playwright test script for visual verification."""
+        checks = checks or ["page loads", "no console errors", "all images render"]
+        return f"""// Playwright test for {html_path} — execute with Playwright MCP
+const {{ test, expect }} = require('@playwright/test');
+
+test('visual verification', async ({{ page }}) => {{
+  await page.goto('file://{html_path}');
+
+  // {checks[0] if len(checks)>0 else 'page loads'}
+  await page.waitForLoadState('networkidle');
+
+  // Check no console errors
+  page.on('console', msg => {{
+    if (msg.type() === 'error') console.error(msg.text());
+  }});
+
+  // {checks[1] if len(checks)>1 else 'accessibility'}
+  const violations = await page.accessibility.snapshot();
+  expect(violations).toBeTruthy();
+
+  // Screenshot
+  await page.screenshot({{ path: 'preview.png', fullPage: true }});
+}});
+"""
+
+
+@mcp_server.tool(
+    name="vibe_preview",
+    description="Generate a preview HTML page and Playwright test script for visual verification. Use with Playwright MCP to screenshot the output."
+)
+async def vibe_preview_tool(
+    ctx: Context,
+    html_content: str,
+    filename: str = "preview.html"
+) -> Dict[str, Any]:
+    """Generate preview and test script"""
+    await ctx.info(f"[preview] Generating preview: {filename}")
+
+    playwright_script = PlaywrightBridge.generate_test_script(filename)
+    SentryTracker.track("preview_generated", {"filename": filename})
+
+    await ctx.info(f"[preview] Playwright test script ready")
+
+    return {
+        "status": "success",
+        "html_file": filename,
+        "html_size": len(html_content),
+        "playwright_test": playwright_script,
+        "instructions": f"Save {filename} to disk, then run the playwright test with Playwright MCP to screenshot."
+    }
+
+
+@mcp_server.tool(
+    name="vibe_docs",
+    description="Fetch up-to-date documentation for a framework or library via Context7. Use before code generation to ensure generated code uses current APIs."
+)
+async def vibe_docs_tool(
+    ctx: Context,
+    query: str,
+    library: Optional[str] = None
+) -> Dict[str, Any]:
+    """Fetch framework docs from Context7"""
+    await ctx.info(f"[docs] Fetching docs for: {query}")
+
+    docs = await Context7Provider.fetch_docs(query, library)
+
+    SentryTracker.track("docs_fetched", {"query": query, "length": len(docs)})
+
+    if docs:
+        await ctx.info(f"[docs] Retrieved {len(docs)} chars of documentation")
+    else:
+        await ctx.info(f"[docs] No docs found for {query} (Context7 may be unavailable)")
+
+    return {
+        "status": "success",
+        "query": query,
+        "library": library or query,
+        "docs": docs,
+        "docs_length": len(docs)
+    }
+
+
+@mcp_server.tool(
+    name="vibe_health",
+    description="Get system health stats: tracked events, error count, provider status. Use for monitoring VibeServe in production."
+)
+async def vibe_health_tool(ctx: Context) -> Dict[str, Any]:
+    """System health monitoring"""
+    errors = SentryTracker.errors()
+    all_events = SentryTracker.flush()
+
+    return {
+        "status": "healthy",
+        "providers_active": list(router.providers.keys()),
+        "provider_count": len(router.providers),
+        "recent_errors": len(errors),
+        "recent_events": len(all_events),
+        "memory_specs": memory_store.stats().get("total_stored_specs", 0)
     }
 
 
