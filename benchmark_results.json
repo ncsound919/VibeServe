@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-03T16:32:23",
+  "timestamp": "2026-05-03T16:37:46",
   "categories": {
     "Performance": {
       "score": 59.8,
@@ -8,12 +8,12 @@
         {
           "name": "Import time",
           "score": 0,
-          "detail": "2.799s (lower is better)"
+          "detail": "3.047s (lower is better)"
         },
         {
           "name": "Test execution",
           "score": 100,
-          "detail": "44 tests in 21.0s"
+          "detail": "44 tests in 21.1s"
         },
         {
           "name": "TOON compression",
@@ -28,13 +28,13 @@
       ]
     },
     "Code Quality": {
-      "score": 69.0,
+      "score": 69.2,
       "weight": 20,
       "metrics": [
         {
           "name": "Code size",
-          "score": 74.5,
-          "detail": "2554 lines, 108185 chars"
+          "score": 73.8,
+          "detail": "2624 lines, 110907 chars"
         },
         {
           "name": "Functions",
@@ -44,22 +44,22 @@
         {
           "name": "Classes",
           "score": 100,
-          "detail": "41 classes"
+          "detail": "42 classes"
         },
         {
           "name": "Docstrings",
           "score": 100,
-          "detail": "130 docstrings found"
+          "detail": "133 docstrings found"
         },
         {
           "name": "Error handling",
-          "score": 40,
-          "detail": "20 try/except blocks"
+          "score": 42,
+          "detail": "21 try/except blocks"
         }
       ]
     },
     "Security": {
-      "score": 69.0,
+      "score": 82.8,
       "weight": 20,
       "metrics": [
         {
@@ -69,13 +69,13 @@
         },
         {
           "name": "Input sanitization",
-          "score": 50,
-          "detail": "2 sanitization functions"
+          "score": 100,
+          "detail": "8 sanitization functions"
         },
         {
           "name": "Error logging",
-          "score": 26,
-          "detail": "26 logged error points"
+          "score": 31,
+          "detail": "31 logged error points"
         },
         {
           "name": "Git hygiene",
@@ -137,5 +137,5 @@
       ]
     }
   },
-  "overall": 76.3
+  "overall": 79.1
 }

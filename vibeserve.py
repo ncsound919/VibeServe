@@ -62,6 +62,61 @@ class AsyncProfiler:
     @classmethod
     def clear(cls): cls._traces.clear()
 
+
+# pyinstrument profiler integration (optional, 7.7k★ GitHub)
+try:
+    from pyinstrument import Profiler as PyInstrument
+    PYINSTRUMENT_AVAILABLE = True
+    log.info("[Profiler] pyinstrument available for async profiling")
+except ImportError:
+    PYINSTRUMENT_AVAILABLE = False
+
+
+class ProfilerProvider:
+    """Optional pyinstrument-based async profiler for production diagnostics."""
+
+    @staticmethod
+    def profile_async(func):
+        """Decorator to profile an async function with pyinstrument."""
+        if not PYINSTRUMENT_AVAILABLE:
+            return func
+        
+        import functools
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            profiler = PyInstrument()
+            profiler.start()
+            try:
+                result = await func(*args, **kwargs)
+                return result
+            finally:
+                profiler.stop()
+                elapsed = time.time() - getattr(wrapper, '_t0', time.time())
+                if elapsed > 2.0:
+                    log.warning(f"[pyinstrument] {func.__name__} took {elapsed:.1f}s\n{profiler.output_text(unicode=True, color=False)[:500]}")
+        return wrapper
+
+    @staticmethod
+    def profile_sync(func):
+        """Decorator to profile a sync function with pyinstrument."""
+        if not PYINSTRUMENT_AVAILABLE:
+            return func
+        
+        import functools
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            profiler = PyInstrument()
+            profiler.start()
+            try:
+                result = func(*args, **kwargs)
+                return result
+            finally:
+                profiler.stop()
+                elapsed = time.time() - getattr(wrapper, '_t0', time.time())
+                if elapsed > 0.5:
+                    log.warning(f"[pyinstrument] {func.__name__} took {elapsed:.1f}s\n{profiler.output_text(unicode=True, color=False)[:300]}")
+        return wrapper
+
 # ====================== SCHEMAS ======================
 class WCAGLevel(str, Enum):
     AAA = "AAA"
@@ -491,6 +546,7 @@ class LLMRouter:
             if result:
                 return result
 
+        log.error(f"[LLMRouter] All {len(self.providers)} providers failed. Check API keys and network.")
         return None
 
 
@@ -795,11 +851,25 @@ class SpecGenerator:
         self.ctx = None
 
     def _sanitize_input(self, text: str, max_len: int = 500) -> str:
-        """Strip known prompt-injection patterns and enforce max length."""
-        dangerous = ["ignore previous", "system:", "assistant:", "```", "<|", "|>"]
+        """Strip known prompt-injection patterns, SQL injection fragments, and enforce max length."""
+        if not text or not isinstance(text, str):
+            log.warning("[Security] _sanitize_input received non-string input")
+            return ""
+        dangerous = [
+            "ignore previous", "system:", "assistant:", "```", "<|", "|>",
+            "DROP TABLE", "DELETE FROM", "INSERT INTO", "UNION SELECT",
+            "<script", "javascript:", "onerror=", "onload=",
+            "../", "\\x", "SELECT * FROM",
+        ]
         for pattern in dangerous:
             text = text.replace(pattern, "")
-        return text[:max_len].strip()
+        # Collapse multiple spaces
+        import re
+        text = re.sub(r'\s+', ' ', text)
+        sanitized = text[:max_len].strip()
+        if sanitized != text[:max_len].strip():
+            log.warning(f"[Security] Input sanitized: {len(text) - len(sanitized)} chars removed or truncated")
+        return sanitized
 
     async def generate_variant(self, requirements: List[str], iteration: int = 0) -> Dict[str, Any]:
         """
