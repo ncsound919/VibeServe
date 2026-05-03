@@ -1321,6 +1321,61 @@ class VibeCodeReviewer:
         }
 
 
+class SystemAuditor:
+    """Backend + security + performance audit for server-side code.
+    Different from VibeCodeReviewer which reviews UI/UX design."""
+
+    def __init__(self):
+        self.backend = DesignAgent(
+            role="Backend Engineer",
+            personality="Review for code quality: error handling, async patterns, resource cleanup, SQL injection, type safety, logging consistency, API design.",
+            provider=os.getenv("ENGINEER_PROVIDER")
+        )
+        self.security = DesignAgent(
+            role="Security Auditor",
+            personality="Review for vulnerabilities: API key exposure, prompt injection, path traversal, input validation, auth bypass, secrets in logs. Be specific to lines/patterns.",
+            provider=os.getenv("ADVOCATE_PROVIDER")
+        )
+        self.perf = DesignAgent(
+            role="Performance Reviewer",
+            personality="Review for performance: blocking I/O in async, missing caching, N+1 queries, large memory structures, excessive retries. Use specific metrics.",
+            provider=os.getenv("DESIGNER_PROVIDER")
+        )
+
+    async def audit(self, files: List[CodeFile], requirements: List[str]) -> Dict[str, Any]:
+        code_summary = [{"path": f.path, "language": f.language, "purpose": f.purpose, "content_preview": f.content[:500]} for f in files]
+        schema = {"files": code_summary, "requirements": requirements}
+        critiques = await asyncio.gather(
+            self.backend.critique(schema, requirements),
+            self.security.critique(schema, requirements),
+            self.perf.critique(schema, requirements),
+            return_exceptions=True
+        )
+        scores = [c.get("score", 0.5) for c in critiques if isinstance(c, dict) and "error" not in c]
+        avg_score = sum(scores) / len(scores) if scores else 0.5
+        line_level = []
+        for c in critiques:
+            if isinstance(c, dict):
+                for w in c.get("weaknesses", []):
+                    line_level.append({
+                        "agent": c.get("role", "?"),
+                        "issue": w,
+                        "severity": "high" if any(kw in str(w).lower() for kw in ["security", "vulnerability", "exposure", "injection", "crash", "sql"]) else "medium"
+                    })
+        return {
+            "consensus_score": round(avg_score, 2),
+            "recommendation": "approve" if avg_score > 0.8 else "revise" if avg_score > 0.6 else "reject",
+            "agent_reviews": {
+                "backend": critiques[0] if isinstance(critiques[0], dict) else {"error": str(critiques[0])},
+                "security": critiques[1] if isinstance(critiques[1], dict) else {"error": str(critiques[1])},
+                "performance": critiques[2] if isinstance(critiques[2], dict) else {"error": str(critiques[2])},
+            },
+            "line_level_issues": line_level,
+            "files_reviewed": len(files),
+            "critical_issues": len([i for i in line_level if i["severity"] == "high"])
+        }
+
+
 # ====================== MCP SERVER INIT ======================
 from fastmcp import FastMCP, Context
 
@@ -2157,6 +2212,26 @@ async def vibe_health_tool(ctx: Context) -> Dict[str, Any]:
         "recent_events": len(all_events),
         "memory_specs": memory_store.stats().get("total_stored_specs", 0)
     }
+
+
+
+@mcp_server.tool(
+    name="vibe_audit",
+    description="Full system audit: backend code quality, security vulnerability scan, and performance review. Reviews server-side code (not UI/UX)."
+)
+async def vibe_audit_tool(
+    ctx: Context,
+    files: List[Dict[str, Any]],
+    requirements: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """System audit from backend, security, and performance perspectives"""
+    requirements = requirements or ["Production-grade server", "No security vulnerabilities"]
+    await ctx.info(f"[audit] 3-perspective audit on {len(files)} files...")
+    code_files = [CodeFile(**f) for f in files]
+    auditor = SystemAuditor()
+    result = await auditor.audit(code_files, requirements)
+    await ctx.info(f"[audit] {result['recommendation']} (score: {result['consensus_score']}, {result['critical_issues']} critical)")
+    return {"status": "success", **result}
 
 
 # ====================== CLI / TESTING ======================
