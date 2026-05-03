@@ -624,7 +624,7 @@ def test_version_resource():
     data = json.loads(result)
     assert data["version"] == "5.0.0"
     assert data["codename"] == "Karpathy"
-    assert data["tools"] == 11
+    assert data["tools"] == 13
     print(f"  ✅ Version resource: v{data['version']} ({data['codename']})")
 
 def test_design_tokens_resource():
@@ -649,6 +649,90 @@ def test_default_design_system_resource():
     assert "tokens" in data
     assert "constraints" in data
     print("  ✅ Default design system resource has tokens and constraints")
+
+@pytest.mark.asyncio
+async def test_vibe_tester_with_mock_llm():
+    """Verify VibeTester.generate_tests output shape with mocked LLM"""
+    from unittest.mock import AsyncMock, patch
+    from mcp_ui_optimizer_v4 import VibeTester, CodeFile, mcp_llm_call
+
+    mock_response = json.dumps([
+        {"path": "__tests__/Button.test.tsx", "content": "test('renders', () => {})",
+         "language": "tsx", "purpose": "Button unit tests",
+         "accessibility_notes": ["Tests aria-label presence"]},
+        {"path": "__tests__/Button.a11y.test.tsx", "content": "test('has aria', () => {})",
+         "language": "tsx", "purpose": "Button accessibility tests",
+         "accessibility_notes": ["Keyboard navigation", "Screen reader"]}
+    ])
+
+    tester = VibeTester()
+    with patch('mcp_ui_optimizer_v4.mcp_llm_call', new=AsyncMock(return_value=mock_response)):
+        files = [
+            CodeFile(path="/src/Button.tsx", content="export const Button = () => <button>OK</button>",
+                     language="tsx", purpose="Button")
+        ]
+        result = await tester.generate_tests(files, ["WCAG AAA"], "vitest")
+        assert len(result) == 2
+        assert result[0].path == "__tests__/Button.test.tsx"
+        assert result[1].path == "__tests__/Button.a11y.test.tsx"
+        assert len(result[0].accessibility_notes) >= 1
+    print("  ✅ VibeTester mocked LLM call — correct output shape")
+
+@pytest.mark.asyncio
+async def test_vibe_deployer_with_mock_llm():
+    """Verify VibeDeployer.generate_deploy output shape with mocked LLM"""
+    from unittest.mock import AsyncMock, patch
+    from mcp_ui_optimizer_v4 import VibeDeployer, CodeFile, mcp_llm_call
+
+    mock_response = json.dumps({
+        "configs": {
+            "vercel": {"vercel.json": '{"buildCommand":"npm run build"}', "output_dir": ".next"},
+            "docker": {"Dockerfile": "FROM node:20\n..."}
+        },
+        "environment_variables": {"NODE_ENV": "production"},
+        "health_check": {"endpoint": "/api/health", "interval": "30s"},
+        "monitoring": {"recommended": ["datadog", "sentry"]}
+    })
+
+    deployer = VibeDeployer()
+    with patch('mcp_ui_optimizer_v4.mcp_llm_call', new=AsyncMock(return_value=mock_response)):
+        files = [CodeFile(path="/src/App.tsx", content="...", language="tsx", purpose="App")]
+        result = await deployer.generate_deploy("test-app", files, ["vercel", "docker"])
+        assert "vercel" in result["configs"]
+        assert "docker" in result["configs"]
+        assert result["environment_variables"]["NODE_ENV"] == "production"
+        assert result["health_check"]["endpoint"] == "/api/health"
+        assert len(result["monitoring"]["recommended"]) == 2
+    print("  ✅ VibeDeployer mocked LLM call — correct output shape")
+
+def test_sampling_provider_initialization():
+    """Verify SamplingProvider initializes and binds correctly"""
+    from mcp_ui_optimizer_v4 import SamplingProvider
+    sp = SamplingProvider()
+    assert sp.name == "MCP-Sampling"
+    assert sp._active == False  # No context bound yet
+
+    class MockCtx:
+        async def sample(self, messages, temperature=None, max_tokens=None):
+            return type('Result', (), {'text': 'sampled response'})()
+    ctx = MockCtx()
+    sp.bind(ctx)
+    assert sp._active == True
+    print("  ✅ SamplingProvider initializes and binds to context")
+
+@pytest.mark.asyncio
+async def test_sampling_provider_call():
+    """Verify SamplingProvider.call() works with a mock context"""
+    from mcp_ui_optimizer_v4 import SamplingProvider
+
+    class MockCtx:
+        async def sample(self, messages, temperature=None, max_tokens=None):
+            return type('Result', (), {'text': '{"key": "value"}'})()
+
+    sp = SamplingProvider(MockCtx())
+    result = await sp.call("test prompt", 0.5)
+    assert result == '{"key": "value"}'
+    print("  ✅ SamplingProvider.call returns mocked sample result")
 
 # ====================== TEST RUNNER ======================
 
@@ -695,9 +779,13 @@ async def run_all_tests():
         test_version_resource()
         test_design_tokens_resource()
         test_default_design_system_resource()
+        test_sampling_provider_initialization()
         
         # Async tests
         await test_multi_agent_critique()
+        await test_vibe_tester_with_mock_llm()
+        await test_vibe_deployer_with_mock_llm()
+        await test_sampling_provider_call()
         
         print("\n" + "=" * 60)
         print("✅ All tests passed!")

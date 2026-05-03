@@ -467,6 +467,59 @@ class LLMRouter:
 # Global router instance
 router = LLMRouter()
 
+
+class SamplingProvider(LLMProvider):
+    """MCP Sampling provider — uses the MCP client's built-in LLM.
+    No API keys needed. The client handles model selection and billing."""
+
+    def __init__(self, ctx: Any = None):
+        self._ctx = ctx
+        self._active = ctx is not None and hasattr(ctx, 'sample')
+
+    @property
+    def name(self) -> str:
+        return "MCP-Sampling"
+
+    def bind(self, ctx: Any):
+        """Bind to an MCP context for sampling calls"""
+        self._ctx = ctx
+        self._active = ctx is not None and hasattr(ctx, 'sample')
+
+    async def call(self, prompt: str, temperature: float = 0.7,
+                   response_format: str = "json") -> Optional[str]:
+        if not self._active or not self._ctx:
+            return None
+        try:
+            result = await self._ctx.sample(
+                messages=[prompt],
+                temperature=temperature,
+                max_tokens=4096
+            )
+            if hasattr(result, 'text'):
+                return result.text
+            if hasattr(result, 'content'):
+                return str(result.content)
+            return str(result) if result else None
+        except Exception as e:
+            log.warning(f"[MCP-Sampling] Sample call failed: {e}")
+            return None
+
+
+# Global sampling provider (bound per-request via bind())
+sampling = SamplingProvider()
+
+async def mcp_llm_call(prompt: str, temperature: float = 0.7,
+                       response_format: str = "json",
+                       ctx: Any = None) -> Optional[str]:
+    """Smart LLM call: tries MCP sampling first (free, uses client's model),
+    then falls back to configured providers."""
+    if ctx:
+        sampling.bind(ctx)
+        result = await sampling.call(prompt, temperature, response_format)
+        if result:
+            return result
+    return await router.call(prompt, temperature, response_format)
+
 # ====================== WCAG VALIDATION ======================
 def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
     """Convert a CSS hex color string (e.g. '#FF0099') to an (R, G, B) integer tuple."""
@@ -737,7 +790,7 @@ Return a valid UISchema v1.0 JSON with:
 
 Make it production-ready."""
 
-        response = await self.provider.call(prompt, temperature=CONFIG.temp_generator, response_format="json")
+        response = await mcp_llm_call(prompt, temperature=CONFIG.temp_generator, ctx=self.ctx)
         if not response:
             log.error("Failed to generate spec variant")
             return {}
@@ -1060,8 +1113,9 @@ Produce the repaired version as valid JSON. Fix every weakness listed above."""
 
 
 class VibeArchitect:
-    def __init__(self, provider: Optional[str] = None):
+    def __init__(self, provider: Optional[str] = None, ctx: Any = None):
         self.provider = router.get(provider)
+        self.ctx = ctx
 
     async def plan(self, intent: str, constraints: List[str] = None,
                    context: Dict[str, Any] = None, target_stack: str = "react") -> VibePlan:
@@ -1074,7 +1128,7 @@ CONSTRAINTS: {chr(10).join(f'- {c}' for c in constraints) if constraints else 'N
 TARGET STACK: {target_stack}
 
 Return JSON: {{"decisions": [{{"id":"ADR-001","title":"...","context":"...","decision":"...","alternatives":["A","B"],"rationale":"...","consequences":["..."],"confidence":0.9}}], "component_tree": [...], "data_flow": {{}}, "file_structure": [...], "estimated_complexity": "low|medium|high", "risks": [...], "recommended_stack": {{}}}}"""
-        response = await self.provider.call(prompt, temperature=0.3, response_format="json")
+        response = await mcp_llm_call(prompt, temperature=0.3, ctx=self.ctx)
         if not response:
             return VibePlan(intent=intent, risks=["Failed to generate plan"])
         try:
@@ -1092,9 +1146,10 @@ Return JSON: {{"decisions": [{{"id":"ADR-001","title":"...","context":"...","dec
 
 
 class VibeImplementer:
-    def __init__(self, provider: Optional[str] = None, design_system: Optional[Dict[str, Any]] = None):
+    def __init__(self, provider: Optional[str] = None, design_system: Optional[Dict[str, Any]] = None, ctx: Any = None):
         self.provider = router.get(provider)
         self.design_system = design_system or DEFAULT_DESIGN_SYSTEM
+        self.ctx = ctx
 
     async def implement(self, plan: VibePlan, intent: str, constraints: List[str] = None,
                         target_language: str = "typescript") -> List[CodeFile]:
@@ -1112,7 +1167,7 @@ DESIGN TOKENS: {ds_tokens}
 TARGET: {target_language}
 
 Return a JSON array of files: [{{"path":"...","content":"...","language":"tsx","purpose":"...","accessibility_notes":["..."]}}]"""
-        response = await self.provider.call(prompt, temperature=CONFIG.temp_generator, response_format="json")
+        response = await mcp_llm_call(prompt, temperature=CONFIG.temp_generator, ctx=self.ctx)
         if not response:
             return []
         try:
@@ -1361,7 +1416,7 @@ async def vibe_architect_tool(ctx: Context, intent: str, constraints: Optional[L
                                context: Optional[Dict[str, Any]] = None, target_stack: str = "react") -> Dict[str, Any]:
     await ctx.info(f"[architect] {intent[:80]}...")
     await ctx.report_progress(0, 100, "Analyzing intent...")
-    architect = VibeArchitect()
+    architect = VibeArchitect(ctx=ctx)
     await ctx.report_progress(30, 100, "Generating decisions...")
     plan = await architect.plan(intent, constraints, context, target_stack)
     await ctx.report_progress(100, 100, "Complete!")
@@ -1383,7 +1438,7 @@ async def vibe_code_tool(ctx: Context, intent: str, plan: Dict[str, Any], constr
         estimated_complexity=plan.get("estimated_complexity", "medium"), risks=plan.get("risks", []),
         recommended_stack=plan.get("recommended_stack", {}))
     await ctx.report_progress(20, 100, "Generating code...")
-    implementer = VibeImplementer(design_system=design_system)
+    implementer = VibeImplementer(design_system=design_system, ctx=ctx)
     files = await implementer.implement(vibe_plan, intent, constraints, target_language)
     await ctx.report_progress(90, 100, "Quality checks...")
     quality = VibeVerifier.verify_code_quality(files)
@@ -1442,8 +1497,9 @@ class VibeTester:
     """Generate test files from code. Applies TDD patterns:
     unit tests, accessibility tests, integration tests, edge cases."""
 
-    def __init__(self, provider: Optional[str] = None):
+    def __init__(self, provider: Optional[str] = None, ctx: Any = None):
         self.provider = router.get(provider)
+        self.ctx = ctx
 
     async def generate_tests(self, files: List[CodeFile],
                               requirements: List[str] = None,
@@ -1485,7 +1541,7 @@ Cover:
 
 Return ONLY the JSON array of test files."""
 
-        response = await self.provider.call(prompt, temperature=CONFIG.temp_generator, response_format="json")
+        response = await mcp_llm_call(prompt, temperature=CONFIG.temp_generator, ctx=self.ctx)
         if not response:
             return []
 
@@ -1502,8 +1558,9 @@ Return ONLY the JSON array of test files."""
 class VibeDeployer:
     """Generate deployment configurations for multiple platforms."""
 
-    def __init__(self, provider: Optional[str] = None):
+    def __init__(self, provider: Optional[str] = None, ctx: Any = None):
         self.provider = router.get(provider)
+        self.ctx = ctx
 
     async def generate_deploy(self, project_name: str,
                                files: List[CodeFile],
@@ -1533,7 +1590,7 @@ Return a JSON object with deployment configs for each target:
 
 Include only the requested targets."""
 
-        response = await self.provider.call(prompt, temperature=0.3, response_format="json")
+        response = await mcp_llm_call(prompt, temperature=0.3, ctx=self.ctx)
         if not response:
             return {"configs": {}, "environment_variables": {}}
 
@@ -1561,7 +1618,7 @@ async def vibe_test_tool(
     await ctx.report_progress(0, 100, "Analyzing source files...")
 
     code_files = [CodeFile(**f) for f in files]
-    tester = VibeTester()
+    tester = VibeTester(ctx=ctx)
 
     await ctx.report_progress(30, 100, "Generating test cases...")
     test_files = await tester.generate_tests(code_files, requirements, test_framework)
@@ -1599,7 +1656,7 @@ async def vibe_deploy_tool(
     await ctx.report_progress(0, 100, "Analyzing project...")
 
     code_files = [CodeFile(**f) for f in files]
-    deployer = VibeDeployer()
+    deployer = VibeDeployer(ctx=ctx)
 
     await ctx.report_progress(30, 100, "Generating configs...")
     result = await deployer.generate_deploy(project_name, code_files, targets)
