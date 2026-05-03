@@ -1,8 +1,12 @@
 # VibeServe v1.0 — The Agentic Coding Orchestrator
 
-> 🚀 **Now available on GitHub** — 13 MCP tools, 5 LLM providers, WCAG AAA built-in.
+<p align="center">
+  <img src="assets/flyer.png" width="600" alt="VibeServe v1.0" />
+</p>
 
 ---
+
+> 🚀 **Now available on GitHub** — 13 MCP tools, 5 LLM providers, zero-config via MCP Sampling.
 
 ## What is VibeServe?
 
@@ -20,10 +24,11 @@ vibe_architect → vibe_code → vibe_review → vibe_verify → vibe_iterate �
 
 - **13 MCP Tools** — full vibe coding pipeline
 - **5 LLM Providers** — OpenAI, DeepSeek, OpenRouter, Ollama (free local), OpenCode CLI
+- **MCP Sampling** — works with zero API keys
 - **3-Agent Code Review** — UX Designer, Engineer, Accessibility Advocate critique in parallel
 - **WCAG AAA Enforcement** — accessibility is a hard gate, not a suggestion
 - **ADR-Gated Architecture** — every decision is auditable with alternatives and confidence scores
-- **CritiqueLoop™** — gradient descent on code quality (nothing else in MCP does this)
+- **CritiqueLoop** — gradient descent on code quality (nothing else in MCP does this)
 - **5 Resources + 6 Prompts** — design tokens, version info, reusable templates
 
 ---
@@ -70,14 +75,6 @@ DEFAULT_LLM_PROVIDER=deepseek python vibeserve.py --vibe-demo
 📱 **CashApp:** `$helptools`
 
 Every donation helps cover API costs for testing and keeps the free tier running.
-
----
-
-## 🧪 Test Stats
-
-- **39 unit tests** — all pass
-- **4 integration tests** — end-to-end with real LLM calls
-- **5 providers tested** — DeepSeek, Ollama, OpenAI-compatible
 
 ---
 

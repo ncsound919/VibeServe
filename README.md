@@ -1,4 +1,4 @@
-# ⬡ VibeServe v1.0
+# <img src="assets/logo.png" width="48" height="48" alt=""> VibeServe v1.0
 
 > **The Agentic UI Coding Orchestrator for the Model Context Protocol**
 
@@ -32,7 +32,7 @@ Each step is an independent MCP tool. Chain the full pipeline or call any step s
 
 ## Key Features
 
-- **11 MCP Tools** — Full pipeline from architecture to deployment
+- **13 MCP Tools** — Full pipeline from architecture to deployment
 - **5 LLM Providers** — OpenAI, DeepSeek, OpenRouter, Local (Ollama), OpenCode CLI — with automatic fallback
 - **MCP Sampling** — Works with zero API keys via the client's own LLM
 - **WCAG AAA** — Accessibility validation built into every generation step
@@ -41,6 +41,14 @@ Each step is an independent MCP tool. Chain the full pipeline or call any step s
 - **SHA-256 Cache** — Tamper-resistant filesystem cache with TTL
 - **Prompt Injection Guard** — `_sanitize_input()` strips injection patterns before every LLM call
 - **43 Tests** — 39 unit + 4 live DeepSeek integration tests, all passing
+
+---
+
+## Frontend Visual
+
+<p align="center">
+  <img src="assets/flyer.png" width="600" alt="VibeServe Flyer" />
+</p>
 - **Docker Support** — `Dockerfile` + `docker-compose.yml` included
 
 ---
@@ -68,12 +76,12 @@ cp .env.example .env  # add your API keys, or leave blank for local/sampling
 
 **Run tests:**
 ```bash
-pyproject.toml pytest test_aether_nexus.py test_integration_v5.py -v
+pyproject.toml pytest test_aether_nexus.py test_integration_v5.py test_integration_real_api.py -v
 ```
 
 ---
 
-## All 11 MCP Tools
+## All 13 MCP Tools
 
 | Tool | Description |
 |------|-------------|
@@ -100,7 +108,7 @@ Quick overview:
 MCP Client (Claude Desktop / Cursor / Windsurf)
        ↓ MCP Protocol
 VibeServe FastMCP Server
-  ├── 11 Tools · 5 Resources · 6 Prompts · SamplingProvider
+  ├── 13 Tools · 5 Resources · 6 Prompts · SamplingProvider
   ├── V5 Agentic Pipeline (Architect → Implement → Review → Verify → Iterate → Test → Deploy)
   ├── LLMRouter (OpenAI · DeepSeek · OpenRouter · Local · OpenCode + auto-fallback)
   ├── MemoryStore (SQLite, indexed by page_type + score)
