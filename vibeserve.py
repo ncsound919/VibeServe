@@ -994,6 +994,17 @@ async def generate_ui_specification(
 
 # ====================== V5: AGENTIC CODING ORCHESTRATOR ======================
 
+# Content generation guidelines — applied to all prompts to prevent common LLM issues
+CONTENT_GUIDELINES = """
+CONTENT RULES (enforce strictly):
+- NEVER generate fake testimonials, fabricated quotes, or invented social proof.
+- NEVER use SaaS copy ("free trial", "pricing plans", "enterprise tier").
+- For OSS projects: CTA = GitHub star + donate link. No "Sign Up" buttons.
+- Use current year (automatically determined from system time).
+- Asset paths must be relative to deployment root (e.g., docs/ folder uses "logo.png" not "assets/logo.png").
+- All interactive elements need ARIA labels for WCAG AAA compliance.
+"""
+
 @dataclass
 class ArchitectureDecision:
     """A single Architecture Decision Record (ADR) produced by the VibeArchitect."""
@@ -1130,6 +1141,8 @@ class VibeArchitect:
         context = context or {}
         prompt = f"""You are a senior software architect. Produce a detailed architecture plan.
 
+{CONTENT_GUIDELINES}
+
 USER INTENT: {intent}
 CONSTRAINTS: {chr(10).join(f'- {c}' for c in constraints) if constraints else 'None'}
 TARGET STACK: {target_stack}
@@ -1171,6 +1184,8 @@ class VibeImplementer:
         constraints = constraints or []
         ds_tokens = json.dumps(self.design_system.get("tokens", {}), indent=2)[:2000]
         prompt = f"""Generate production-ready code from this plan. Enforce constraints. Include full accessibility.
+
+{CONTENT_GUIDELINES}
 
 INTENT: {intent}
 DECISIONS: {json.dumps([asdict(d) for d in plan.decisions], indent=2)[:2000]}
@@ -1413,7 +1428,8 @@ def resource_spec_example(page_type: str) -> str:
 
 @mcp_server.prompt()
 def prompt_architecture(intent: str = "", constraints: str = "") -> str:
-    return f"""Architecture plan for: {intent}\nConstraints: {constraints}\n\nUse vibe_architect to generate structured ADR decisions."""
+    return f"""Architecture plan for: {intent}\nConstraints: {constraints}\n\nContent rules: no fake testimonials, no SaaS CTAs, relative asset paths, WCAG AAA. Use vibe_architect."""
+
 
 @mcp_server.prompt()
 def prompt_code_review(files: str = "", requirements: str = "") -> str:
