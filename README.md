@@ -42,16 +42,14 @@ Each step is an independent MCP tool. Chain the full pipeline or call any step s
 - **Prompt Injection Guard** — `_sanitize_input()` strips injection patterns before every LLM call
 - **43 Tests** — 39 unit + 4 live DeepSeek integration tests, all passing
 
----
 
-## Frontend Visual
 
 <p align="center">
   <img src="assets/flyer.png" width="600" alt="VibeServe Flyer" />
 </p>
 - **Docker Support** — `Dockerfile` + `docker-compose.yml` included
 
----
+
 
 ## Quickstart
 
@@ -72,7 +70,7 @@ cp .env.example .env  # add your API keys, or leave blank for local/sampling
     }
   }
 }
-```
+
 
 **Run tests:**
 ```bash
@@ -97,7 +95,7 @@ pyproject.toml pytest test_aether_nexus.py test_integration_v5.py test_integrati
 | `list_design_systems` | List available design systems and token palettes |
 | `memory_stats` | Stats on the SQLite-backed spec memory store |
 
----
+
 
 ## Architecture
 
@@ -116,7 +114,7 @@ VibeServe FastMCP Server
   └── SchemaValidator (UISchema v1.0 + WCAG AAA)
 ```
 
----
+
 
 ## LLM Providers
 
@@ -129,7 +127,7 @@ VibeServe FastMCP Server
 | OpenCode CLI | opencode/hy3-preview-free | `npm install -g opencode-ai` |
 | **SamplingProvider** | *(client's LLM)* | **Nothing — zero config** |
 
----
+
 
 ## Donate
 
