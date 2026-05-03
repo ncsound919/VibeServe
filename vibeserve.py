@@ -495,7 +495,7 @@ class SamplingProvider(LLMProvider):
             return None
         try:
             result = await self._ctx.sample(
-                messages=[prompt],
+                messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
                 max_tokens=4096
             )
@@ -526,8 +526,14 @@ async def mcp_llm_call(prompt: str, temperature: float = 0.7,
 
 # ====================== WCAG VALIDATION ======================
 def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
-    """Convert a CSS hex color string (e.g. '#FF0099') to an (R, G, B) integer tuple."""
+    """Convert a CSS hex color string (e.g. '#FF0099', '#FFF', '#FF0099AA') to an (R, G, B) integer tuple."""
     hex_color = hex_color.lstrip('#')
+    if len(hex_color) == 3:
+        hex_color = ''.join(c * 2 for c in hex_color)
+    elif len(hex_color) >= 6:
+        hex_color = hex_color[:6]
+    else:
+        raise ValueError(f"Invalid hex color: {hex_color!r}")
     r = int(hex_color[0:2], 16)
     g = int(hex_color[2:4], 16)
     b = int(hex_color[4:6], 16)
@@ -546,18 +552,14 @@ def relative_luminance(rgb: Tuple[int, int, int]) -> float:
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 def contrast_ratio(fg: str, bg: str) -> float:
-    """
-    Calculate the WCAG contrast ratio between two hex colors.
-    Returns a ratio between 1.0 (no contrast) and 21.0 (max contrast).
-    AAA threshold: 7.0  |  AA threshold: 4.5
-    """
     try:
         l1 = relative_luminance(hex_to_rgb(fg))
         l2 = relative_luminance(hex_to_rgb(bg))
         lighter = max(l1, l2)
         darker = min(l1, l2)
         return (lighter + 0.05) / (darker + 0.05)
-    except Exception:
+    except (ValueError, IndexError) as e:
+        log.warning(f"contrast_ratio failed for fg={fg!r} bg={bg!r}: {e}")
         return 0.0
 
 def validate_wcag_contrast(fg: str, bg: str, min_level: WCAGLevel = WCAGLevel.AA) -> ContrastResult:
@@ -731,6 +733,7 @@ class MultiAgentCritique:
             self.designer.critique(schema, requirements),
             self.engineer.critique(schema, requirements),
             self.advocate.critique(schema, requirements),
+            return_exceptions=True
         )
 
         scores = [c.get("score", 0.5) for c in critiques if "error" not in c]
@@ -763,6 +766,7 @@ class SpecGenerator:
         self.design_system = design_system
         self.critique = MultiAgentCritique()
         self.provider = router.get(provider) if provider else router.get()
+        self.ctx = None
 
     def _sanitize_input(self, text: str, max_len: int = 500) -> str:
         """Strip known prompt-injection patterns and enforce max length."""
@@ -1067,10 +1071,10 @@ class CritiqueLoop:
             recommendation = review.get("recommendation", "proceed")
             if ctx:
                 await ctx.info(f"Iteration {i + 1} score: {score:.2f} [{recommendation}]")
-            if recommendation == "proceed" and score >= self.quality_threshold:
+            if recommendation in ("proceed", "approve") and score >= self.quality_threshold:
                 history.append(IterationResult(iteration=i + 1, score_before=score, score_after=score, passed=True))
                 break
-            if recommendation == "reject":
+            if recommendation in ("reject", "revise", "modify"):
                 repair_prompt = self._build_repair_prompt(current, review, requirements)
                 repaired = await self.generator.call(repair_prompt, temperature=CONFIG.temp_generator, response_format="json")
                 if repaired:
@@ -1151,8 +1155,12 @@ Return JSON: {{"decisions": [{{"id":"ADR-001","title":"...","context":"...","dec
 class VibeImplementer:
     def __init__(self, provider: Optional[str] = None, design_system: Optional[Dict[str, Any]] = None, ctx: Any = None):
         self.provider = router.get(provider)
-        self.design_system = design_system or DEFAULT_DESIGN_SYSTEM
+        self._design_system = design_system
         self.ctx = ctx
+
+    @property
+    def design_system(self):
+        return self._design_system or DEFAULT_DESIGN_SYSTEM
 
     async def implement(self, plan: VibePlan, intent: str, constraints: List[str] = None,
                         target_language: str = "typescript") -> List[CodeFile]:
@@ -1244,8 +1252,9 @@ class VibeCodeReviewer:
         critiques = await asyncio.gather(
             self.designer.critique(schema_for_review, requirements),
             self.engineer.critique(schema_for_review, requirements),
-            self.advocate.critique(schema_for_review, requirements))
-        scores = [c.get("score", 0.5) for c in critiques if "error" not in c]
+            self.advocate.critique(schema_for_review, requirements),
+            return_exceptions=True)
+        scores = [c.get("score", 0.5) for c in critiques if isinstance(c, dict) and "error" not in c]
         avg_score = sum(scores) / len(scores) if scores else 0.5
         return {
             "consensus_score": round(avg_score, 2),

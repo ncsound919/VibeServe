@@ -7,6 +7,7 @@ Tests all core functionality: validation, critique, generation, and learning
 import asyncio
 import json
 import copy
+import time
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -17,8 +18,6 @@ from vibeserve import (
     validate_wcag_contrast,
     WCAGLevel,
     ContrastResult,
-    UIComponent,
-    ComponentType,
     MultiAgentCritique,
     SpecGenerator,
     store_successful_spec,
@@ -235,20 +234,27 @@ async def test_multi_agent_critique():
     print("  ✅ Agent roles correctly assigned")
 
 def test_memory_system():
-    """Test successful spec storage and retrieval"""
-    print("\n🧪 Test: Memory & Feedback Loop")
+    """Test successful spec storage and retrieval with cleanup"""
+    import sqlite3
+    from vibeserve import CONFIG
     
-    # Store a successful spec
-    test_spec = VALID_SPEC.copy()
-    test_spec["metadata"]["id"] = "test_memory_spec"
+    test_spec = copy.deepcopy(VALID_SPEC)
+    test_id = f"test_memory_{int(time.time())}"
+    test_spec["metadata"]["id"] = test_id
     
     store_successful_spec("test_page", test_spec, score=0.88)
-    print("  ✅ Spec stored successfully")
     
-    # Retrieve similar specs
     similar = get_similar_specs("test_page", limit=5)
     assert len(similar) > 0, "Should retrieve stored specs"
     print(f"  ✅ Retrieved {len(similar)} similar spec(s)")
+    
+    try:
+        conn = sqlite3.connect(str(CONFIG.memory_db))
+        conn.execute("DELETE FROM specs WHERE id = ?", (test_id,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 def test_contrast_matrix():
     """Test contrast matrix for entire palette"""
@@ -325,10 +331,11 @@ def test_spec_metadata():
     print(f"  ✅ Valid spec ID: {spec_id}")
 
 def test_contrast_result_post_init():
-    """Verify ContrastResult correctly classifies by ratio"""
+    """Verify ContrastResult correctly classifies by ratio, including thresholds"""
     r_aaa = ContrastResult(fg="#000", bg="#FFF", ratio=8.0, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
     assert r_aaa.wcag_level == WCAGLevel.AAA
     assert r_aaa.passes_aaa == True
+    assert r_aaa.passes_aa == True
 
     r_aa = ContrastResult(fg="#000", bg="#888", ratio=5.0, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
     assert r_aa.wcag_level == WCAGLevel.AA
@@ -338,17 +345,27 @@ def test_contrast_result_post_init():
     r_fail = ContrastResult(fg="#CCC", bg="#DDD", ratio=1.5, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
     assert r_fail.wcag_level == WCAGLevel.FAIL
 
+    # Boundary: exactly at AAA threshold (7.0)
+    r_edge = ContrastResult(fg="#000", bg="#FFF", ratio=7.0, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
+    assert r_edge.wcag_level == WCAGLevel.AAA
+
+    # Boundary: exactly at AA threshold (4.5)
+    r_edge = ContrastResult(fg="#000", bg="#888", ratio=4.5, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
+    assert r_edge.wcag_level == WCAGLevel.AA
+    assert r_edge.passes_aa == True
+
 def test_cache_manager_ttl(tmp_path=None):
     """Verify cache respects TTL and rejects stale entries"""
     import tempfile
+    from unittest.mock import patch
     if tmp_path is None:
         tmp_path = Path(tempfile.mkdtemp())
     from vibeserve import CacheManager
     cm = CacheManager(cache_dir=tmp_path, ttl=1)
     cm.set("testkey", {"result": "value"})
     assert cm.get("testkey") == {"result": "value"}
-    import time; time.sleep(2)
-    assert cm.get("testkey") is None
+    with patch('vibeserve.time.time', return_value=time.time() + 10):
+        assert cm.get("testkey") is None
 
 def test_prompt_injection_sanitization():
     from vibeserve import SpecGenerator, DEFAULT_DESIGN_SYSTEM
@@ -590,16 +607,12 @@ def test_critique_loop_repair_prompt():
 # ====================== V5 EXTENDED TESTS ======================
 
 def test_mcp_resources_defined():
-    """Verify MCP resources are registered on the server"""
-    from vibeserve import mcp_server
-    resources = getattr(mcp_server, '_resources', {}) or getattr(mcp_server, 'resources', {})
-    if hasattr(mcp_server, '_resources'):
-        names = list(mcp_server._resources.keys()) if mcp_server._resources else []
-    else:
-        names = []
-    print(f"  Resources registered: {len(names)}")
-    # Resources may not be enumerable in all FastMCP versions
-    assert True  # existence check only
+    """Verify core VibeServe tools are importable and callable"""
+    from vibeserve import vibe_architect_tool, vibe_code_tool, generate_ui_spec_tool
+    assert callable(vibe_architect_tool)
+    assert callable(vibe_code_tool)
+    assert callable(generate_ui_spec_tool)
+    print("  All core tools importable and callable")
 
 def test_vibe_tester_initialization():
     """Verify VibeTester initializes"""
@@ -734,6 +747,28 @@ async def test_sampling_provider_call():
     assert result == '{"key": "value"}'
     print("  ✅ SamplingProvider.call returns mocked sample result")
 
+def test_hex_to_rgb_edge_cases():
+    """Verify hex_to_rgb handles 3-char, 6-char, 8-char, and invalid hex"""
+    from vibeserve import hex_to_rgb
+    assert hex_to_rgb("#FFF") == (255, 255, 255)
+    assert hex_to_rgb("#000") == (0, 0, 0)
+    assert hex_to_rgb("#FF0099") == (255, 0, 153)
+    assert hex_to_rgb("FF0099") == (255, 0, 153)
+    assert hex_to_rgb("#FF0099AA") == (255, 0, 153)
+    import pytest
+    with pytest.raises(ValueError):
+        hex_to_rgb("INVALID")
+    with pytest.raises(ValueError):
+        hex_to_rgb("")
+    print("  ✅ hex_to_rgb handles all formats and invalid input")
+
+def test_contrast_ratio_error_handling():
+    """Verify contrast_ratio returns 0 on invalid input"""
+    from vibeserve import contrast_ratio
+    assert contrast_ratio("INVALID", "#000") == 0.0
+    assert contrast_ratio("", "#FFF") == 0.0
+    print("  ✅ contrast_ratio handles invalid hex gracefully")
+
 # ====================== TEST RUNNER ======================
 
 async def run_all_tests():
@@ -780,6 +815,8 @@ async def run_all_tests():
         test_design_tokens_resource()
         test_default_design_system_resource()
         test_sampling_provider_initialization()
+        test_hex_to_rgb_edge_cases()
+        test_contrast_ratio_error_handling()
         
         # Async tests
         await test_multi_agent_critique()
