@@ -996,13 +996,29 @@ async def generate_ui_specification(
 
 # Content generation guidelines — applied to all prompts to prevent common LLM issues
 CONTENT_GUIDELINES = """
-CONTENT RULES (enforce strictly):
-- NEVER generate fake testimonials, fabricated quotes, or invented social proof.
-- NEVER use SaaS copy ("free trial", "pricing plans", "enterprise tier").
-- For OSS projects: CTA = GitHub star + donate link. No "Sign Up" buttons.
-- Use current year (automatically determined from system time).
+CRITICAL CONTENT RULES — VIOLATIONS WILL BE REJECTED:
+
+NO FABRICATION:
+- NEVER invent statistics: no fake "10K+ downloads", "99.9% uptime", "24/7 support", user counts, or percentages.
+- NEVER fabricate features: only list features explicitly stated in the architecture plan. If the plan doesn't mention "real-time collaboration" or "enterprise security", DO NOT add them.
+- NEVER invent testimonials, quotes, or named users. No "Sarah K." or "Marcus J." or any fabricated person.
+
+NO SAAS COPY:
+- This is an open-source MCP server, not a SaaS product. NO "Free Trial", "Pricing Plans", "Enterprise Tier", "Sign Up", "Schedule Demo".
+- CTA = GitHub star + donate link. That is the ONLY call to action.
+
+STRUCTURAL INTEGRITY:
+- HTML must be valid, well-formed, and properly nested. Every opening tag must have a closing tag.
+- Do not embed content inside containers meant for other content (e.g., flyer image inside testimonial grid).
+- Section headers must match section content. No "What Developers Say" header with no testimonials.
+
+SHOW THE PRODUCT:
+- Always include the pipeline diagram, tool list, and provider list from the architecture plan.
 - Asset paths must be relative to deployment root (e.g., docs/ folder uses "logo.png" not "assets/logo.png").
 - All interactive elements need ARIA labels for WCAG AAA compliance.
+- Use current year from system time. Do not hardcode years.
+
+IF UNSURE, OMIT. An incomplete but honest page is better than a complete but fabricated one.
 """
 
 @dataclass
@@ -1222,11 +1238,21 @@ class VibeVerifier:
 
     @staticmethod
     def verify_code_quality(files: List[CodeFile]) -> Dict[str, Any]:
-        """
-        Check generated code files for common quality issues:
-        missing accessibility notes, missing ARIA attributes in JSX, TODO/FIXME markers.
-        """
         issues = []
+        # Fabricated content patterns
+        fabricated_patterns = [
+            (r"\d+K\+.*[Dd]ownloads", "fabricated download count"),
+            (r"\d+\.\d+%.*[Uu]ptime", "fabricated uptime stat"),
+            (r"24/7.*[Ss]upport", "fabricated support claim"),
+            (r"[Ee]nterprise.grade.{0,30}security", "fabricated security claim"),
+            (r"[Rr]eal.time.{0,20}[Cc]ollaboration", "fabricated feature"),
+            (r"\d+%.*faster", "fabricated performance claim"),
+            (r"[Jj]oin.{0,15}thousands.{0,15}developers", "fabricated user count"),
+            (r"Sarah K\.|Marcus J\.|Elena R\.", "fabricated testimonial name"),
+            (r"[Ss]ign.{0,10}[Uu]p|[Ff]ree.{0,10}[Tt]rial|[Pp]ricing.{0,10}[Pp]lan|[Ss]chedule.{0,10}[Dd]emo", "SaaS CTA pattern"),
+            (r"[Ww]hat.{0,15}[Dd]evelopers.{0,15}[Ss]ay", "testimonial header with no content"),
+        ]
+        import re
         for f in files:
             if not f.accessibility_notes:
                 issues.append(f"{f.path}: missing accessibility notes")
@@ -1234,6 +1260,16 @@ class VibeVerifier:
                 issues.append(f"{f.path}: no ARIA attributes found")
             if "TODO" in f.content or "FIXME" in f.content:
                 issues.append(f"{f.path}: contains TODO/FIXME")
+            # Check for fabricated content in HTML
+            if f.language == "html":
+                for pattern, label in fabricated_patterns:
+                    if re.search(pattern, f.content):
+                        issues.append(f"{f.path}: {label} — fabricated/hallucinated content")
+                # Check unmatched opening tags
+                opens = len(re.findall(r"<section\b", f.content))
+                closes = len(re.findall(r"</section>", f.content))
+                if opens != closes:
+                    issues.append(f"{f.path}: HTML nesting error — {opens} <section> opens vs {closes} closes")
         return {"passed": len(issues) == 0, "issues": issues, "issue_count": len(issues), "files_checked": len(files)}
 
 
@@ -1437,7 +1473,7 @@ def prompt_code_review(files: str = "", requirements: str = "") -> str:
 
 @mcp_server.prompt()
 def prompt_vibe_build(intent: str = "") -> str:
-    return f"""Full pipeline: architect -> code -> review -> verify -> iterate\nIntent: {intent}\n\nUse vibe_architect, vibe_code, vibe_review, vibe_verify, vibe_iterate in sequence."""
+    return f"""Full pipeline: architect -> code -> review -> verify -> iterate\nIntent: {intent}\n\nCRITICAL: Zero fabrication. No fake stats, no SaaS copy. Show actual product features."""
 
 @mcp_server.prompt()
 def prompt_accessibility_audit() -> str:

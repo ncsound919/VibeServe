@@ -544,6 +544,23 @@ def test_vibe_verifier_code_quality():
     assert result["issue_count"] >= 1
     print("  ✅ Bad code correctly flagged")
 
+
+def test_vibe_verifier_fabricated_content():
+    """Verify VibeVerifier detects hallucinated/fabricated content"""
+    from vibeserve import VibeVerifier, CodeFile
+
+    fabricated_html = CodeFile(
+        path="/src/index.html",
+        content='<section><h2>What Developers Say</h2><p>10K+ Downloads</p><p>99.9% Uptime</p><p>Sarah K. says "great"</p></section>',
+        language="html",
+        purpose="Landing page",
+        accessibility_notes=["Has ARIA labels"]
+    )
+    result = VibeVerifier.verify_code_quality([fabricated_html])
+    assert not result["passed"]
+    assert result["issue_count"] >= 3  # downloads + uptime + testimonial name + testimonial header
+    print(f"  ✅ Fabricated content detected: {result['issue_count']} issues")
+
 def test_vibe_verifier_spec_validation():
     """Verify VibeVerifier validates specs correctly"""
     from vibeserve import VibeVerifier
@@ -802,6 +819,7 @@ async def run_all_tests():
         test_code_file_creation()
         test_iteration_result_creation()
         test_vibe_verifier_code_quality()
+        test_vibe_verifier_fabricated_content()
         test_vibe_verifier_spec_validation()
         test_vibe_code_reviewer_initialization()
         test_critique_loop_initialization()
