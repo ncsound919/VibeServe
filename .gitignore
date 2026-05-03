@@ -4,3 +4,19 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Generated output files
+benchmark_results.json
+loop_analysis.json
+audit_output.json
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
