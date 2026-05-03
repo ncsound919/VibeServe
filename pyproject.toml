@@ -13,9 +13,11 @@ dependencies = [
     "httpx>=0.27.0",
     "python-dotenv>=1.0.0",
 ]
+long_description = {file = "README.md"}
+long_description_content_type = "text/markdown"
 license = {text = "MIT"}
 readme = "README.md"
-keywords = ["mcp", "agentic-coding", "vibe-coding", "ui-design", "accessibility", "wcag", "llm", "multi-agent"]
+keywords = ["mcp", "agentic-coding", "vibe-coding", "ui-design", "accessibility", "wcag", "llm", "multi-agent", "fastmcp", "code-generation"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -28,19 +30,23 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ncsound919/VibeServe"
-Documentation = "https://github.com/ncsound919/VibeServe#readme"
-Repository = "https://github.com/ncsound919/VibeServe"
+Homepage = "https://github.com/ncsound919/AetherNexus-MCP"
+Documentation = "https://ncsound919.github.io/AetherNexus-MCP"
+Repository = "https://github.com/ncsound919/AetherNexus-MCP"
+Issues = "https://github.com/ncsound919/AetherNexus-MCP/issues"
 "Donate" = "https://cash.app/$helptools"
 
 [project.scripts]
-vibeserve = "vibeserve:main"
+vibeserve = "vibeserve.__main__:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0", "pytest-asyncio>=0.23.0", "ruff>=0.4.0", "mypy>=1.10.0"]
 
 [tool.setuptools.packages.find]
-include = ["."]
+include = ["vibeserve", "vibeserve.*"]
+
+[tool.setuptools]
+py-modules = ["benchmark"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

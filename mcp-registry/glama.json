@@ -1,0 +1,28 @@
+{
+  "name": "vibeserve",
+  "displayName": "VibeServe",
+  "version": "1.0.0",
+  "description": "Agentic coding orchestrator for the Model Context Protocol. 7-step pipeline: architect -> code -> review -> verify -> iterate -> test -> deploy. Multi-agent critique with WCAG AAA enforcement.",
+  "author": "ncsound919",
+  "repository": "https://github.com/ncsound919/AetherNexus-MCP",
+  "homepage": "https://github.com/ncsound919/AetherNexus-MCP#readme",
+  "license": "MIT",
+  "category": "UI Design & Code Generation",
+  "tags": ["ui-generation", "accessibility", "wcag", "multi-agent", "design-system", "code-generation"],
+  "runtime": "python",
+  "entrypoint": "vibeserve.py",
+  "dependencies": ["fastmcp>=0.9.0", "pydantic>=2.0.0", "httpx>=0.27.0", "python-dotenv>=1.0.0"],
+  "tools": 28,
+  "providers": ["openai", "deepseek", "openrouter", "local", "opencode"],
+  "features": [
+    "7-step agentic coding pipeline",
+    "Multi-agent critique (UX, Engineering, Accessibility)",
+    "WCAG AAA validation built-in",
+    "5 LLM providers with auto-fallback",
+    "SQLite memory store for learning",
+    "SHA-256 content hash caching",
+    "Monte Carlo design template system",
+    "Docker + Vercel deployment configs",
+    "Supabase, Vercel, GitHub, Cloudflare API connectors"
+  ]
+}

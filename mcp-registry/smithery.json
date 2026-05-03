@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "name": "vibeserve",
+  "display_name": "VibeServe",
+  "description": "Agentic UI coding orchestrator — 28-tool MCP pipeline from architecture to deployment with multi-agent critique and WCAG AAA validation",
+  "homepage": "https://github.com/ncsound919/AetherNexus-MCP",
+  "entrypoint": {
+    "command": "python",
+    "args": ["vibeserve.py"]
+  },
+  "env": {
+    "OPENAI_API_KEY": {"description": "OpenAI API key (can leave blank for local/sampling)", "required": false},
+    "DEEPSEEK_API_KEY": {"description": "DeepSeek API key", "required": false},
+    "OPENROUTER_API_KEY": {"description": "OpenRouter API key", "required": false},
+    "LOCAL_LLM_URL": {"description": "Local LLM URL (e.g. http://localhost:11434/v1)", "default": "http://localhost:11434/v1"},
+    "DEFAULT_LLM_PROVIDER": {"description": "Default LLM provider: openai, deepseek, openrouter, local, opencode", "default": "openai"}
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true,
+    "sampling": true
+  }
+}

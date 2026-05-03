@@ -1,0 +1,21 @@
+{
+  "project": "VibeServe",
+  "version": "1.0.0",
+  "mode": "yolo",
+  "depth": "standard",
+  "workflow": {
+    "research": false,
+    "plan_check": false,
+    "verifier": true
+  },
+  "profiles": {
+    "current": "simple",
+    "presets": {
+      "simple": {
+        "planning": "ollama/qwen3.5:4b",
+        "execution": "ollama/qwen3.5:4b",
+        "verification": "ollama/qwen3.5:4b"
+      }
+    }
+  }
+}
