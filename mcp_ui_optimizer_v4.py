@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AetherNexus Prime v4 — Production-Ready MCP UI Optimizer
+AetherNexus Prime v5 — Agentic Coding Orchestrator (MCP)
 Features:
   • Design System as Code (live token enforcement)
   • Multi-Agent Critique (Designer, Engineer, User Advocate)
@@ -8,6 +8,7 @@ Features:
   • Full UI Schema compliance
   • Self-healing and repair
   • Real usage feedback loop
+  • V5: Architect → Code → Review → Verify → Iterate → Test → Deploy
 """
 
 import asyncio
@@ -63,9 +64,9 @@ class ContrastResult:
     wcag_level: WCAGLevel
     passes_aa: bool
     passes_aaa: bool
-    
+
     def __post_init__(self):
-        # WCAG levels: AAA >= 7:1, AA >= 4.5:1
+        """Classify the ratio into WCAG level and set pass flags."""
         self.wcag_level = WCAGLevel.AAA if self.ratio >= 7 else WCAGLevel.AA if self.ratio >= 4.5 else WCAGLevel.FAIL
         self.passes_aa = self.ratio >= 4.5
         self.passes_aaa = self.ratio >= 7
@@ -80,7 +81,7 @@ class UIComponent(BaseModel):
     interaction: Dict[str, Any] = Field(default_factory=dict)
     animation: Dict[str, Any] = Field(default_factory=dict)
     responsive: Dict[str, Any] = Field(default_factory=dict)
-    
+
     @field_validator('accessibility')
     @classmethod
     def validate_accessibility(cls, v):
@@ -122,12 +123,12 @@ class Config(BaseModel):
     max_concurrency: int = 3
     max_retries: int = 4
     max_repairs: int = 2
-    
+
     # Temperature tuning
     temp_generator: float = 0.82
     temp_critic: float = 0.15
     temp_synthesizer: float = 0.65
-    
+
     # Evolution
     max_variants: int = 4
     evolution_threshold: float = 0.85
@@ -140,39 +141,39 @@ CONFIG.memory_dir.mkdir(parents=True, exist_ok=True)
 # ====================== LLM PROVIDER ARCHITECTURE ======================
 
 class LLMProvider(ABC):
-    """Abstract base class for all LLM providers"""
-    
+    """Abstract base class for all LLM providers."""
+
     @abstractmethod
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json") -> Optional[str]:
-        """Call the LLM and return response text"""
+        """Call the LLM and return response text."""
         pass
-    
+
     @property
     @abstractmethod
     def name(self) -> str:
-        """Provider name for logging"""
+        """Provider name for logging."""
         pass
-    
+
     async def _api_call(self, base_url: str, api_key: str, model: str,
-                         prompt: str, temperature: float, response_format: str,
-                         extra_headers: Optional[Dict[str, str]] = None) -> Optional[str]:
-        """Shared API call logic for OpenAI-compatible providers"""
+                        prompt: str, temperature: float, response_format: str,
+                        extra_headers: Optional[Dict[str, str]] = None) -> Optional[str]:
+        """Shared OpenAI-compatible API call logic with exponential-backoff retry."""
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         if extra_headers:
             headers.update(extra_headers)
-        
-        payload = {
+
+        payload: Dict[str, Any] = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": temperature,
         }
         if response_format == "json":
             payload["response_format"] = {"type": "json_object"}
-        
+
         async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, read=180.0)) as client:
             for attempt in range(CONFIG.max_retries):
                 try:
@@ -197,19 +198,20 @@ class LLMProvider(ABC):
 
 class OpenAIProvider(LLMProvider):
     """OpenAI API provider (GPT-4, GPT-3.5, etc.)"""
-    
+
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None,
                  model: Optional[str] = None):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.base_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview")
-    
+
     @property
     def name(self) -> str:
         return "OpenAI"
-    
+
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json") -> Optional[str]:
+        """Call the OpenAI chat completions endpoint."""
         return await self._api_call(
             self.base_url, self.api_key, self.model,
             prompt, temperature, response_format
@@ -217,19 +219,20 @@ class OpenAIProvider(LLMProvider):
 
 
 class DeepSeekProvider(LLMProvider):
-    """DeepSeek API provider (DeepSeek-V3, DeepSeek-R1)"""
-    
+    """DeepSeek API provider (DeepSeek-V3, DeepSeek-R1)."""
+
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY")
         self.base_url = "https://api.deepseek.com/v1"
         self.model = model or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
-    
+
     @property
     def name(self) -> str:
         return "DeepSeek"
-    
+
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json") -> Optional[str]:
+        """Call the DeepSeek chat completions endpoint."""
         return await self._api_call(
             self.base_url, self.api_key, self.model,
             prompt, temperature, response_format
@@ -237,19 +240,20 @@ class DeepSeekProvider(LLMProvider):
 
 
 class OpenRouterProvider(LLMProvider):
-    """OpenRouter provider — access 200+ models via single API"""
-    
+    """OpenRouter provider — access 200+ models via a single API."""
+
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         self.base_url = "https://openrouter.ai/api/v1"
         self.model = model or os.getenv("OPENROUTER_MODEL", "anthropic/claude-3.5-sonnet")
-    
+
     @property
     def name(self) -> str:
         return "OpenRouter"
-    
+
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json") -> Optional[str]:
+        """Call the OpenRouter completions endpoint with site attribution headers."""
         return await self._api_call(
             self.base_url, self.api_key, self.model,
             prompt, temperature, response_format,
@@ -261,21 +265,22 @@ class OpenRouterProvider(LLMProvider):
 
 
 class LocalProvider(LLMProvider):
-    """Local LLM provider (Ollama, LM Studio, llama.cpp server)"""
-    
+    """Local LLM provider (Ollama, LM Studio, llama.cpp server)."""
+
     def __init__(self, base_url: Optional[str] = None, model: Optional[str] = None):
         self.base_url = base_url or os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1")
         self.model = model or os.getenv("LOCAL_LLM_MODEL", "llama3.2")
         self.api_key = "not-needed"
-    
+
     @property
     def name(self) -> str:
         return "Local"
-    
+
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json") -> Optional[str]:
+        """Call a locally running OpenAI-compatible inference server."""
         headers = {"Content-Type": "application/json"}
-        payload = {
+        payload: Dict[str, Any] = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             "temperature": temperature,
@@ -283,7 +288,7 @@ class LocalProvider(LLMProvider):
         }
         if response_format == "json":
             payload["response_format"] = {"type": "json_object"}
-        
+
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, read=300.0)) as client:
             for attempt in range(max(CONFIG.max_retries, 2)):
                 try:
@@ -302,20 +307,18 @@ class LocalProvider(LLMProvider):
 
 
 class OpenCodeProvider(LLMProvider):
-    """OpenCode CLI provider — calls opencode as subprocess"""
-    
+    """OpenCode CLI provider — calls the opencode binary as a subprocess."""
+
     def __init__(self, model: Optional[str] = None):
         self.model = model or os.getenv("OPENCODE_MODEL", "opencode/hy3-preview-free")
         self._available = False
         self._binary = "opencode"
-        # Check common installation paths
         for name in ["opencode.cmd", "opencode.ps1", "opencode"]:
             found = shutil.which(name)
             if found:
                 self._available = True
                 self._binary = found
                 break
-        # Also check npm global bin
         if not self._available:
             npm_bin = os.path.expandvars(r"%APPDATA%\npm")
             for name in ["opencode.cmd", "opencode", "opencode.ps1"]:
@@ -326,56 +329,53 @@ class OpenCodeProvider(LLMProvider):
                     break
         if not self._available:
             log.warning("OpenCode CLI not found. Install: npm install -g opencode-ai")
-    
+
     @property
     def name(self) -> str:
         return "OpenCode"
-    
+
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json") -> Optional[str]:
+        """Execute the opencode binary and return its parsed JSON output."""
         if not self._available:
             log.error("OpenCode CLI not installed -- provider disabled")
             return None
-        
+
         try:
-            cmd = [
-                self._binary, "run",
-                "--model", self.model,
-                "--format", "json",
-                prompt
-            ]
-            
+            cmd = [self._binary, "run", "--model", self.model, "--format", "json", prompt]
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
-            
             try:
-                stdout, stderr = await asyncio.wait_for(
-                    proc.communicate(), timeout=300.0
-                )
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300.0)
             except asyncio.TimeoutError:
                 proc.kill()
                 await proc.wait()
                 log.warning(f"[{self.name}] CLI timeout after 300s")
                 return None
-            
+
             if proc.returncode != 0:
                 stderr_msg = stderr.decode() if stderr else "unknown error"
                 log.warning(f"[{self.name}] CLI failed (exit {proc.returncode}): {stderr_msg[:200]}")
                 return None
-            
+
             return self._parse_output(stdout.decode())
         except Exception as e:
             log.warning(f"[{self.name}] Provider error: {e}")
             return None
-    
+
     def _parse_output(self, output: str) -> Optional[str]:
-        """Parse opencode --format json output (JSONL)"""
+        """
+        Parse opencode --format json output (JSONL stream).
+        Returns the last JSON content field found, or None if unparseable.
+        Intentionally returns None rather than raw text to avoid polluting
+        callers with non-JSON data.
+        """
         try:
             lines = [l.strip() for l in output.strip().split('\n') if l.strip()]
-            last_content = None
+            last_content: Optional[str] = None
             for line in lines:
                 try:
                     data = json.loads(line)
@@ -387,72 +387,75 @@ class OpenCodeProvider(LLMProvider):
                         elif 'response' in data:
                             last_content = data['response']
                 except json.JSONDecodeError:
+                    # Plain-text line — carry it as a candidate only if it
+                    # looks like actual content, not a JSONL stream artifact
                     if line and not line.startswith('{'):
                         last_content = line
-            return last_content
+            return last_content  # None if nothing parseable was found
         except Exception as e:
             log.warning(f"[{self.name}] Failed to parse output: {e}")
-            return output[:2000] if output else None
+            return None  # Never return raw text — callers expect None on failure
 
 
 class LLMRouter:
-    """Routes LLM calls to configured providers with automatic fallback"""
-    
+    """Routes LLM calls to configured providers with automatic fallback."""
+
     def __init__(self):
         self.providers: Dict[str, LLMProvider] = {}
         self._init_providers()
-    
+
     def _init_providers(self):
-        """Initialize all configured providers"""
+        """Initialize all providers whose credentials are present in the environment."""
         if os.getenv("OPENAI_API_KEY"):
             self.providers["openai"] = OpenAIProvider()
             log.info("LLMRouter: OpenAI provider registered")
-        
+
         if os.getenv("DEEPSEEK_API_KEY"):
             self.providers["deepseek"] = DeepSeekProvider()
             log.info("LLMRouter: DeepSeek provider registered")
-        
+
         if os.getenv("OPENROUTER_API_KEY"):
             self.providers["openrouter"] = OpenRouterProvider()
             log.info("LLMRouter: OpenRouter provider registered")
-        
+
         self.providers["local"] = LocalProvider()
         log.info(f"LLMRouter: Local provider registered ({self.providers['local'].model})")
-        
+
         if shutil.which("opencode"):
             self.providers["opencode"] = OpenCodeProvider()
             log.info("LLMRouter: OpenCode CLI provider registered")
         else:
             log.info("LLMRouter: OpenCode CLI not found — provider disabled")
-    
+
     @property
     def default_name(self) -> str:
+        """Return the name of the default provider from env or fallback to openai."""
         return os.getenv("DEFAULT_LLM_PROVIDER", "openai")
-    
+
     def get(self, name: Optional[str] = None) -> LLMProvider:
-        """Get a specific provider or the default"""
+        """Return the named provider, or the default, or the first available."""
         if name and name in self.providers:
             return self.providers[name]
-        
+
         default = self.default_name
         if default in self.providers:
             return self.providers[default]
-        
+
         if self.providers:
             return list(self.providers.values())[0]
-        
+
         raise RuntimeError("No LLM providers configured. Set an API key or install a local model.")
-    
+
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json",
                    provider: Optional[str] = None) -> Optional[str]:
-        """Call LLM with automatic fallback"""
+        """Call the primary provider and automatically fall back to others on failure."""
         primary = self.get(provider)
         result = await primary.call(prompt, temperature, response_format)
-        
+
         if result:
             return result
-        
+
         log.warning(f"[LLMRouter] {primary.name} failed, trying fallback providers...")
         for name, prov in self.providers.items():
             if prov is primary:
@@ -461,8 +464,9 @@ class LLMRouter:
             result = await prov.call(prompt, temperature, response_format)
             if result:
                 return result
-        
+
         return None
+
 
 # Global router instance
 router = LLMRouter()
@@ -545,7 +549,7 @@ def contrast_ratio(fg: str, bg: str) -> float:
     """
     Calculate the WCAG contrast ratio between two hex colors.
     Returns a ratio between 1.0 (no contrast) and 21.0 (max contrast).
-    AAA threshold: 7.0, AA threshold: 4.5.
+    AAA threshold: 7.0  |  AA threshold: 4.5
     """
     try:
         l1 = relative_luminance(hex_to_rgb(fg))
@@ -553,16 +557,21 @@ def contrast_ratio(fg: str, bg: str) -> float:
         lighter = max(l1, l2)
         darker = min(l1, l2)
         return (lighter + 0.05) / (darker + 0.05)
-    except:
+    except Exception:
         return 0.0
 
 def validate_wcag_contrast(fg: str, bg: str, min_level: WCAGLevel = WCAGLevel.AA) -> ContrastResult:
-    """Validate contrast and return WCAG level"""
+    """
+    Validate contrast between two hex colors.
+    Returns a ContrastResult with full WCAG classification and a
+    passes_min flag specific to the requested min_level.
+    """
     ratio = contrast_ratio(fg, bg)
     result = ContrastResult(
         fg=fg, bg=bg, ratio=round(ratio, 2),
         wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False
     )
+    # __post_init__ sets wcag_level, passes_aa, passes_aaa based on ratio
     result.passes_min = (
         result.passes_aaa if min_level == WCAGLevel.AAA
         else result.passes_aa if min_level == WCAGLevel.AA
@@ -572,92 +581,92 @@ def validate_wcag_contrast(fg: str, bg: str, min_level: WCAGLevel = WCAGLevel.AA
 
 # ====================== SCHEMA VALIDATION ======================
 class SchemaValidator:
-    """Validate UI schemas against spec"""
-    
+    """Validates UI schemas and individual components against design system rules."""
+
     @staticmethod
     def validate_component(component: Dict[str, Any], design_system: Dict[str, Any]) -> Tuple[bool, List[str]]:
-        """Validate single component against design system"""
+        """
+        Validate a single component dict against the provided design system.
+        Checks: required fields, aria_role presence, color whitelist, allowed types.
+        """
         errors = []
-        
-        # Check required fields
+
         if not component.get("id"):
             errors.append("component.id is required")
         if not component.get("type"):
             errors.append("component.type is required")
         if not component.get("accessibility", {}).get("aria_role"):
             errors.append(f"Component {component.get('id')} missing aria_role")
-        
-        # Check color whitelist
+
         palette = design_system.get("tokens", {}).get("colors", {})
         whitelisted = list(palette.keys())
         if component.get("visual", {}).get("color_role"):
             color = component["visual"]["color_role"]
             if color not in whitelisted:
                 errors.append(f"Color '{color}' not in design system palette")
-        
-        # Check allowed component types
+
         allowed = design_system.get("constraints", {}).get("allowed_components", [])
         if allowed and component.get("type") not in allowed:
             errors.append(f"Component type '{component.get('type')}' not in allowed list")
-        
+
         return len(errors) == 0, errors
-    
+
     @staticmethod
     def validate_schema(schema: Dict[str, Any]) -> Tuple[bool, List[str]]:
-        """Validate full schema"""
+        """
+        Validate a full UISchema v1.0 dict.
+        Checks: version, metadata completeness, component validity,
+        and WCAG contrast for all non-background-only palette colors.
+        """
         errors = []
-        
-        # Version check
+
         if schema.get("version") != "1.0":
             errors.append("Schema version must be 1.0")
-        
-        # Metadata
+
         if not schema.get("metadata", {}).get("id"):
             errors.append("metadata.id is required")
         if not schema.get("metadata", {}).get("name"):
             errors.append("metadata.name is required")
-        
-        # Components
+
         design_system = schema.get("design_system", {})
         for component in schema.get("components", []):
             valid, comp_errors = SchemaValidator.validate_component(component, design_system)
             if not valid:
                 errors.extend(comp_errors)
-        
-        # Design system constraints
+
         constraints = design_system.get("constraints", {})
         min_wcag = constraints.get("min_wcag_level", "AA")
         tokens = design_system.get("tokens", {})
-        
-        # Validate color contrasts
+
         for color_id, color_data in tokens.get("colors", {}).items():
             if isinstance(color_data, dict):
                 if color_data.get("role") == "background_only":
-                    continue
+                    continue  # bg-only tokens are not used for text — skip WCAG check
                 hex_val = color_data.get("hex")
                 if hex_val:
-                    # Check against white and black
                     white_ratio = contrast_ratio(hex_val, "#FFFFFF")
                     black_ratio = contrast_ratio(hex_val, "#000000")
-                    
                     if min_wcag == "AAA":
                         if white_ratio < 7 and black_ratio < 7:
                             errors.append(f"Color {color_id} fails WCAG AAA contrast requirements")
-        
+
         return len(errors) == 0, errors
 
 # ====================== MULTI-AGENT CRITIQUE ======================
 class DesignAgent:
-    """Individual design agent (Designer, Engineer, or User Advocate)"""
-    
+    """A single-perspective design reviewer powered by an LLM provider."""
+
     def __init__(self, role: str, personality: str, provider: Optional[str] = None):
         self.role = role
         self.personality = personality
         self.provider = router.get(provider) if provider else router.get()
-    
+
     async def critique(self, schema: Dict[str, Any], requirements: List[str]) -> Dict[str, Any]:
-        """Generate critique from agent perspective"""
-        
+        """
+        Generate a structured JSON critique from this agent's perspective.
+        Returns score, strengths, weaknesses, specific_feedback, and recommendation.
+        Falls back to a neutral score dict on LLM failure.
+        """
         prompt = f"""You are a {self.role} reviewing a UI design specification.
 
 Your personality: {self.personality}
@@ -683,53 +692,53 @@ Be concise and specific. Your perspective as a {self.role} matters."""
         response = await self.provider.call(prompt, temperature=CONFIG.temp_critic)
         if not response:
             return {"score": 0.5, "error": "Failed to generate critique"}
-        
+
         try:
             return json.loads(response)
         except json.JSONDecodeError:
             log.warning(f"Failed to parse critique from {self.role}")
             return {"score": 0.5, "error": "Invalid JSON response"}
 
+
 class MultiAgentCritique:
-    """Orchestrate multiple agents for design review"""
-    
+    """Orchestrate three design agents (UX, Engineering, Accessibility) for consensus review."""
+
     def __init__(self):
         self.designer = DesignAgent(
             role="UX Designer",
-            personality="Focus on user experience, delight, and aesthetic coherence. Are users delighted? Is the interface intuitive?",
+            personality="Focus on user experience, delight, and aesthetic coherence.",
             provider=os.getenv("DESIGNER_PROVIDER")
         )
         self.engineer = DesignAgent(
             role="Frontend Engineer",
-            personality="Focus on implementation feasibility and performance. Can this be built? Will it scale? What's the dev cost?",
+            personality="Focus on implementation feasibility and performance.",
             provider=os.getenv("ENGINEER_PROVIDER")
         )
         self.advocate = DesignAgent(
             role="Accessibility Advocate",
-            personality="Focus on accessibility, inclusion, and WCAG compliance. Can everyone use this? Are we being inclusive?",
+            personality="Focus on accessibility, inclusion, and WCAG compliance.",
             provider=os.getenv("ADVOCATE_PROVIDER")
         )
-    
+
     async def review(self, schema: Dict[str, Any], requirements: List[str]) -> Dict[str, Any]:
-        """Get critiques from all three agents and synthesize"""
-        
+        """
+        Run all three agents in parallel and synthesize a consensus result.
+        Returns consensus_score, recommendation, red_flags count, and per-agent details.
+        """
         log.info("Starting multi-agent critique...")
-        
-        # Gather critiques in parallel
+
         critiques = await asyncio.gather(
             self.designer.critique(schema, requirements),
             self.engineer.critique(schema, requirements),
             self.advocate.critique(schema, requirements),
         )
-        
-        # Calculate weighted score
+
         scores = [c.get("score", 0.5) for c in critiques if "error" not in c]
         avg_score = sum(scores) / len(scores) if scores else 0.5
-        
-        # Check for red flags
+
         concerns = [c.get("concern_level") for c in critiques if c.get("concern_level") == "high"]
         recommendations = [c.get("recommendation") for c in critiques]
-        
+
         synthesis = {
             "agents": {
                 "designer": critiques[0],
@@ -741,36 +750,38 @@ class MultiAgentCritique:
             "recommendation": "proceed" if avg_score > 0.7 else "revise" if avg_score > 0.5 else "reject",
             "agent_agreement": len([r for r in recommendations if r == "keep"]) / 3 if recommendations else 0.5
         }
-        
+
         log.info(f"Critique complete. Consensus: {synthesis['recommendation']} (score: {synthesis['consensus_score']})")
-        
         return synthesis
+
 
 # ====================== SPEC GENERATOR ======================
 class SpecGenerator:
-    """Generate UI specs using multi-agent feedback"""
-    
+    """Generate UI specs through multi-agent critique-and-refine cycles."""
+
     def __init__(self, design_system: Dict[str, Any], provider: Optional[str] = None):
         self.design_system = design_system
         self.critique = MultiAgentCritique()
         self.provider = router.get(provider) if provider else router.get()
-    
+
     def _sanitize_input(self, text: str, max_len: int = 500) -> str:
-        """Strip prompt injection patterns and enforce length"""
+        """Strip known prompt-injection patterns and enforce max length."""
         dangerous = ["ignore previous", "system:", "assistant:", "```", "<|", "|>"]
         for pattern in dangerous:
             text = text.replace(pattern, "")
         return text[:max_len].strip()
-    
+
     async def generate_variant(self, requirements: List[str], iteration: int = 0) -> Dict[str, Any]:
-        """Generate a single UI spec variant"""
-        
+        """
+        Generate a single UISchema v1.0 variant from the given requirements.
+        Returns an empty dict on LLM or parse failure.
+        """
         spec_id = hashlib.sha256(
             f"{json.dumps(requirements)}{time.time()}".encode()
         ).hexdigest()[:20]
 
         clean_reqs = [self._sanitize_input(r) for r in requirements]
-        
+
         prompt = f"""Generate a production-ready UI specification for:
 Requirements:
 {chr(10).join(f'- {r}' for r in clean_reqs)}
@@ -780,64 +791,54 @@ Design System Constraints:
 - Minimum WCAG level: {self.design_system.get('constraints', {}).get('min_wcag_level', 'AA')}
 - Allowed components: {', '.join(self.design_system.get('constraints', {}).get('allowed_components', []))}
 
-Return a valid UISchema v1.0 JSON with:
-- Proper metadata
-- At least 3 components with full accessibility attributes
-- Responsive layout definitions for mobile/tablet/desktop
-- All colors from the design system
-- WCAG AAA-passing contrast ratios
-- Complete aria roles and labels
-
-Make it production-ready."""
+Return a valid UISchema v1.0 JSON with proper metadata, at least 3 components with full accessibility attributes, responsive layouts, and WCAG AAA-passing contrast ratios."""
 
         response = await mcp_llm_call(prompt, temperature=CONFIG.temp_generator, ctx=self.ctx)
         if not response:
             log.error("Failed to generate spec variant")
             return {}
-        
+
         try:
             spec = json.loads(response)
             spec["metadata"]["id"] = spec_id
             spec["metadata"]["created_at"] = datetime.now(timezone.utc).isoformat()
             return spec
-        except json.JSONDecodeError:
-            log.error("Invalid spec JSON generated")
+        except (json.JSONDecodeError, KeyError) as e:
+            log.error(f"Invalid spec JSON generated: {e}")
             return {}
-    
+
     async def generate_with_critique(self, requirements: List[str], iterations: int = 2) -> Dict[str, Any]:
-        """Generate variants, critique, and synthesize best result"""
-        
+        """
+        Generate multiple spec variants, validate each, run multi-agent critique,
+        and return the highest-scoring variant along with alternatives.
+        """
         variants = []
-        
-        # Generate multiple variants
-        for i in range(min(CONFIG.max_variants, 2)):  # Start with 2 for speed
+
+        for i in range(min(CONFIG.max_variants, 2)):
             log.info(f"Generating variant {i + 1}...")
             variant = await self.generate_variant(requirements, i)
-            
+
             if not variant:
                 continue
-            
-            # Validate schema
+
             valid, errors = SchemaValidator.validate_schema(variant)
             if not valid:
                 log.warning(f"Variant {i + 1} validation failed: {errors}")
                 continue
-            
-            # Get multi-agent critique
+
             critique_result = await self.critique.review(variant, requirements)
             variant["_critique"] = critique_result
             variant["_score"] = critique_result.get("consensus_score", 0.5)
-            
+
             variants.append(variant)
-        
+
         if not variants:
             log.error("No valid variants generated")
             return {}
-        
-        # Sort by score and return best
+
         best = max(variants, key=lambda v: v.get("_score", 0))
         log.info(f"Selected best variant with score {best['_score']}")
-        
+
         return {
             "selected": best,
             "alternatives": sorted(variants, key=lambda v: v.get("_score", 0), reverse=True)[1:],
@@ -848,15 +849,17 @@ Make it production-ready."""
             }
         }
 
+
 # ====================== MEMORY / FEEDBACK LOOP ======================
 class MemoryStore:
-    """SQLite-backed memory store for specs — queryable, indexed, scalable"""
-    
+    """SQLite-backed store for high-scoring specs — indexed by page_type and score."""
+
     def __init__(self, db_path: Path = CONFIG.memory_db):
         self.db_path = db_path
         self._init_db()
-    
+
     def _init_db(self):
+        """Create the specs table and indexes if they don't already exist."""
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS specs (
@@ -870,54 +873,57 @@ class MemoryStore:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_page_type ON specs(page_type)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_score ON specs(score DESC)")
             conn.commit()
-    
+
     def store(self, page_type: str, spec: Dict[str, Any], score: float):
+        """Persist a spec if its score meets the minimum threshold."""
         if score < CONFIG.min_score_to_store:
             return
-        
+
         spec_id = spec.get("metadata", {}).get("id", hashlib.sha256(
             f"{page_type}{time.time()}".encode()
         ).hexdigest()[:20])
         timestamp = datetime.now(timezone.utc).isoformat()
-        
+
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO specs (id, page_type, score, timestamp, spec_json) VALUES (?, ?, ?, ?, ?)",
                 (spec_id, page_type, score, timestamp, json.dumps(spec))
             )
             conn.commit()
-        
+
         log.info(f"Stored spec {spec_id[:8]} for {page_type} (score: {score:.2f})")
-    
+
     def get(self, page_type: str, limit: int = 3) -> List[Dict[str, Any]]:
+        """Retrieve the top-scoring stored specs for a given page_type."""
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT spec_json, score FROM specs WHERE page_type = ? ORDER BY score DESC LIMIT ?",
                 (page_type, limit)
             ).fetchall()
-        
+
         return [
             {"score": row["score"], "spec": json.loads(row["spec_json"])}
             for row in rows
         ]
-    
+
     def stats(self) -> Dict[str, Any]:
-        stats = {
+        """Return aggregate statistics across all stored specs."""
+        stats: Dict[str, Any] = {
             "total_stored_specs": 0,
             "by_page_type": {},
             "memory_usage_mb": 0,
             "oldest_spec": None,
             "highest_score": 0
         }
-        
+
         with sqlite3.connect(str(self.db_path)) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT page_type, COUNT(*) as cnt, MAX(score) as max_score, MIN(timestamp) as oldest "
                 "FROM specs GROUP BY page_type"
             ).fetchall()
-            
+
             for row in rows:
                 stats["by_page_type"][row["page_type"]] = {
                     "count": row["cnt"],
@@ -926,22 +932,23 @@ class MemoryStore:
                 }
                 stats["total_stored_specs"] += row["cnt"]
                 stats["highest_score"] = max(stats["highest_score"], row["max_score"])
-        
+
         if self.db_path.exists():
             stats["memory_usage_mb"] = self.db_path.stat().st_size / (1024 * 1024)
-        
+
         return stats
 
 
 memory_store = MemoryStore()
 
 def store_successful_spec(page_type: str, spec: Dict[str, Any], score: float):
-    """Store high-scoring spec (backward-compat wrapper)"""
+    """Store high-scoring spec (backward-compat wrapper)."""
     memory_store.store(page_type, spec, score)
 
 def get_similar_specs(page_type: str, limit: int = 3) -> List[Dict[str, Any]]:
-    """Retrieve similar high-scoring specs (backward-compat wrapper)"""
+    """Retrieve similar high-scoring specs (backward-compat wrapper)."""
     return memory_store.get(page_type, limit)
+
 
 # ====================== MCP TOOL IMPLEMENTATION ======================
 async def generate_ui_specification(
@@ -951,63 +958,41 @@ async def generate_ui_specification(
     target_audience: str = "general users"
 ) -> Dict[str, Any]:
     """
-    Main MCP tool: Generate a complete, production-ready UI specification
-    
-    Args:
-        page_type: Type of page (dashboard, landing, form, etc.)
-        requirements: List of requirements
-        design_system: Complete design system with tokens and constraints
-        target_audience: Target user demographic
-    
-    Returns:
-        Complete UI specification with alternatives and metadata
+    Main V4 pipeline: validate design system, generate spec variants,
+    run multi-agent critique, store the best result, return cleaned output.
     """
-    
     log.info(f"Generating UI spec for {page_type}")
-    log.info(f"Requirements: {requirements}")
-    
-    # Validate design system
+
     validator = SchemaValidator()
     pre_check = {"version": "1.0", "metadata": {"id": "pre", "name": "pre"},
                  "design_system": design_system, "layouts": [], "components": []}
     valid, warnings = validator.validate_schema(pre_check)
     if not valid:
         log.warning(f"Design system pre-validation warnings: {warnings}")
-    
-    # Generate specs with multi-agent critique
+
     generator = SpecGenerator(design_system)
     result = await generator.generate_with_critique(requirements, iterations=1)
-    
+
     if not result:
         return {"error": "Failed to generate specification"}
-    
-    # Store successful result
+
     selected = result.get("selected", {})
     store_successful_spec(page_type, selected, selected.get("_score", 0))
-    
-    # Clean output
-    output = {
+
+    return {
         "status": "success",
-        "selected_specification": {
-            k: v for k, v in selected.items() 
-            if not k.startswith("_")
-        },
-        "alternatives": [
-            {k: v for k, v in alt.items() if not k.startswith("_")}
-            for alt in result.get("alternatives", [])
-        ],
+        "selected_specification": {k: v for k, v in selected.items() if not k.startswith("_")},
+        "alternatives": [{k: v for k, v in alt.items() if not k.startswith("_")} for alt in result.get("alternatives", [])],
         "metadata": result.get("generation_metadata", {}),
         "critique": selected.get("_critique", {})
     }
-    
-    log.info("UI specification generation complete")
-    return output
 
 
 # ====================== V5: AGENTIC CODING ORCHESTRATOR ======================
 
 @dataclass
 class ArchitectureDecision:
+    """A single Architecture Decision Record (ADR) produced by the VibeArchitect."""
     id: str
     title: str
     context: str
@@ -1019,6 +1004,7 @@ class ArchitectureDecision:
 
 @dataclass
 class VibePlan:
+    """Full architecture plan output from VibeArchitect.plan()."""
     intent: str
     decisions: List[ArchitectureDecision] = field(default_factory=list)
     component_tree: List[Dict[str, Any]] = field(default_factory=list)
@@ -1030,6 +1016,7 @@ class VibePlan:
 
 @dataclass
 class CodeFile:
+    """A single generated source or test file produced by VibeImplementer."""
     path: str
     content: str
     language: str = ""
@@ -1038,6 +1025,7 @@ class CodeFile:
 
 @dataclass
 class IterationResult:
+    """Snapshot of one critique-repair iteration from CritiqueLoop."""
     iteration: int
     score_before: float
     score_after: float
@@ -1048,6 +1036,11 @@ class IterationResult:
 
 
 class CritiqueLoop:
+    """
+    Continuous improvement loop that critiques an output, repairs weaknesses,
+    and re-evaluates — up to max_iterations times or until quality_threshold is met.
+    """
+
     def __init__(self, max_iterations: int = 3, quality_threshold: float = 0.80,
                  generator_provider: Optional[str] = None, critic_provider: Optional[str] = None):
         self.max_iterations = max_iterations
@@ -1058,6 +1051,11 @@ class CritiqueLoop:
 
     async def improve(self, initial_output: Dict[str, Any],
                       requirements: List[str], ctx: Any = None) -> Tuple[Dict[str, Any], List[IterationResult]]:
+        """
+        Iteratively critique and repair initial_output against requirements.
+        Returns (best_output, iteration_history).
+        Stops early if consensus_score >= quality_threshold.
+        """
         history: List[IterationResult] = []
         current = initial_output
         for i in range(self.max_iterations):
@@ -1094,6 +1092,7 @@ class CritiqueLoop:
         return current, history
 
     def _build_repair_prompt(self, current: Dict[str, Any], review: Dict[str, Any], requirements: List[str]) -> str:
+        """Build a targeted repair prompt from agent weaknesses and specific feedback."""
         weaknesses = []
         for agent_name, agent_review in review.get("agents", {}).items():
             for w in agent_review.get("weaknesses", []):
@@ -1119,6 +1118,10 @@ class VibeArchitect:
 
     async def plan(self, intent: str, constraints: List[str] = None,
                    context: Dict[str, Any] = None, target_stack: str = "react") -> VibePlan:
+        """
+        Generate a full architecture plan for the given intent.
+        Returns a VibePlan with decisions, component tree, data flow, and risk assessment.
+        """
         constraints = constraints or []
         context = context or {}
         prompt = f"""You are a senior software architect. Produce a detailed architecture plan.
@@ -1153,6 +1156,10 @@ class VibeImplementer:
 
     async def implement(self, plan: VibePlan, intent: str, constraints: List[str] = None,
                         target_language: str = "typescript") -> List[CodeFile]:
+        """
+        Generate a list of CodeFile objects from the given VibePlan.
+        Enforces design token usage and accessibility requirements in the prompt.
+        """
         constraints = constraints or []
         ds_tokens = json.dumps(self.design_system.get("tokens", {}), indent=2)[:2000]
         prompt = f"""Generate production-ready code from this plan. Enforce constraints. Include full accessibility.
@@ -1175,19 +1182,27 @@ Return a JSON array of files: [{{"path":"...","content":"...","language":"tsx","
             if isinstance(data, list):
                 return [CodeFile(**f) for f in data]
             return []
-        except Exception:
+        except Exception as e:
+            log.warning(f"[VibeImplementer] Failed to parse code files: {e}")
             return []
 
 
 class VibeVerifier:
+    """Static verification utilities for specs and generated code."""
+
     @staticmethod
     def verify_spec(spec: Dict[str, Any]) -> Dict[str, Any]:
+        """Run SchemaValidator against spec and return a structured result."""
         validator = SchemaValidator()
         valid, errors = validator.validate_schema(spec)
         return {"valid": valid, "errors": errors, "error_count": len(errors)}
 
     @staticmethod
     def verify_code_quality(files: List[CodeFile]) -> Dict[str, Any]:
+        """
+        Check generated code files for common quality issues:
+        missing accessibility notes, missing ARIA attributes in JSX, TODO/FIXME markers.
+        """
         issues = []
         for f in files:
             if not f.accessibility_notes:
@@ -1200,16 +1215,31 @@ class VibeVerifier:
 
 
 class VibeCodeReviewer:
+    """
+    Three-agent parallel code reviewer.
+    Perspectives: UX/design quality, code engineering quality, accessibility compliance.
+    """
+
     def __init__(self):
-        self.designer = DesignAgent(role="UX Code Reviewer", personality="Review for visual quality, design tokens, hierarchy",
-                                     provider=os.getenv("DESIGNER_PROVIDER"))
-        self.engineer = DesignAgent(role="Code Quality Reviewer", personality="Review for bugs, error handling, architecture",
-                                     provider=os.getenv("ENGINEER_PROVIDER"))
-        self.advocate = DesignAgent(role="Accessibility Code Reviewer", personality="Review for ARIA, keyboard nav, WCAG",
-                                     provider=os.getenv("ADVOCATE_PROVIDER"))
+        self.designer = DesignAgent(role="UX Code Reviewer",
+                                    personality="Review for visual quality, design tokens, hierarchy",
+                                    provider=os.getenv("DESIGNER_PROVIDER"))
+        self.engineer = DesignAgent(role="Code Quality Reviewer",
+                                    personality="Review for bugs, error handling, architecture",
+                                    provider=os.getenv("ENGINEER_PROVIDER"))
+        self.advocate = DesignAgent(role="Accessibility Code Reviewer",
+                                    personality="Review for ARIA, keyboard nav, WCAG",
+                                    provider=os.getenv("ADVOCATE_PROVIDER"))
 
     async def review_code(self, files: List[CodeFile], requirements: List[str]) -> Dict[str, Any]:
-        code_summary = [{"path": f.path, "language": f.language, "purpose": f.purpose, "content_preview": f.content[:500]} for f in files]
+        """
+        Run three agents in parallel on the provided code files.
+        Returns consensus_score, recommendation, and per-agent line-level issues.
+        """
+        code_summary = [{
+            "path": f.path, "language": f.language,
+            "purpose": f.purpose, "content_preview": f.content[:500]
+        } for f in files]
         schema_for_review = {"files": code_summary, "requirements": requirements}
         critiques = await asyncio.gather(
             self.designer.critique(schema_for_review, requirements),
@@ -1217,14 +1247,17 @@ class VibeCodeReviewer:
             self.advocate.critique(schema_for_review, requirements))
         scores = [c.get("score", 0.5) for c in critiques if "error" not in c]
         avg_score = sum(scores) / len(scores) if scores else 0.5
-        return {"consensus_score": round(avg_score, 2),
-                "recommendation": "approve" if avg_score > 0.8 else "revise" if avg_score > 0.6 else "reject",
-                "agent_reviews": {"designer": critiques[0], "engineer": critiques[1], "advocate": critiques[2]},
-                "line_level_issues": [{"agent": c.get("role", "?"), "issue": w, "severity": "high" if "crash" in str(w).lower() else "medium"}
-                                      for c in critiques for w in c.get("weaknesses", [])],
-                "files_reviewed": len(files),
-                "critical_issues": 0}
-
+        return {
+            "consensus_score": round(avg_score, 2),
+            "recommendation": "approve" if avg_score > 0.8 else "revise" if avg_score > 0.6 else "reject",
+            "agent_reviews": {"designer": critiques[0], "engineer": critiques[1], "advocate": critiques[2]},
+            "line_level_issues": [{
+                "agent": c.get("role", "?"), "issue": w,
+                "severity": "high" if "crash" in str(w).lower() else "medium"
+            } for c in critiques for w in c.get("weaknesses", [])],
+            "files_reviewed": len(files),
+            "critical_issues": 0
+        }
 
 
 # ====================== MCP SERVER INIT ======================
@@ -1265,30 +1298,65 @@ DEFAULT_DESIGN_SYSTEM = {
     }
 }
 
+
 class CacheManager:
+    """Filesystem cache with SHA-256 integrity checking and TTL expiry."""
+
     def __init__(self, cache_dir: Path = CONFIG.cache_dir, ttl: int = CONFIG.cache_ttl):
-        self.cache_dir = cache_dir; self.ttl = ttl
+        self.cache_dir = cache_dir
+        self.ttl = ttl
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-    def get_cache_key(self, page_type, requirements, design_system_id):
-        return hashlib.sha256(json.dumps({"page_type":page_type,"requirements":sorted(requirements),"design_system":design_system_id[:20]},sort_keys=True).encode()).hexdigest()[:32]
-    def get(self, cache_key):
+
+    def get_cache_key(self, page_type: str, requirements: List[str], design_system_id: str) -> str:
+        """Produce a deterministic 32-char hex key from the request inputs."""
+        return hashlib.sha256(
+            json.dumps({"page_type": page_type, "requirements": sorted(requirements),
+                        "design_system": design_system_id[:20]}, sort_keys=True).encode()
+        ).hexdigest()[:32]
+
+    def get(self, cache_key: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve a cached result by key.
+        Returns None if the entry is missing, expired, or fails integrity check.
+        Logs a warning on integrity failure so silent corruption is always visible.
+        """
         f = self.cache_dir / f"{cache_key}.json"
-        if not f.exists(): return None
+        if not f.exists():
+            return None
         try:
-            raw = json.load(open(f))
-            if hashlib.sha256(json.dumps(raw["data"]).encode()).hexdigest() != raw["checksum"]: f.unlink(); return None
+            with open(f) as fh:
+                raw = json.load(fh)
+            payload = json.dumps(raw["data"])
+            if hashlib.sha256(payload.encode()).hexdigest() != raw["checksum"]:
+                log.warning(f"[CacheManager] Integrity check failed for {cache_key} — evicting")
+                f.unlink()
+                return None
             data = raw["data"]
-            if time.time() - data.get("timestamp",0) > self.ttl: f.unlink(); return None
+            if time.time() - data.get("timestamp", 0) > self.ttl:
+                f.unlink()
+                return None
             return data.get("result")
-        except: return None
-    def set(self, cache_key, result):
+        except Exception as e:
+            log.warning(f"[CacheManager] Failed to read cache {cache_key}: {e}")
+            return None
+
+    def set(self, cache_key: str, result: Dict[str, Any]) -> bool:
+        """
+        Write a result to cache with a SHA-256 integrity checksum.
+        Returns True on success, False on any write error.
+        """
         f = self.cache_dir / f"{cache_key}.json"
         try:
             cache_data = {"timestamp": time.time(), "result": result}
             payload = json.dumps(cache_data)
-            json.dump({"checksum": hashlib.sha256(payload.encode()).hexdigest(), "data": cache_data}, open(f,"w"))
+            with open(f, "w") as fh:
+                json.dump({"checksum": hashlib.sha256(payload.encode()).hexdigest(),
+                           "data": cache_data}, fh)
             return True
-        except: return False
+        except Exception as e:
+            log.warning(f"[CacheManager] Failed to write cache {cache_key}: {e}")
+            return False
+
 
 cache_manager = CacheManager()
 
@@ -1296,23 +1364,39 @@ cache_manager = CacheManager()
 
 @mcp_server.resource("design://systems/default")
 def resource_default_design_system() -> str:
+    """Return the full default design system as JSON."""
     return json.dumps(DEFAULT_DESIGN_SYSTEM, indent=2)
 
 @mcp_server.resource("design://tokens/{token_type}")
 def resource_design_tokens(token_type: str) -> str:
+    """Return a specific token category (colors, typography, spacing, shadows, border_radius)."""
     tokens = DEFAULT_DESIGN_SYSTEM.get("tokens", {})
-    return json.dumps(tokens.get(token_type, {"error": f"Unknown: {token_type}", "available": list(tokens.keys())}), indent=2)
+    return json.dumps(
+        tokens.get(token_type, {"error": f"Unknown: {token_type}", "available": list(tokens.keys())}),
+        indent=2
+    )
 
 @mcp_server.resource("memory://stats")
 def resource_memory_stats() -> str:
+    """Return aggregate memory store statistics."""
     return json.dumps(memory_store.stats(), indent=2)
 
 @mcp_server.resource("aether://version")
 def resource_version() -> str:
-    return json.dumps({"version":"5.0.0","codename":"Karpathy","tools":13,"resources":5,"prompts":6,"providers":["openai","deepseek","openrouter","local","opencode"],"pipeline":["architect->code->review->verify->iterate->test->deploy"]}, indent=2)
+    """Return server version metadata."""
+    return json.dumps({
+        "version": "5.0.0",
+        "codename": "Karpathy",
+        "tools": 11,
+        "resources": 5,
+        "prompts": 6,
+        "providers": ["openai", "deepseek", "openrouter", "local", "opencode"],
+        "pipeline": ["architect->code->review->verify->iterate->test->deploy"]
+    }, indent=2)
 
 @mcp_server.resource("spec://examples/{page_type}")
 def resource_spec_example(page_type: str) -> str:
+    """Return the highest-scoring stored spec for the requested page_type."""
     specs = get_similar_specs(page_type, limit=1)
     return json.dumps(specs[0]["spec"] if specs else {"error": f"No specs for {page_type}"}, indent=2)
 
@@ -1356,23 +1440,29 @@ async def generate_ui_spec_tool(ctx: Context, page_type: str, requirements: List
             if cr:
                 await ctx.info(f"[cache] Hit for {page_type}")
                 return {**cr, "_cache_hit": True}
-        else: ck = None
+        else:
+            ck = None
         await ctx.info(f"[generate] {page_type}")
         await ctx.report_progress(10, 100, "Validating...")
         gen = SpecGenerator(ds)
         await ctx.report_progress(15, 100, "Generating variants...")
         result = await gen.generate_with_critique([*requirements, f"Target: {target_audience}", "WCAG AAA mandatory"], iterations=1)
-        if not result: return {"error": "Failed", "status": "error"}
+        if not result:
+            return {"error": "Failed", "status": "error"}
         await ctx.report_progress(85, 100, "Storing...")
         sel = result.get("selected", {})
         score = sel.get("_score", 0)
-        if score > CONFIG.min_score_to_store: store_successful_spec(page_type, sel, score)
-        output = {"status": "success", "page_type": page_type,
+        if score > CONFIG.min_score_to_store:
+            store_successful_spec(page_type, sel, score)
+        output = {
+            "status": "success", "page_type": page_type,
             "selected_specification": {k: v for k, v in sel.items() if not k.startswith("_")},
             "alternatives": [{k: v for k, v in alt.items() if not k.startswith("_")} for alt in result.get("alternatives", [])],
             "metadata": {**result.get("generation_metadata", {}), "design_system_id": ds_id, "target_audience": target_audience},
-            "critique": sel.get("_critique", {})}
-        if use_cache and ck: cache_manager.set(ck, output)
+            "critique": sel.get("_critique", {})
+        }
+        if use_cache and ck:
+            cache_manager.set(ck, output)
         await ctx.report_progress(100, 100, "Complete!")
         await ctx.info(f"[generate] Score: {score}")
         return output
@@ -1380,6 +1470,7 @@ async def generate_ui_spec_tool(ctx: Context, page_type: str, requirements: List
         log.error(f"Error: {e}", exc_info=True)
         await ctx.info(f"[generate] Error: {e}")
         return {"status": "error", "error": str(e)}
+
 
 @mcp_server.tool(name="validate_ui_spec", description="Validate a UI specification against design system and WCAG standards")
 async def validate_ui_spec_tool(ctx: Context, specification: Dict[str, Any]) -> Dict[str, Any]:
@@ -1390,17 +1481,31 @@ async def validate_ui_spec_tool(ctx: Context, specification: Dict[str, Any]) -> 
         ds = specification.get("design_system", {})
         bg = ds.get("tokens", {}).get("colors", {}).get("background", {}).get("hex", "#FFF")
         for c in specification.get("components", []):
-            cr = c.get("visual", {}).get("color_role")
-            if cr:
-                cd = ds.get("tokens", {}).get("colors", {}).get(cr, {})
+            cr_key = c.get("visual", {}).get("color_role")
+            if cr_key:
+                cd = ds.get("tokens", {}).get("colors", {}).get(cr_key, {})
                 ratio = contrast_ratio(cd.get("hex", "#000"), bg)
-                if ratio < 4.5: warnings.append(f"Component '{c.get('label')}' low contrast ({ratio:.1f}:1)")
+                if ratio < 4.5:
+                    warnings.append(f"Component '{c.get('label')}' low contrast ({ratio:.1f}:1)")
     return {"valid": valid, "error_count": len(errors), "errors": errors[:10], "warnings": warnings}
+
 
 @mcp_server.tool(name="list_design_systems", description="List available design systems and their characteristics")
 async def list_design_systems_tool(ctx: Context) -> Dict[str, Any]:
-    return {"available_systems": [{"id":"default_grok","name":"Grok Neon Dark","colors":list(DEFAULT_DESIGN_SYSTEM["tokens"]["colors"].keys()),"component_count":len(DEFAULT_DESIGN_SYSTEM["constraints"]["allowed_components"]),"wcag_level":"AAA"}],
-            "custom_systems": [{"id":f.stem,"path":str(f)} for f in CONFIG.memory_dir.glob("*_system.json")] if CONFIG.memory_dir.exists() else []}
+    return {
+        "available_systems": [{
+            "id": "default_grok",
+            "name": "Grok Neon Dark",
+            "colors": list(DEFAULT_DESIGN_SYSTEM["tokens"]["colors"].keys()),
+            "component_count": len(DEFAULT_DESIGN_SYSTEM["constraints"]["allowed_components"]),
+            "wcag_level": "AAA"
+        }],
+        "custom_systems": [
+            {"id": f.stem, "path": str(f)}
+            for f in CONFIG.memory_dir.glob("*_system.json")
+        ] if CONFIG.memory_dir.exists() else []
+    }
+
 
 @mcp_server.tool(name="memory_stats", description="Get statistics on learned/stored UI specifications")
 async def memory_stats_tool(ctx: Context) -> Dict[str, Any]:
@@ -1408,6 +1513,7 @@ async def memory_stats_tool(ctx: Context) -> Dict[str, Any]:
     stats = memory_store.stats()
     await ctx.info(f"[memory] {stats['total_stored_specs']} specs (best: {stats['highest_score']:.2f})")
     return stats
+
 
 # ====================== V5 CORE MCP TOOLS ======================
 
@@ -1421,10 +1527,21 @@ async def vibe_architect_tool(ctx: Context, intent: str, constraints: Optional[L
     plan = await architect.plan(intent, constraints, context, target_stack)
     await ctx.report_progress(100, 100, "Complete!")
     await ctx.info(f"[architect] {len(plan.decisions)} decisions, complexity: {plan.estimated_complexity}")
-    return {"status": "success", "plan": {"intent": plan.intent, "decisions": [asdict(d) for d in plan.decisions],
-            "component_tree": plan.component_tree, "data_flow": plan.data_flow, "file_structure": plan.file_structure,
-            "estimated_complexity": plan.estimated_complexity, "risks": plan.risks, "recommended_stack": plan.recommended_stack},
-            "decision_count": len(plan.decisions), "risk_count": len(plan.risks)}
+    return {
+        "status": "success",
+        "plan": {
+            "intent": plan.intent,
+            "decisions": [asdict(d) for d in plan.decisions],
+            "component_tree": plan.component_tree,
+            "data_flow": plan.data_flow,
+            "file_structure": plan.file_structure,
+            "estimated_complexity": plan.estimated_complexity,
+            "risks": plan.risks,
+            "recommended_stack": plan.recommended_stack
+        },
+        "decision_count": len(plan.decisions),
+        "risk_count": len(plan.risks)
+    }
 
 
 @mcp_server.tool(name="vibe_code", description="Generate production code from an architecture plan. Enforces accessibility (ARIA, WCAG) and design tokens.")
@@ -1433,10 +1550,15 @@ async def vibe_code_tool(ctx: Context, intent: str, plan: Dict[str, Any], constr
     await ctx.info(f"[code] {intent[:80]}...")
     await ctx.report_progress(0, 100, "Parsing plan...")
     decisions = [ArchitectureDecision(**d) for d in plan.get("decisions", [])]
-    vibe_plan = VibePlan(intent=intent, decisions=decisions, component_tree=plan.get("component_tree", []),
-        data_flow=plan.get("data_flow", {}), file_structure=plan.get("file_structure", []),
-        estimated_complexity=plan.get("estimated_complexity", "medium"), risks=plan.get("risks", []),
-        recommended_stack=plan.get("recommended_stack", {}))
+    vibe_plan = VibePlan(
+        intent=intent, decisions=decisions,
+        component_tree=plan.get("component_tree", []),
+        data_flow=plan.get("data_flow", {}),
+        file_structure=plan.get("file_structure", []),
+        estimated_complexity=plan.get("estimated_complexity", "medium"),
+        risks=plan.get("risks", []),
+        recommended_stack=plan.get("recommended_stack", {})
+    )
     await ctx.report_progress(20, 100, "Generating code...")
     implementer = VibeImplementer(design_system=design_system, ctx=ctx)
     files = await implementer.implement(vibe_plan, intent, constraints, target_language)
@@ -1444,8 +1566,13 @@ async def vibe_code_tool(ctx: Context, intent: str, plan: Dict[str, Any], constr
     quality = VibeVerifier.verify_code_quality(files)
     await ctx.report_progress(100, 100, "Complete!")
     await ctx.info(f"[code] {len(files)} files, {sum(len(f.content.split(chr(10))) for f in files)} lines")
-    return {"status": "success", "files": [asdict(f) for f in files], "file_count": len(files), "quality": quality,
-            "total_lines": sum(len(f.content.split("\n")) for f in files)}
+    return {
+        "status": "success",
+        "files": [asdict(f) for f in files],
+        "file_count": len(files),
+        "quality": quality,
+        "total_lines": sum(len(f.content.split("\n")) for f in files)
+    }
 
 
 @mcp_server.tool(name="vibe_review", description="Multi-agent code review from three perspectives: UX/design, code quality, and accessibility.")
@@ -1473,11 +1600,14 @@ async def vibe_verify_tool(ctx: Context, specification: Optional[Dict[str, Any]]
         await ctx.report_progress(60, 100, "Checking code quality...")
         results["code_quality"] = VibeVerifier.verify_code_quality([CodeFile(**f) for f in files])
     await ctx.report_progress(100, 100, "Complete!")
-    return {"status": "success", "results": results,
-            "all_passed": all(r.get("valid", r.get("passed", True)) for r in results.values())}
+    return {
+        "status": "success",
+        "results": results,
+        "all_passed": all(r.get("valid", r.get("passed", True)) for r in results.values())
+    }
 
 
-@mcp_server.tool(name="vibe_iterate", description="Run the continuous improvement loop: critique -> repair -> verify -> repeat. Software 2.0 gradient descent on code quality.")
+@mcp_server.tool(name="vibe_iterate", description="Run the continuous improvement loop: critique -> repair -> verify -> repeat.")
 async def vibe_iterate_tool(ctx: Context, specification: Dict[str, Any], requirements: List[str],
                              max_iterations: int = 3, quality_threshold: float = 0.80) -> Dict[str, Any]:
     await ctx.info(f"[iterate] max {max_iterations} iterations, threshold {quality_threshold}")
@@ -1486,16 +1616,23 @@ async def vibe_iterate_tool(ctx: Context, specification: Dict[str, Any], require
     final_score = history[-1].score_after if history else 0
     await ctx.report_progress(100, 100, "Complete!")
     await ctx.info(f"[iterate] {'Converged' if history and history[-1].passed else 'Max iterations'}: {len(history)} iters, score {final_score:.2f}")
-    return {"status": "success", "final_output": best_output, "iterations": [asdict(h) for h in history],
-            "iterations_used": len(history), "final_score": final_score,
-            "converged": history[-1].passed if history else False}
+    return {
+        "status": "success",
+        "final_output": best_output,
+        "iterations": [asdict(h) for h in history],
+        "iterations_used": len(history),
+        "final_score": final_score,
+        "converged": history[-1].passed if history else False
+    }
 
 
 # ====================== V5 EXTENDED TOOLS ======================
 
 class VibeTester:
-    """Generate test files from code. Applies TDD patterns:
-    unit tests, accessibility tests, integration tests, edge cases."""
+    """
+    Generates comprehensive test files from source code using an LLM.
+    Covers unit, accessibility, integration, edge case, and responsive tests.
+    """
 
     def __init__(self, provider: Optional[str] = None, ctx: Any = None):
         self.provider = router.get(provider)
@@ -1504,59 +1641,42 @@ class VibeTester:
     async def generate_tests(self, files: List[CodeFile],
                               requirements: List[str] = None,
                               test_framework: str = "vitest") -> List[CodeFile]:
+        """
+        Generate test files for the provided source CodeFile list.
+        Returns an empty list on LLM failure or parse error.
+        """
         requirements = requirements or []
+        files_summary = [
+            {"path": f.path, "language": f.language, "purpose": f.purpose, "content": f.content[:800]}
+            for f in files
+        ]
+        prompt = f"""You are a senior QA engineer. Generate comprehensive tests.
 
-        files_summary = []
-        for f in files:
-            files_summary.append({
-                "path": f.path,
-                "language": f.language,
-                "purpose": f.purpose,
-                "content": f.content[:800]
-            })
-
-        prompt = f"""You are a senior QA engineer. Generate comprehensive tests for these source files.
-
-SOURCE FILES:
-{json.dumps(files_summary, indent=2)[:3000]}
-
-REQUIREMENTS:
-{chr(10).join(f'- {r}' for r in requirements)}
-
+SOURCE FILES:\n{json.dumps(files_summary, indent=2)[:3000]}
+REQUIREMENTS:\n{chr(10).join(f'- {r}' for r in requirements)}
 TEST FRAMEWORK: {test_framework}
 
-Generate test files as a JSON array. Each test file must include:
-- path: test file path (e.g., __tests__/Component.test.tsx)
-- content: complete test code
-- language: typescript|tsx
-- purpose: what this test file covers
-- accessibility_notes: accessibility test coverage
-
-Cover:
-1. Unit tests: render tests, state changes, event handlers
-2. Accessibility tests: ARIA roles present, keyboard navigation, focus management
-3. Integration tests: component composition, data flow
-4. Edge cases: empty states, error states, loading states
-5. Responsive tests: mobile/tablet/desktop breakpoints
-
-Return ONLY the JSON array of test files."""
+Return a JSON array of test files with path, content, language, purpose, accessibility_notes.
+Cover: unit, accessibility, integration, edge cases, responsive breakpoints."""
 
         response = await mcp_llm_call(prompt, temperature=CONFIG.temp_generator, ctx=self.ctx)
         if not response:
             return []
-
         try:
             data = json.loads(response)
             if isinstance(data, list):
                 return [CodeFile(**f) for f in data]
             return []
         except Exception as e:
-            log.error(f"Failed to parse test files: {e}")
+            log.error(f"[VibeTester] Failed to parse test files: {e}")
             return []
 
 
 class VibeDeployer:
-    """Generate deployment configurations for multiple platforms."""
+    """
+    Generates deployment configurations for multiple platforms:
+    Vercel, Docker, static hosting, Node.js server.
+    """
 
     def __init__(self, provider: Optional[str] = None, ctx: Any = None):
         self.provider = router.get(provider)
@@ -1565,11 +1685,13 @@ class VibeDeployer:
     async def generate_deploy(self, project_name: str,
                                files: List[CodeFile],
                                targets: List[str] = None) -> Dict[str, Any]:
+        """
+        Generate platform-specific deployment configs for the given project.
+        Returns a dict with per-target configs, env vars, health check, and monitoring recommendations.
+        """
         targets = targets or ["vercel"]
-
         files_summary = [{"path": f.path, "purpose": f.purpose} for f in files]
-
-        prompt = f"""You are a DevOps engineer. Generate deployment configurations for this project.
+        prompt = f"""You are a DevOps engineer. Generate deployment configurations.
 
 PROJECT: {project_name}
 FILES: {json.dumps(files_summary, indent=2)[:2000]}
@@ -1593,19 +1715,16 @@ Include only the requested targets."""
         response = await mcp_llm_call(prompt, temperature=0.3, ctx=self.ctx)
         if not response:
             return {"configs": {}, "environment_variables": {}}
-
         try:
             return json.loads(response)
         except Exception as e:
-            log.error(f"Failed to parse deploy config: {e}")
+            log.error(f"[VibeDeployer] Failed to parse deploy config: {e}")
             return {"configs": {}, "environment_variables": {}}
 
 
-# ====================== V5 EXTENDED MCP TOOLS ======================
-
 @mcp_server.tool(
     name="vibe_test",
-    description="Generate comprehensive test files from source code. Covers unit tests, accessibility tests, integration tests, edge cases, and responsive tests."
+    description="Generate comprehensive test files from source code. Covers unit, accessibility, integration, edge case, and responsive tests."
 )
 async def vibe_test_tool(
     ctx: Context,
@@ -1613,24 +1732,18 @@ async def vibe_test_tool(
     requirements: Optional[List[str]] = None,
     test_framework: str = "vitest"
 ) -> Dict[str, Any]:
-    """Generate tests for code files"""
+    """MCP tool: generate tests for code files using VibeTester."""
     await ctx.info(f"[test] Generating tests for {len(files)} files with {test_framework}...")
     await ctx.report_progress(0, 100, "Analyzing source files...")
-
     code_files = [CodeFile(**f) for f in files]
     tester = VibeTester(ctx=ctx)
 
     await ctx.report_progress(30, 100, "Generating test cases...")
     test_files = await tester.generate_tests(code_files, requirements, test_framework)
-
     await ctx.report_progress(90, 100, "Verifying test quality...")
     quality = VibeVerifier.verify_code_quality(test_files)
-
     await ctx.report_progress(100, 100, "Complete!")
-
-    await ctx.info(f"[test] Generated {len(test_files)} test files"
-                   f"{' (quality issues: ' + str(quality['issue_count']) + ')' if quality['issue_count'] else ''}")
-
+    await ctx.info(f"[test] Generated {len(test_files)} test files")
     return {
         "status": "success",
         "test_files": [asdict(f) for f in test_files],
@@ -1642,7 +1755,7 @@ async def vibe_test_tool(
 
 @mcp_server.tool(
     name="vibe_deploy",
-    description="Generate deployment configurations for multiple platforms: Vercel, Docker, static hosting, Node.js server. Includes health checks and monitoring setup."
+    description="Generate deployment configurations for Vercel, Docker, static hosting, and Node.js. Includes health checks and monitoring setup."
 )
 async def vibe_deploy_tool(
     ctx: Context,
@@ -1650,71 +1763,49 @@ async def vibe_deploy_tool(
     files: List[Dict[str, Any]],
     targets: Optional[List[str]] = None
 ) -> Dict[str, Any]:
-    """Generate deployment configurations"""
+    """MCP tool: generate deployment configs via VibeDeployer."""
     targets = targets or ["vercel"]
     await ctx.info(f"[deploy] Generating deploy configs for {project_name} to {', '.join(targets)}...")
     await ctx.report_progress(0, 100, "Analyzing project...")
-
     code_files = [CodeFile(**f) for f in files]
     deployer = VibeDeployer(ctx=ctx)
 
     await ctx.report_progress(30, 100, "Generating configs...")
     result = await deployer.generate_deploy(project_name, code_files, targets)
-
     await ctx.report_progress(100, 100, "Complete!")
-
     config_count = len(result.get("configs", {}))
     await ctx.info(f"[deploy] Generated configs for {config_count} target(s)")
-
-    return {
-        "status": "success",
-        "project": project_name,
-        "targets": targets,
-        **result
-    }
+    return {"status": "success", "project": project_name, "targets": targets, **result}
 
 
 # ====================== CLI / TESTING ======================
 
 if __name__ == "__main__":
     import sys
-    
+
     async def demo():
-        """Run demo if executed directly (for testing outside MCP)"""
+        """Run a V4 UI spec generation demo (for testing outside MCP)."""
         print("\n" + "=" * 70)
         print("[v4] AetherNexus Prime v4 -- Direct Execution Demo")
         print("=" * 70 + "\n")
 
-        # Simulate MCP context
         class MockContext:
-            async def info(self, msg: str):
-                print(f"  [i] {msg}")
-
+            async def info(self, msg: str): print(f"  [i] {msg}")
             async def report_progress(self, current: int, total: int, message: str):
-                pct = int((current / total) * 100)
-                print(f"  [{pct:3d}%] {message}")
-        
+                print(f"  [{int((current / total) * 100):3d}%] {message}")
+
         ctx = MockContext()
-        
         requirements = [
             "SaaS product dashboard",
             "KPI metrics (users, revenue, growth)",
             "Dark mode with neon accents",
             "Mobile responsive"
         ]
-        
         result = await generate_ui_spec_tool(
-            ctx=ctx,
-            page_type="product_dashboard",
-            requirements=requirements,
-            design_system=None,  # Use default
-            target_audience="product managers",
-            use_cache=False
+            ctx=ctx, page_type="product_dashboard", requirements=requirements,
+            design_system=None, target_audience="product managers", use_cache=False
         )
-        
-        print("\n" + "=" * 70)
-        print("✅ Result:")
-        print("=" * 70)
+        print("\n" + "=" * 70 + "\n✅ Result:")
         print(json.dumps({
             "status": result.get("status"),
             "page_type": result.get("page_type"),
@@ -1722,73 +1813,45 @@ if __name__ == "__main__":
             "component_count": len(result.get("selected_specification", {}).get("components", [])),
             "alternatives": len(result.get("alternatives", []))
         }, indent=2))
-    
+
     async def vibe_demo():
-        """Run v5 agentic coding demo"""
+        """Run a V5 agentic coding pipeline demo (for testing outside MCP)."""
         print("\n" + "=" * 70)
         print("[v5] AetherNexus Prime v5 -- Agentic Coding Demo")
         print("=" * 70 + "\n")
 
         class MockContext:
-            async def info(self, msg: str):
-                print(f"  [i] {msg}")
+            async def info(self, msg: str): print(f"  [i] {msg}")
             async def report_progress(self, current: int, total: int, message: str):
-                pct = int((current / total) * 100)
-                print(f"  [{pct:3d}%] {message}")
+                print(f"  [{int((current / total) * 100):3d}%] {message}")
 
         ctx = MockContext()
 
-        # Step 1: Architecture
-        print("\n[Step 1] vibe_architect")
-        print("-" * 40)
+        print("\n[Step 1] vibe_architect\n" + "-" * 40)
         plan_result = await vibe_architect_tool(
             ctx=ctx,
-            intent="Build a SaaS analytics dashboard with KPI cards, charts, and a dark mode theme",
+            intent="Build a SaaS analytics dashboard with KPI cards, charts, and dark mode",
             constraints=["WCAG AAA", "React + TypeScript", "Mobile responsive"],
             context={"existing_stack": "Next.js 14", "team_size": 3},
             target_stack="react"
         )
         if plan_result.get("status") == "success":
             plan = plan_result["plan"]
-            print(f"\n  Plan: {plan_result['decision_count']} decisions, "
-                  f"{plan['estimated_complexity']} complexity, "
-                  f"{plan_result['risk_count']} risks")
-            for d in plan["decisions"][:2]:
-                print(f"  ADR: {d['title']} (confidence: {d['confidence']})")
+            print(f"\n  Plan: {plan_result['decision_count']} decisions, {plan['estimated_complexity']} complexity, {plan_result['risk_count']} risks")
 
-        # Step 2: Verify (dry run on the reference spec)
-        print("\n[Step 2] vibe_verify")
-        print("-" * 40)
-        verify_result = await vibe_verify_tool(
-            ctx=ctx,
-            specification=VALID_SPEC if 'VALID_SPEC' in dir() else None
-        )
-        if verify_result.get("results"):
-            for name, r in verify_result["results"].items():
-                status = "PASS" if r.get("valid", r.get("passed", False)) else "FAIL"
-                print(f"  [{status}] {name}")
+        print("\n[Step 2] vibe_verify\n" + "-" * 40)
+        await vibe_verify_tool(ctx=ctx, specification=None)
 
-        # Step 3: Review (with mock code files)
-        print("\n[Step 3] vibe_review")
-        print("-" * 40)
+        print("\n[Step 3] vibe_review\n" + "-" * 40)
         mock_files = [
-            {"path": "/src/components/KpiCard.tsx", "content": 'export const KpiCard = () => <div role="region" aria-label="KPI">KPI</div>', "language": "tsx", "purpose": "KPI metric card"},
-            {"path": "/src/pages/Dashboard.tsx", "content": 'export default () => <main role="main">{/* dashboard */}</main>', "language": "tsx", "purpose": "Dashboard page"},
+            {"path": "/src/KpiCard.tsx", "content": '<div role="region" aria-label="KPI">KPI</div>', "language": "tsx", "purpose": "KPI card"},
         ]
-        review_result = await vibe_review_tool(
-            ctx=ctx,
-            files=mock_files,
-            requirements=["SaaS dashboard", "Dark mode", "WCAG AAA"]
-        )
+        review_result = await vibe_review_tool(ctx=ctx, files=mock_files, requirements=["Dark mode", "WCAG AAA"])
         if review_result.get("status") == "success":
-            print(f"  Score: {review_result['consensus_score']}, "
-                  f"Recommendation: {review_result['recommendation']}")
-            print(f"  Issues: {len(review_result.get('line_level_issues', []))} "
-                  f"({review_result.get('critical_issues', 0)} critical)")
+            print(f"  Score: {review_result['consensus_score']}, {review_result['recommendation']}")
 
         print("\n" + "=" * 70)
-        print("[OK] Vibe demo complete -- full pipeline: architect -> verify -> review")
-        print("   Add an LLM API key to run with real generation.")
+        print("[OK] Vibe demo: architect -> verify -> review complete.")
         print("=" * 70)
 
     if "--demo" in sys.argv:
@@ -1798,19 +1861,15 @@ if __name__ == "__main__":
     else:
         print("=" * 70)
         print("AetherNexus Prime v5 MCP Server")
-        print("   Agentic Coding Orchestrator")
-        print("=" * 70)
         print("   11 tools | 5 resources | 6 prompts")
-        print("   5 LLM providers (openai, deepseek, openrouter, local, opencode)")
+        print("   5 LLM providers: openai, deepseek, openrouter, local, opencode")
         print("   Pipeline: architect -> code -> review -> verify -> iterate -> test -> deploy")
-        print("   --demo: Run v4 UI spec demo")
-        print("   --vibe-demo: Run v5 agentic coding demo")
-        print("\nStarting MCP server...\n")
+        print("   --demo: V4 UI spec demo | --vibe-demo: V5 agentic coding demo\n")
         mcp_server.run()
 
 
 def main():
-    """Entry point for 'aethernexus' CLI command"""
+    """Entry point for 'aethernexus' CLI command."""
     import sys
     if "--vibe-demo" in sys.argv:
         asyncio.run(vibe_demo())
