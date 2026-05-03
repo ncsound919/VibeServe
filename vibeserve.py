@@ -39,19 +39,34 @@ log.info("VibeServe logging initialized")
 
 # Structured JSON logging for Sentry-compatible monitoring
 class StructuredLogger:
+    # Patterns to mask in logs (API keys, secrets, passwords)
+    _SECRET_PATTERNS = [
+        (r'sk-[a-zA-Z0-9]{20,}', 'sk-***REDACTED***'),
+        (r'Bearer [a-zA-Z0-9_\-]{20,}', 'Bearer ***REDACTED***'),
+        (r'github_pat_[a-zA-Z0-9_]{20,}', 'github_pat_***REDACTED***'),
+        (r'password[\s:=]+[^\s,}]+', 'password=***REDACTED***'),
+    ]
+
+    @classmethod
+    def _redact(cls, text: str) -> str:
+        import re
+        for pattern, replacement in cls._SECRET_PATTERNS:
+            text = re.sub(pattern, replacement, text)
+        return text
+
     @staticmethod
     def event(name: str, **kwargs):
-        data = json.dumps({"event": name, "timestamp": datetime.now(timezone.utc).isoformat(), **kwargs})
+        data = StructuredLogger._redact(json.dumps({"event": name, "timestamp": datetime.now(timezone.utc).isoformat(), **kwargs}))
         log.info(f"[Structured] {data}")
 
     @staticmethod
     def error(name: str, error: str = "", **kwargs):
-        data = json.dumps({"event": name, "error": error, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "error", **kwargs})
+        data = StructuredLogger._redact(json.dumps({"event": name, "error": error, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "error", **kwargs}))
         log.error(f"[Structured] {data}")
 
     @staticmethod
     def warn(name: str, detail: str = "", **kwargs):
-        data = json.dumps({"event": name, "detail": detail, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "warning", **kwargs})
+        data = StructuredLogger._redact(json.dumps({"event": name, "detail": detail, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "warning", **kwargs}))
         log.warning(f"[Structured] {data}")
 
 # Lightweight async performance profiler (zero dependencies)
@@ -1241,6 +1256,7 @@ class CritiqueLoop:
                         if new_score >= self.quality_threshold:
                             break
                     except json.JSONDecodeError:
+                        log.warning(f"[CritiqueLoop] JSON decode failed for repair response")
                         history.append(IterationResult(iteration=i + 1, score_before=score, score_after=0, passed=False))
             else:
                 history.append(IterationResult(iteration=i + 1, score_before=score, score_after=score,
