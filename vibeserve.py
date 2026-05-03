@@ -2515,7 +2515,7 @@ async def vibe_benchmark_tool(ctx: Context, iterations: int = 5) -> Dict[str, An
         with open(__file__, encoding="utf-8") as f:
             code = f.read()
 
-        mock = [{"path": "vibeserve.py", "content": code[:3000], "language": "python", "purpose": "VibeServe MCP server"}]
+        mock = [{"path": "vibeserve.py", "content": code[:8000], "language": "python", "purpose": "VibeServe MCP server"}]
         auditor = SystemAuditor()
         audit = await auditor.audit([CodeFile(**m) for m in mock], ["Production-grade MCP server"])
 

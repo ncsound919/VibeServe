@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-05-03T16:55:19",
+  "iterations": [
+    {
+      "iteration": 1,
+      "score": 0.52,
+      "recommendation": "reject",
+      "issues": 9,
+      "critical": 4,
+      "time_ms": 4605
+    },
+    {
+      "iteration": 2,
+      "score": 0.45,
+      "recommendation": "reject",
+      "issues": 9,
+      "critical": 5,
+      "time_ms": 4335
+    },
+    {
+      "iteration": 3,
+      "score": 0.47,
+      "recommendation": "reject",
+      "issues": 9,
+      "critical": 3,
+      "time_ms": 4289
+    },
+    {
+      "iteration": 4,
+      "score": 0.52,
+      "recommendation": "reject",
+      "issues": 9,
+      "critical": 3,
+      "time_ms": 4101
+    },
+    {
+      "iteration": 5,
+      "score": 0.47,
+      "recommendation": "reject",
+      "issues": 9,
+      "critical": 3,
+      "time_ms": 4210
+    }
+  ],
+  "insights": {
+    "score_trend": "improving",
+    "score_delta": 0.002,
+    "total_time": 21.5,
+    "avg_time_per_loop": 4.31,
+    "time_trend": "faster",
+    "total_issues": 45,
+    "avg_issues_per_loop": 9.0,
+    "recommendations": [
+      "High issue count (45) \u2014 prioritize fixes by severity"
+    ]
+  },
+  "compression_savings_percent": 2.4,
+  "profiler_stats": {}
+}
