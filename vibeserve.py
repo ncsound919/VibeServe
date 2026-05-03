@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AetherNexus Prime v5 — Agentic Coding Orchestrator (MCP)
+VibeServe v1.0 — Agentic Coding Orchestrator (MCP)
 Features:
   • Design System as Code (live token enforcement)
   • Multi-Agent Critique (Designer, Engineer, User Advocate)
@@ -34,7 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
-log = logging.getLogger("AetherNexusPrime")
+log = logging.getLogger("VibeServe")
 
 # ====================== SCHEMAS ======================
 class WCAGLevel(str, Enum):
@@ -258,8 +258,8 @@ class OpenRouterProvider(LLMProvider):
             self.base_url, self.api_key, self.model,
             prompt, temperature, response_format,
             extra_headers={
-                "HTTP-Referer": "https://aethernexus.app",
-                "X-Title": "AetherNexus-MCP"
+                "HTTP-Referer": "https://vibeserve.dev",
+                "X-Title": "VibeServe"
             }
         )
 
@@ -1263,7 +1263,7 @@ class VibeCodeReviewer:
 # ====================== MCP SERVER INIT ======================
 from fastmcp import FastMCP, Context
 
-mcp_server = FastMCP("AetherNexusPrime_v5")
+mcp_server = FastMCP("VibeServe")
 
 DEFAULT_DESIGN_SYSTEM = {
     "tokens": {
@@ -1385,8 +1385,8 @@ def resource_memory_stats() -> str:
 def resource_version() -> str:
     """Return server version metadata."""
     return json.dumps({
-        "version": "5.0.0",
-        "codename": "Karpathy",
+        "version": "1.0.0",
+        "codename": "VibeServe",
         "tools": 13,
         "resources": 5,
         "prompts": 6,
@@ -1786,7 +1786,7 @@ if __name__ == "__main__":
     async def demo():
         """Run a V4 UI spec generation demo (for testing outside MCP)."""
         print("\n" + "=" * 70)
-        print("[v4] AetherNexus Prime v4 -- Direct Execution Demo")
+        print("[v4] VibeServe Legacy -- Direct Execution Demo")
         print("=" * 70 + "\n")
 
         class MockContext:
@@ -1817,7 +1817,7 @@ if __name__ == "__main__":
     async def vibe_demo():
         """Run a V5 agentic coding pipeline demo (for testing outside MCP)."""
         print("\n" + "=" * 70)
-        print("[v5] AetherNexus Prime v5 -- Agentic Coding Demo")
+        print("[v1] VibeServe v1.0 -- Agentic Coding Demo")
         print("=" * 70 + "\n")
 
         class MockContext:
@@ -1860,16 +1860,18 @@ if __name__ == "__main__":
         asyncio.run(vibe_demo())
     else:
         print("=" * 70)
-        print("AetherNexus Prime v5 MCP Server")
-        print("   11 tools | 5 resources | 6 prompts")
+        print("VibeServe v1.0 MCP Server")
+        print("   Agentic Coding Orchestrator")
+        print("=" * 70)
+        print("   13 tools | 5 resources | 6 prompts")
         print("   5 LLM providers: openai, deepseek, openrouter, local, opencode")
         print("   Pipeline: architect -> code -> review -> verify -> iterate -> test -> deploy")
-        print("   --demo: V4 UI spec demo | --vibe-demo: V5 agentic coding demo\n")
+        print("   --demo: V4 UI spec demo | --vibe-demo: V1 agentic coding demo\n")
         mcp_server.run()
 
 
 def main():
-    """Entry point for 'aethernexus' CLI command."""
+    """Entry point for 'vibeserve' CLI command."""
     import sys
     if "--vibe-demo" in sys.argv:
         asyncio.run(vibe_demo())

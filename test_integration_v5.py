@@ -9,7 +9,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from mcp_ui_optimizer_v4 import (
+from vibeserve import (
     vibe_architect_tool, vibe_code_tool, vibe_review_tool,
     vibe_verify_tool, vibe_iterate_tool
 )
