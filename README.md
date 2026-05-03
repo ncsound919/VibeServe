@@ -99,7 +99,7 @@ pyproject.toml pytest test_aether_nexus.py test_integration_v5.py test_integrati
 
 ## Architecture
 
-See **[docs/index.html](https://ncsound919.github.io/VibeServe-MCP)** for the full interactive architecture page.
+See **[docs/index.html](https://ncsound919.github.io/AetherNexus-MCP)** for the full interactive architecture page.
 
 Quick overview:
 ```
