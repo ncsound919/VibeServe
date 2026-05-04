@@ -108,7 +108,7 @@ function parseCodeFile(content: string, filePath: string, language: string): Ind
     ],
     go: [
       /^func\s+(\w+)/,
-      /^func\s+\((\w+)\s+\*?\w+)\s+(\w+)/,
+      /^func\s+\((\w+)\s+\*?\w+\)\s+(\w+)/,
       /^type\s+(\w+)\s+(struct|interface)/,
       /^package\s+(\w+)/,
       /^import\s+\(/,
