@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   AlertTriangle, Cpu, MemoryStick, Network, Sliders, ShieldAlert,
-  Zap, Info, ListTodo
+  Zap, Info, ListTodo, Activity, Pause, Play, CheckCircle, Clock,
+  Brain, Terminal, Bot, Square
 } from 'lucide-react';
 import { kernelService } from '../../services/kernelService';
 
@@ -174,6 +175,7 @@ export default function MissionControlTab() {
       </div>
 
       <div className="grid grid-cols-3 gap-6">
+        {/* Left: Agent list */}
         <div className="col-span-2 space-y-4">
           <h2 className="text-lg font-semibold text-white">Agent Status</h2>
           {agents.map((agent) => (
@@ -248,9 +250,7 @@ export default function MissionControlTab() {
           ))}
         </div>
 
-          </div>
-        </div>
-
+        {/* Right: Controls + Logs */}
         <div className="space-y-6">
           {/* Agency & Psychology Sliders */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 space-y-6">
