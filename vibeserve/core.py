@@ -24,10 +24,18 @@ log = logging.getLogger("VibeServe")
 # ====================== WCAG VALIDATION ======================
 def validate_wcag_contrast(fg: str, bg: str, min_level: WCAGLevel = WCAGLevel.AA) -> ContrastResult:
     ratio = contrast_ratio(fg, bg)
-    result = ContrastResult(fg=fg, bg=bg, ratio=round(ratio, 2), wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
+    passes_aa = ratio >= 4.5
+    passes_aaa = ratio >= 7.0
+    if passes_aaa:
+        wcag_level = WCAGLevel.AAA
+    elif passes_aa:
+        wcag_level = WCAGLevel.AA
+    else:
+        wcag_level = WCAGLevel.FAIL
+    result = ContrastResult(fg=fg, bg=bg, ratio=round(ratio, 2), wcag_level=wcag_level, passes_aa=passes_aa, passes_aaa=passes_aaa)
     result.passes_min = (
-        result.passes_aaa if min_level == WCAGLevel.AAA
-        else result.passes_aa if min_level == WCAGLevel.AA
+        passes_aaa if min_level == WCAGLevel.AAA
+        else passes_aa if min_level == WCAGLevel.AA
         else False
     )
     return result
@@ -872,6 +880,7 @@ class TemplateLibrary:
         if path.exists():
             content = path.read_text(encoding="utf-8")
             return cls._mutate(content, name)
+        log.warning(f"Design template '{name}' not found at {path}")
         return f"# {name.title()} Design System\nUse {{{{colors.primary}}}} for accents."
 
     @classmethod

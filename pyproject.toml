@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vibeserve"
-version = "1.0.0"
+version = "2.0.0"
 description = "Agentic coding orchestrator for the Model Context Protocol. Vibe coding pipeline: architect, code, review, verify, iterate, test, deploy."
 requires-python = ">=3.10"
 dependencies = [
@@ -30,10 +30,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ncsound919/AetherNexus-MCP"
-Documentation = "https://ncsound919.github.io/AetherNexus-MCP"
-Repository = "https://github.com/ncsound919/AetherNexus-MCP"
-Issues = "https://github.com/ncsound919/AetherNexus-MCP/issues"
+Homepage = "https://github.com/ncsound919/VibeServe"
+Documentation = "https://ncsound919.github.io/VibeServe"
+Repository = "https://github.com/ncsound919/VibeServe"
+Issues = "https://github.com/ncsound919/VibeServe/issues"
 "Donate" = "https://cash.app/$helptools"
 
 [project.scripts]
@@ -46,11 +46,11 @@ dev = ["pytest>=8.0.0", "pytest-asyncio>=0.23.0", "ruff>=0.4.0", "mypy>=1.10.0"]
 include = ["vibeserve", "vibeserve.*"]
 
 [tool.setuptools]
-py-modules = ["benchmark"]
+# py-modules = ["benchmark"]  # Moved to dev dependencies
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["test_aether_nexus.py", "test_integration_real_api.py", "test_integration_v5.py"]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
