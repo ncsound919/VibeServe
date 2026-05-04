@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useAuditStore, type AuditEvent } from '../core/agents/monitoring/auditStore';
+import { useAuditStore, type AuditEvent } from '../../core/agents/monitoring/auditStore';
 import { BarChart3, Activity, Clock, DollarSign, Zap, AlertCircle, CheckCircle } from 'lucide-react';
 
 export function AuditTab() {

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { Clock, History, AlertTriangle, CheckCircle, XCircle, RefreshCcw, Sparkles, Bug, TrendingUp, Wrench, Zap } from 'lucide-react';
-import { usePipelineStore } from '../stores/usePipelineStore';
-import { cn } from '../lib/utils';
+import { usePipelineStore } from '../../stores/usePipelineStore';
+import { cn } from '../../lib/utils';
 
 interface VibeHistoryEntry {
   id?: string;

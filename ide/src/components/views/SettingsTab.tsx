@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Settings, Activity, Users, Save, Shield, Cpu } from "lucide-react";
-import { BrainControlPanel } from "../features/settings/BrainControlPanel";
-import { IntegrationsPanel } from "../features/settings/IntegrationsPanel";
-import { ProjectRulesPanel } from "../features/settings/ProjectRulesPanel";
-import { useSettingsStore } from "../stores/useSettingsStore";
-import { ollamaService } from "../services/ollamaService";
+import { BrainControlPanel } from "../../features/settings/BrainControlPanel";
+import { IntegrationsPanel } from "../../features/settings/IntegrationsPanel";
+import { ProjectRulesPanel } from "../../features/settings/ProjectRulesPanel";
+import { useSettingsStore } from "../../stores/useSettingsStore";
+import { ollamaService } from "../../services/ollamaService";
 
 function PrivacyModePanel() {
   const [privacyMode, setPrivacyMode] = useState(() => {
@@ -272,7 +272,7 @@ function AgentRegistryPanel() {
               <div className="text-[9px] text-[#4a4b50] space-y-0.5">
                 <p>Type: <span className="text-white/70">{agent.type}</span></p>
                 <p>Phase: <span className="text-white/70">{agent.assignedPhase}</span></p>
-                <p>Skills: <span className="text-white/70">{agent.skills.join(', ') || '—'}</span></p>
+                <p>Skills: <span className="text-white/70">{agent.skills.join(', ') || '\u2014'}</span></p>
               </div>
               <div className="flex gap-2 mt-2">
                 <button
