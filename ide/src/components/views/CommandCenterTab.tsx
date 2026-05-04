@@ -12,19 +12,20 @@ import { IntegrationHubPanel } from '../../features/integrations/IntegrationHubP
 import type { DashboardData, CLIStateData } from '../../types';
 
 interface CommandCenterTabProps {
-  data: DashboardData;
-  onCommand: (cmd: string) => void;
-  onProviderChange: (provider: CLIStateData['activeProvider']) => void;
-  onAgentUpload: () => void;
+  data?: DashboardData;
+  onCommand?: (cmd: string) => void;
+  onProviderChange?: (provider: CLIStateData['activeProvider']) => void;
+  onAgentUpload?: () => void;
   latency?: number;
 }
 
 export const CommandCenterTab = ({
-  data,
-  onCommand,
-  onProviderChange,
-  onAgentUpload,
-}: CommandCenterTabProps) => (
+  data = { cliState: { activeProvider: 'opencode', output: [] }, customAgents: [], mcpStatus: null },
+  onCommand = () => {},
+  onProviderChange = () => {},
+  onAgentUpload = () => {},
+  latency = 0,
+}: Partial<CommandCenterTabProps>) => (
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <div className="lg:col-span-2 space-y-8">
       <section>
