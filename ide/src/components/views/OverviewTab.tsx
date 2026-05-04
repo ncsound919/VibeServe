@@ -8,22 +8,22 @@ import {
   BarChart3, TrendingUp, Globe, Activity, Zap, Github,
   ShieldCheck, Database, Share2, Cpu, Trophy,
 } from 'lucide-react';
-import { SectionHeader } from '../components/SectionHeader';
-import { GrowthChart } from '../features/overview/GrowthChart';
-import { StatCard } from '../features/overview/StatCard';
-import { PredictionCard } from '../features/overview/PredictionCard';
-import { GamifiedDashboard } from '../features/overview/GamifiedDashboard';
-import { ErrorDashboard } from '../features/overview/ErrorDashboard';
-import { VibeCoderDashboard } from '../features/overview/VibeCoderDashboard';
-import { TrendInsightsDashboard } from '../features/overview/TrendInsightsDashboard';
-import { OpenSourceWidget } from '../features/overview/OpenSourceWidget';
-import { NewsCard } from '../features/overview/NewsCard';
-import { SynergyInsightsWidget } from '../features/overview/SynergyInsightsWidget';
-import { HarvestIntelligenceWidget } from '../features/overview/HarvestIntelligenceWidget';
-import { NexusIntelligenceWidget } from '../features/overview/NexusIntelligenceWidget';
-import { cn } from '../lib/utils';
-import { useNexusStats } from '../hooks/useNexusStats';
-import type { DashboardData } from '../types';
+import { SectionHeader } from '../SectionHeader';
+import { GrowthChart } from '../../features/overview/GrowthChart';
+import { StatCard } from '../../features/overview/StatCard';
+import { PredictionCard } from '../../features/overview/PredictionCard';
+import { GamifiedDashboard } from '../../features/overview/GamifiedDashboard';
+import { ErrorDashboard } from '../../features/overview/ErrorDashboard';
+import { VibeCoderDashboard } from '../../features/overview/VibeCoderDashboard';
+import { TrendInsightsDashboard } from '../../features/overview/TrendInsightsDashboard';
+import { OpenSourceWidget } from '../../features/overview/OpenSourceWidget';
+import { NewsCard } from '../../features/overview/NewsCard';
+import { SynergyInsightsWidget } from '../../features/overview/SynergyInsightsWidget';
+import { HarvestIntelligenceWidget } from '../../features/overview/HarvestIntelligenceWidget';
+import { NexusIntelligenceWidget } from '../../features/overview/NexusIntelligenceWidget';
+import { cn } from '../../lib/utils';
+import { useNexusStats } from '../../hooks/useNexusStats';
+import type { DashboardData } from '../../types';
 
 interface OverviewTabProps {
   data: DashboardData;
