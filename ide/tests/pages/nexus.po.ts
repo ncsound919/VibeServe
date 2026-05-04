@@ -63,11 +63,15 @@ export class NexusApp {
   }
 
   async openAdvancedSection() {
-    const overviewBtn = this.page.locator('#nav-item-overview');
-    const isVisible = await overviewBtn.isVisible().catch(() => false);
-    if (!isVisible) {
-      await this.page.locator('aside button').last().click();
-      await overviewBtn.waitFor({ state: 'visible', timeout: 5000 });
+    try {
+      const overviewBtn = this.page.locator('#nav-item-overview');
+      const isVisible = await overviewBtn.isVisible().catch(() => false);
+      if (!isVisible) {
+        await this.page.locator('aside button').last().click();
+        await overviewBtn.waitFor({ state: 'visible', timeout: 3000 });
+      }
+    } catch {
+      // Already open or not needed
     }
   }
 
