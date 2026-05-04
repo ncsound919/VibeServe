@@ -12,7 +12,7 @@ import { GlobalCommandBar } from './GlobalCommandBar';
 import { useNexusApp } from '../hooks/useNexusApp';
 import { TrajectorySidebar } from './TrajectorySidebar';
 
-// ── Per-tab error boundary ──────────────────────────────────────────────────────────────────────────────
+// ── Per-tab error boundary ──────────────────────────────────────────────────
 interface TabEBState { hasError: boolean; error: Error | null }
 class TabErrorBoundary extends Component<{ name: string; children: ReactNode }, TabEBState> {
   constructor(props: { name: string; children: ReactNode }) {
@@ -45,7 +45,7 @@ class TabErrorBoundary extends Component<{ name: string; children: ReactNode }, 
   }
 }
 
-// ── Lazy views ──────────────────────────────────────────────────────────────────────────────────────
+// ── Lazy views ──────────────────────────────────────────────────────────────
 const CommandCenterTab = lazy(() => import('./views/CommandCenterTab').then(m => ({ default: m.CommandCenterTab })));
 const PipelineTab = lazy(() => import('./views/PipelineTab').then(m => ({ default: m.PipelineTab })));
 const SettingsTab = lazy(() => import('./views/SettingsTab').then(m => ({ default: m.SettingsTab })));
@@ -63,7 +63,7 @@ const AgentEvalTab = lazy(() => import('./views/AgentEvalTab').then(m => ({ defa
 const MagicTab = lazy(() => import('../features/composer/MagicComposer').then(m => ({ default: m.MagicComposer })));
 const PlanReviewTab = lazy(() => import('./views/PlanReviewTab'));
 
-// ── Suspense fallback ─────────────────────────────────────────────────────────────────────────────────────
+// ── Suspense fallback ────────────────────────────────────────────────────────
 function TabLoader() {
   return (
     <div className="flex items-center justify-center h-full min-h-[200px]" role="status" aria-label="Loading tab content">
@@ -76,7 +76,7 @@ function TabLoader() {
   );
 }
 
-// ── Main App ─────────────────────────────────────────────────────────────────────────────────────────
+// ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const {
     data, loading, latency, appLicensed,
@@ -87,7 +87,8 @@ export default function App() {
     refetch,
   } = useNexusApp();
 
-  if (!appLicensed) return <LicenseGate onUnlock={() => refetch()} />;
+  // Don't block render while license check is still loading
+  if (appLicensed === false) return <LicenseGate onUnlock={() => refetch()} />;
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] flex flex-col" role="application" aria-label="Nexus Alpha IDE">
@@ -108,7 +109,13 @@ export default function App() {
         <main className="flex-1 overflow-auto p-4 md:p-6" role="main" aria-label="Content area">
           <TabErrorBoundary name={activeTab}>
             <Suspense fallback={<TabLoader />}>
-              {activeTab === 'Overview' && <OverviewTab data={data} loading={loading} />}
+              {activeTab === 'Overview' && (
+                <OverviewTab
+                  data={data}
+                  nexusSystemStatus={nexusSystemStatus}
+                  onTabChange={setActiveTab}
+                />
+              )}
               {activeTab === 'Composer' && <ComposerTab selectedRepos={selectedRepos} />}
               {activeTab === 'Command Center' && <CommandCenterTab />}
               {activeTab === 'Pipeline' && <PipelineTab />}
