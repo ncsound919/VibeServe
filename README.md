@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/ncsound919/VibeServe/blob/main/nu%20image.png?raw=true" alt="VibeServe" width="100%" />
+<img src="https://github.com/ncsound919/VibeServe/blob/main/nu%20image.png" alt="VibeServe" width="100%" />
 
 # VibeServe v1.1
 ### *The Ultimate Agentic IDE, Orchestrator, and MCP Backend*
