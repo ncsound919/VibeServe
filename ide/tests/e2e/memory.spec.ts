@@ -36,10 +36,12 @@ test.describe('Memory Tab', () => {
     }
   });
 
-  test('should render empty state gracefully', async ({ page }) => {
-    const memoryElements = page.locator('main').first();
-    await expect(memoryElements).toBeVisible({ timeout: 5000 });
-    const hasContent = await memoryElements.innerText();
-    expect(hasContent.length).toBeGreaterThan(0);
+  test('should render empty state gracefully', async ({ page, nexus }) => {
+    await nexus.navigateTo('Memory');
+    await page.waitForTimeout(1000);
+    const memoryContent = page.locator('main');
+    await expect(memoryContent).toBeVisible({ timeout: 5000 });
+    const hasText = await memoryContent.textContent();
+    expect(hasText?.length).toBeGreaterThan(0);
   });
 });

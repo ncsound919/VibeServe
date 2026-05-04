@@ -26,7 +26,7 @@ test.describe('IDE Shell', () => {
     await nexus.navigateTo('Editor');
 
     await expect(page.getByText('Project Registry')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('select')).toHaveCount({ timeout: 5000 }, { gte: 1 });
+    await expect(page.locator('select').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('terminal panel opens only when CLI tab is active', async ({ page, nexus }) => {

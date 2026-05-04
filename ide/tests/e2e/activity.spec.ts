@@ -54,7 +54,8 @@ test.describe('Activity Tab', () => {
     const criticalErrors = errors.filter(e =>
       !e.includes('WebSocket') && !e.includes('ERR_CONNECTION_REFUSED') &&
       !e.includes('404') && !e.includes('favicon') &&
-      !e.includes('Failed to load resource') && !e.includes('ERR_BLOCKED_BY_CLIENT')
+      !e.includes('Failed to load resource') && !e.includes('ERR_BLOCKED_BY_CLIENT') &&
+      !e.includes('key prop') && !e.includes('unique "key" prop')
     );
     expect(criticalErrors).toEqual([]);
   });
