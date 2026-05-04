@@ -2,7 +2,7 @@
 
 > **The Agentic UI Coding Orchestrator for the Model Context Protocol**
 
-[![CI](https://github.com/ncsound919/AetherNexus-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/ncsound919/AetherNexus-MCP/actions/workflows/ci.yml)
+[![CI](https://github.com/ncsound919/VibeServe/actions/workflows/ci.yml/badge.svg)](https://github.com/ncsound919/VibeServe/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/vibeserve.svg)](https://pypi.org/project/vibeserve/)
 [![Downloads](https://img.shields.io/pypi/dm/vibeserve.svg)](https://pypi.org/project/vibeserve/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
@@ -58,8 +58,8 @@ Each step is an independent MCP tool. Chain the full pipeline or call any step s
 ```bash
 pip install vibeserve
 # Or from source:
-git clone https://github.com/ncsound919/AetherNexus-MCP
-cd AetherNexus-MCP
+git clone https://github.com/ncsound919/VibeServe
+cd VibeServe
 pip install -e ".[dev]"
 cp .env.example .env  # add your API keys, or leave blank for local/sampling
 ```
@@ -117,7 +117,7 @@ pyproject.toml pytest test_aether_nexus.py test_integration_v5.py test_integrati
 
 ## Architecture
 
-See **[docs](https://ncsound919.github.io/AetherNexus-MCP)** for the full interactive documentation site.
+See **[docs](https://ncsound919.github.io/VibeServe)** for the full interactive documentation site.
 
 Quick overview:
 ```
@@ -166,10 +166,10 @@ MIT — see [LICENSE](LICENSE)
 ## Community
 
 - **Contribute**: See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add DESIGN.md templates and code
-- **Report bugs**: [GitHub Issues](https://github.com/ncsound919/AetherNexus-MCP/issues)
+- **Report bugs**: [GitHub Issues](https://github.com/ncsound919/VibeServe/issues)
 - **Share**: Post your builds with #VibeServe
-- **Star**: If VibeServe saves you time, [star the repo](https://github.com/ncsound919/AetherNexus-MCP)
+- **Star**: If VibeServe saves you time, [star the repo](https://github.com/ncsound919/VibeServe)
 
 ---
 
-*Built with 🖤 · VibeServe v1.0 · [Docs](https://ncsound919.github.io/AetherNexus-MCP)*
+*Built with 🖤 · VibeServe v1.0 · [Docs](https://ncsound919.github.io/VibeServe)*

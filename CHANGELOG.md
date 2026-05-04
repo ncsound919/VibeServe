@@ -12,7 +12,7 @@
 
 ### Changed
 - Documentation site (`docs/index.html`) completely rewritten with accurate tool list
-- Package URLs unified to `github.com/ncsound919/AetherNexus-MCP`
+- Package URLs unified to `github.com/ncsound919/VibeServe`
 - `pyproject.toml`: added `long_description`, `py-modules`, fixed URLs
 
 ### Performance
