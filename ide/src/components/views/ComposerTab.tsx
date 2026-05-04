@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileDiff, Check, X, Code, Send, Zap, Pin } from 'lucide-react';
-import { useWorkspaceStore } from '../stores/useWorkspaceStore';
+import { useWorkspaceStore } from '../../stores/useWorkspaceStore';
 
 interface FileChange {
   id: string;
@@ -62,7 +62,6 @@ export const ComposerTab = () => {
       'Spawning synthesis agents...'
     ]);
 
-    // Simulate streaming thoughts
     const thoughtInterval = setInterval(() => {
       const additionalThoughts = [
         'Detected module boundaries in src/components...',
@@ -323,4 +322,3 @@ export const ComposerTab = () => {
     </div>
   );
 };
-

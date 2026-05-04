@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, Key, Rocket } from 'lucide-react';
-import { validateLicense, saveLicense, getTrialInfo } from '../services/licenseService';
+import { validateLicense, saveLicense, getTrialInfo } from '../../services/licenseService';
 
 interface LicenseGateProps {
   onActivate: () => void;
