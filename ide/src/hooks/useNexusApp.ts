@@ -4,7 +4,6 @@ import { useDashboardData } from './useDashboardData';
 import { useAppStore } from '../stores/useAppStore';
 import { usePipelineStore } from '../stores/usePipelineStore';
 import { startWorkflow } from '../services/temporalClient';
-import { useCodeixStore } from '../services/codeixService';
 import { DashboardData } from '../types';
 import { useNexusAuth } from './useNexusAuth';
 import { useNexusStatus } from './useNexusStatus';
@@ -40,27 +39,24 @@ export function useNexusApp() {
     return () => { if (cleanup) cleanup(); };
   }, [connectWebSocket]);
 
-  // Codeix initialization (Node.js only - browser gracefully skips)
+  // Codeix initialization — dynamic import keeps Node.js fs/path out of the browser bundle
   useEffect(() => {
-    if (!IS_BROWSER) return; // skip in SSR
-    // Codeix needs fs/path - only available in Electron or Node context
-    // In a pure browser context this will always catch and log a warning
+    if (!IS_BROWSER) return;
     const initCodeix = async () => {
       try {
+        const { useCodeixStore } = await import('../services/codeixService');
         const codeix = useCodeixStore.getState();
-        // Only try indexing if we're not already indexing and have no index
         if (codeix.isIndexing || codeix.index) return;
         const loaded = await codeix.loadFromDisk('.');
         if (!loaded) {
           console.log('[Nexus] No existing Codeix index - will create one when in Node/Electron context');
         }
       } catch {
-        // Expected in browser context - fs/path are not available
         console.debug('[Codeix] Skipped: browser environment (no fs access)');
       }
     };
     initCodeix();
-  }, []); // Only run once on mount
+  }, []);
 
   // Autonomous runtime loop - only active on Overview tab, throttled
   useEffect(() => {
@@ -68,7 +64,6 @@ export function useNexusApp() {
 
     const interval = setInterval(async () => {
       try {
-        // Randomly pick between agent sync and data fetch
         if (Math.random() < 0.5) {
           const d = dataRef.current;
           const agent = d?.customAgents?.find(a => a.status === 'active');
@@ -88,10 +83,9 @@ export function useNexusApp() {
       } catch {
         // Workflow server not running is expected in dev - silently ignore
       } finally {
-        // Reset status back to IDLE after 4s regardless of outcome
         setTimeout(() => setNexusSystemStatus('IDLE'), 4000);
       }
-    }, 18000); // Run every 18 seconds
+    }, 18000);
 
     return () => clearInterval(interval);
   }, [activeTab, setNexusSystemStatus]);
