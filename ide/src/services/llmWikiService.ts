@@ -16,13 +16,13 @@ let _fs: typeof import('fs') | null = null;
 let _path: typeof import('path') | null = null;
 
 async function getFs() {
-  if (IS_BROWSER) throw new Error('[llmWikiService] Not available in browser');
+  if (IS_BROWSER) return null;
   if (!_fs) _fs = await import('fs');
   return _fs;
 }
 
 async function getPath() {
-  if (IS_BROWSER) throw new Error('[llmWikiService] Not available in browser');
+  if (IS_BROWSER) return null;
   if (!_path) _path = await import('path');
   return _path;
 }
