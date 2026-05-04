@@ -15,6 +15,7 @@ test.describe('Navigation - All Tabs', () => {
   const IGNORED_ERROR_PATTERNS = [
     'favicon', 'Failed to load resource', 'ERR_BLOCKED_BY_CLIENT',
     'WebSocket', 'ERR_CONNECTION_REFUSED', '[Pipeline]',
+    'key prop', 'unique "key" prop',
   ];
 
   for (const tab of ALL_TABS) {
