@@ -28,7 +28,6 @@ It transforms natural language intent into fully-architected, accessible, produc
 🏗️ architect → 💻 code → 🔍 review → ✅ verify → 🔄 iterate → 🧪 test → 🚀 deploy
 ```
 
----
 
 ## Unified Repository Structure
 
