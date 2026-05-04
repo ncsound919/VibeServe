@@ -16,7 +16,7 @@
 
 </div>
 
----
+
 
 ## What is VibeServe?
 
@@ -42,7 +42,6 @@ The **VibeServe Orchestrator** (formerly CodeNexus) is a high-performance Node.j
 ### 3. `mcp/` (The Python Backend)
 The original **VibeServe MCP Server**. This is a production-grade FastMCP server containing 28 specialized tools, SQLite-backed memory, multi-LLM routing with auto-fallback (OpenAI, DeepSeek, OpenRouter, Local Ollama), and direct integration endpoints. 
 
----
 
 ## Why VibeServe?
 
@@ -54,7 +53,6 @@ The original **VibeServe MCP Server**. This is a production-grade FastMCP server
 | **Trinity Benchmarked** | System-wide automated auditing and benchmarking scores ensuring A-grade performance and security. |
 | **Human-in-the-Loop** | You choose when to intervene. The IDE allows seamless manual takeover of any automated workflow. |
 
----
 
 ## Quickstart
 
@@ -120,11 +118,8 @@ VibeServe MCP Server (Python / FastMCP)
 
 The entire VibeServe ecosystem undergoes a rigorous, automated audit (The Trinity Benchmark) across Performance, Code Quality, Security, and Features.
 
-**Current System Score: 83.7/100 (Grade A)**
+**Current System Score: 91.9/100 (Grade A)**
 
-* **VibeServe MCP:** 82.7 (A)
-* **VibeServe Orchestrator:** 92.2 (S*)
-* **VibeServe IDE:** 76.0 (B)
 
 Run the benchmark yourself:
 ```bash
@@ -132,7 +127,6 @@ cd mcp
 python benchmark_system.py
 ```
 
----
 
 ## Donate
 
