@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { Trophy, Play, CheckCircle2, XCircle, Timer, Zap, BarChart3 } from 'lucide-react';
-import { useEvalStore, EvalChallenge } from '../services/agentEvalService';
+import { useEvalStore, EvalChallenge } from '../../services/agentEvalService';
 import { motion } from 'motion/react';
 
 export const AgentEvalTab = () => {
