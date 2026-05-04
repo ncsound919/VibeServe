@@ -1,0 +1,35 @@
+{
+  "name": "codenexus-orchestrator",
+  "version": "1.0.0",
+  "description": "CodeNexus Orchestrator - Agent execution engine, WebSocket server, and CodeNexus review gate for VibeServe",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "biome check src/",
+    "test": "vitest",
+    "mcp": "tsx src/mcp-client.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "ws": "^8.14.0",
+    "wslink": "^1.0.0",
+    "express": "^4.18.0",
+    "cors": "^2.8.0",
+    "uuid": "^9.0.0",
+    "semver": "^7.5.0",
+    "playwright": "^1.40.0",
+    "@biomejs/biome": "^1.4.0",
+    "semgrep": "^0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "@types/uuid": "^9.0.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.1.0"
+  }
+}
