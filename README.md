@@ -46,11 +46,6 @@ Each step is an independent MCP tool. Chain the full pipeline or call any step s
 
 
 
-<p align="center">
-  <img src="assets/flyer.png" width="600" alt="VibeServe Flyer" />
-</p>
-- **Docker Support** — `Dockerfile` + `docker-compose.yml` included
-
 
 
 ## Quickstart
