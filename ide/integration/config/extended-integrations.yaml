@@ -1,0 +1,191 @@
+# Nexus Alpha Extended Integrations
+# Additional powerful tools for the stack
+
+# ============================================
+# MEMORY & CONTEXT MANAGEMENT
+# ============================================
+
+memory:
+  # Mem0 - Universal memory layer (54K stars)
+  mem0:
+    enabled: true
+    config:
+      # Vector store for semantic recall
+      vector_store:
+        provider: qdrant
+        collection: mem0_memories
+
+      # Optional: Knowledge graph for entity relationships
+      # graph:
+      #   enabled: true
+      #   provider: neo4j
+
+      # Memory retrieval settings
+      retrieval:
+        top_results: 5
+        min_relevance_score: 0.7
+
+    # API key for managed service (optional - self-host free)
+    api_key: ${MEM0_API_KEY}
+
+  # Letta - Agent runtime with self-editing memory
+  letta:
+    enabled: false  # Set true to use Letta instead of Mem0
+    config:
+      # Memory tiers: Core (always in context), Recall (searchable), Archival (storage)
+      memory_tiers:
+        core:
+          max_tokens: 8000
+        recall:
+          max_tokens: 32000
+        archival:
+          unlimited: true
+
+      # Model configuration
+      model: claude-sonnet-4-20250514
+
+# ============================================
+# WEB SEARCH & RESEARCH
+# ============================================
+
+search:
+  # Firecrawl - Agent-ready web data (27K stars)
+  firecrawl:
+    enabled: true
+    config:
+      api_key: ${FIRECRAWL_API_KEY}
+      # Use for: search, scrape, crawl, map, agent
+      default_mode: scrape
+
+  # Tavily - "Search engine for AI agents"
+  tavily:
+    enabled: true
+    config:
+      api_key: ${TAVILY_API_KEY}
+      # Options: basic, advanced
+      search_depth: advanced
+      # Include AI-generated answer
+      include_answer: true
+
+  # Exa - Neural semantic search
+  exa:
+    enabled: false
+    config:
+      api_key: ${EXA_API_KEY}
+      # Use for: code search, research, find similar
+      default_mode: neural
+
+# ============================================
+# WORKFLOW ORCHESTRATION
+# ============================================
+
+workflow:
+  # n8n - Visual automation (175K stars)
+  n8n:
+    enabled: false  # Requires separate n8n installation
+    url: http://n8n:5678
+    # Pre-built workflows for:
+    # - GitHub PR code review
+    # - Lead enrichment
+    # - RAG chatbots
+
+  # Temporal - Durable execution
+  temporal:
+    enabled: false
+    config:
+      address: temporal:7233
+      namespace: default
+      # Use for: reliable agent state, human-in-loop, retries
+
+# ============================================
+# SANDBOX & EXECUTION
+# ============================================
+
+sandbox:
+  # SmolVM - MicroVM isolation
+  smolvm:
+    enabled: false
+    config:
+      # Sub-second boot, hardware isolation
+      boot_timeout_ms: 500
+      # Network allowlist for egress filtering
+      allowed_domains:
+        - "*.github.com"
+        - "api.openai.com"
+        - "api.anthropic.com"
+      # Mount local directories for agent access
+      mounts:
+        - /workspace:/workspace:ro
+      # Browser sessions for GUI agents
+      enable_browser: false
+
+  # runtm - Agent coding sandboxes
+  runtm:
+    enabled: false
+    config:
+      # Per-agent isolated environments
+      pool_size: 5
+      # Auto-cleanup after inactivity (minutes)
+      cleanup_timeout: 30
+
+# ============================================
+# OBSERVABILITY
+# ============================================
+
+observability:
+  # Langfuse - LLM observability
+  langfuse:
+    enabled: true
+    config:
+      public_key: ${LANGFUSE_PUBLIC_KEY}
+      secret_key: ${LANGFUSE_SECRET_KEY}
+      # Track: tokens, cost, latency, traces
+     追踪:
+        - tool_calls
+        - model_responses
+        - user_feedback
+
+  # Helicone - Open-source observability
+  helicone:
+    enabled: false
+    config:
+      api_key: ${HELICONE_API_KEY}
+      # Proxy configuration for OpenAI/Anthropic
+
+# ============================================
+# MCP SERVERS (Extended)
+# ============================================
+
+mcp_servers:
+  # Additional MCP servers to connect to nanobot
+
+  # Database MCP
+  postgres-mcp:
+    command: npx
+    args: ["-y", "pg-mcp-server"]
+    env:
+      DATABASE_URL: ${DATABASE_URL}
+
+  # Filesystem with better controls
+  filesystem-safe:
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
+    enabledTools:
+      - read_file
+      - read_multiple_files
+      - list_directory
+      - search_files
+
+  # Slack integration
+  slack-mcp:
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-slack"]
+    env:
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+
+  # Notion integration
+  notion-mcp:
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-notion"]
+    env:
+      NOTION_API_KEY: ${NOTION_API_KEY}

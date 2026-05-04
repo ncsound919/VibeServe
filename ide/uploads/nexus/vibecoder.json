@@ -1,0 +1,213 @@
+{
+  "builds": [
+    {
+      "buildId": "build_1777510377382",
+      "timestamp": "2026-04-30T00:52:57.383Z",
+      "totalScore": 25,
+      "scores": {
+        "Type Safety": 0,
+        "Code Quality": 0,
+        "Security Audit": 0,
+        "Bundle Health": 4,
+        "Dependencies": 11,
+        "Project Structure": 10
+      },
+      "repoCount": 1,
+      "passedGates": 2,
+      "totalGates": 6
+    },
+    {
+      "buildId": "build_1777511064745",
+      "timestamp": "2026-04-30T01:04:24.745Z",
+      "totalScore": 25,
+      "scores": {
+        "Type Safety": 0,
+        "Code Quality": 0,
+        "Security Audit": 0,
+        "Bundle Health": 4,
+        "Dependencies": 11,
+        "Project Structure": 10
+      },
+      "repoCount": 1,
+      "passedGates": 2,
+      "totalGates": 6
+    },
+    {
+      "buildId": "build_1777577092929",
+      "timestamp": "2026-04-30T19:24:52.930Z",
+      "totalScore": 46,
+      "scores": {
+        "Type Safety": 15,
+        "Code Quality": 0,
+        "Security Audit": 0,
+        "Bundle Health": 10,
+        "Dependencies": 11,
+        "Project Structure": 10
+      },
+      "repoCount": 1,
+      "passedGates": 3,
+      "totalGates": 6
+    },
+    {
+      "buildId": "build_1777577718079",
+      "timestamp": "2026-04-30T19:35:18.080Z",
+      "totalScore": 46,
+      "scores": {
+        "Type Safety": 15,
+        "Code Quality": 0,
+        "Security Audit": 0,
+        "Bundle Health": 10,
+        "Dependencies": 11,
+        "Project Structure": 10
+      },
+      "repoCount": 1,
+      "passedGates": 3,
+      "totalGates": 6
+    },
+    {
+      "buildId": "build_1777578231913",
+      "timestamp": "2026-04-30T19:43:51.915Z",
+      "totalScore": 46,
+      "scores": {
+        "Type Safety": 15,
+        "Code Quality": 0,
+        "Security Audit": 0,
+        "Bundle Health": 10,
+        "Dependencies": 11,
+        "Project Structure": 10
+      },
+      "repoCount": 1,
+      "passedGates": 3,
+      "totalGates": 6
+    }
+  ],
+  "latestScore": {
+    "total": 46,
+    "maxTotal": 100,
+    "letter": "D",
+    "gates": [
+      {
+        "gate": "Type Safety",
+        "passed": false,
+        "score": 15,
+        "maxScore": 20,
+        "details": [
+          "Type check unavailable in-process (passed via local script)"
+        ],
+        "warnings": []
+      },
+      {
+        "gate": "Code Quality",
+        "passed": false,
+        "score": 0,
+        "maxScore": 20,
+        "details": [
+          "Lint not available"
+        ],
+        "warnings": []
+      },
+      {
+        "gate": "Security Audit",
+        "passed": false,
+        "score": 0,
+        "maxScore": 20,
+        "details": [
+          "Security scan not available"
+        ],
+        "warnings": []
+      },
+      {
+        "gate": "Bundle Health",
+        "passed": true,
+        "score": 10,
+        "maxScore": 15,
+        "details": [
+          "Total JS bundle: 1511 KB (1.48 MB)"
+        ],
+        "warnings": [
+          "Bundle over 1 MB (1511 KB) — consider code splitting"
+        ]
+      },
+      {
+        "gate": "Dependencies",
+        "passed": true,
+        "score": 11,
+        "maxScore": 15,
+        "details": [
+          "Total dependencies: 55",
+          "package-lock.json: Present"
+        ],
+        "warnings": [
+          "55 dependencies — review for unused packages"
+        ]
+      },
+      {
+        "gate": "Project Structure",
+        "passed": true,
+        "score": 10,
+        "maxScore": 10,
+        "details": [
+          ".gitignore: ✓",
+          "tsconfig.json: ✓",
+          "README.md: ✓",
+          ".env.local (in .gitignore): ✓",
+          "package.json: ✓",
+          "Directory 'src/': ✓",
+          "Directory 'tests/': ✓",
+          "Directory 'docs/': ✓"
+        ],
+        "warnings": []
+      }
+    ],
+    "timestamp": "2026-04-30T19:43:51.915Z",
+    "buildId": "build_1777578231913",
+    "repoCount": 1,
+    "durationMs": 1000,
+    "insights": []
+  },
+  "bestScore": 46,
+  "averageScore": 38,
+  "totalBuilds": 5,
+  "streak": 5,
+  "longestStreak": 5,
+  "lastBuild": "2026-04-30T19:43:51.915Z",
+  "insights": [
+    {
+      "pattern": "no-strict-mode",
+      "category": "fix",
+      "message": "Enable 'strict: true' in tsconfig.json for 3-5 extra points on every build.",
+      "frequency": 1,
+      "confidence": 0.9,
+      "autoFix": "Set \"compilerOptions.strict\": true in tsconfig.json"
+    },
+    {
+      "pattern": "large-bundle",
+      "category": "optimization",
+      "message": "Consider lazy-loading routes with React.lazy() or dynamic imports to reduce initial bundle size.",
+      "frequency": 1,
+      "confidence": 0.8
+    }
+  ],
+  "trends": [
+    {
+      "label": "Apr 29",
+      "score": 25
+    },
+    {
+      "label": "Apr 29",
+      "score": 25
+    },
+    {
+      "label": "Apr 30",
+      "score": 46
+    },
+    {
+      "label": "Apr 30",
+      "score": 46
+    },
+    {
+      "label": "Apr 30",
+      "score": 46
+    }
+  ]
+}

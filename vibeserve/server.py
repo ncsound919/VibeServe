@@ -1,0 +1,67 @@
+from typing import Optional
+class _LazyMCP:
+    _tools: list = []
+    _resources: list = []
+    _prompts: list = []
+    _name: str = ""
+
+    @classmethod
+    def init(cls, name: str) -> None:
+        cls._name = name
+
+    @classmethod
+    def tool(cls, name: Optional[str] = None, description: Optional[str] = None):
+        def decorator(func):
+            cls._tools.append((name, description, func))
+            return func
+        return decorator
+
+    @classmethod
+    def resource(cls, uri: str):
+        def decorator(func):
+            cls._resources.append((uri, func))
+            return func
+        return decorator
+
+    @classmethod
+    def prompt(cls):
+        def decorator(func):
+            cls._prompts.append(func)
+            return func
+        return decorator
+
+    @classmethod
+    def build(cls):
+        from fastmcp import FastMCP
+        server = FastMCP(cls._name)
+        for name, desc, func in cls._tools:
+            kwargs = {}
+            if name:
+                kwargs["name"] = name
+            if desc:
+                kwargs["description"] = desc
+            server.tool(**kwargs)(func)
+        for uri, func in cls._resources:
+            server.resource(uri)(func)
+        for func in cls._prompts:
+            server.prompt()(func)
+        return server
+
+
+mcp_server = _LazyMCP
+_LazyMCP.init("VibeServe")
+
+CONTENT_GUIDELINES = """
+CRITICAL CONTENT RULES:
+NO FABRICATION:
+- NEVER invent statistics, testimonials, quotes, or named users.
+- NEVER use SaaS copy: "Free Trial", "Pricing Plans", "Sign Up", "Enterprise Tier".
+MUST INCLUDE: Logo, actual features from plan, pipeline diagram, quick start, donate link.
+STRUCTURAL: Valid HTML, ARIA labels, relative asset paths, current year.
+"""
+
+
+def _clip(d, *_):
+    return {k: v for k, v in d.items() if not k.startswith("_")}
+
+

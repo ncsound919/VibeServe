@@ -1,0 +1,125 @@
+name: Nexus Alpha CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck:
+    name: Lint & TypeCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Biome lint
+        run: npx biome check . --no-errors-on-unmatched
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+      - name: Server type check (Node-only boundary)
+        run: npx tsc --noEmit --project packages/server/tsconfig.json
+        continue-on-error: true
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [lint-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run unit tests
+        run: npm run test:unit
+
+  build:
+    name: Build (Vite)
+    runs-on: ubuntu-latest
+    needs: [lint-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: [lint-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+      - name: Check for secrets
+        run: |
+          if grep -r "GEMINI_API_KEY\|OPENROUTER_API_KEY\|DEEPSEEK_API_KEY" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules src/ 2>/dev/null; then
+            echo "WARNING: Potential API key patterns found in source"
+          fi
+          echo "Secrets scan complete"
+      - name: Verify CSP header
+        run: |
+          ALLOWED_ORIGINS="https://generativelanguage.googleapis.com https://api.github.com https://openrouter.ai https://api.deepseek.com https://*.supabase.co wss: ws:"
+          CSP_CONNECT=$(grep -oP 'connect-src[^;"]+' vite.config.ts | tr -d "'")
+          if [ -z "$CSP_CONNECT" ]; then
+            echo "ERROR: No connect-src directive found in CSP"
+            exit 1
+          fi
+          for origin in $ALLOWED_ORIGINS; do
+            if ! echo "$CSP_CONNECT" | grep -qF "$origin"; then
+              echo "ERROR: Required origin '$origin' missing from CSP connect-src"
+              exit 1
+            fi
+          done
+          KNOWN_SET="self https://generativelanguage.googleapis.com https://api.github.com https://openrouter.ai https://api.deepseek.com https://*.supabase.co wss: ws:"
+          ENTRIES=$(echo "$CSP_CONNECT" | sed 's/connect-src//' | tr ' ' '\n' | sed '/^$/d')
+          for entry in $ENTRIES; do
+            if ! echo "$KNOWN_SET" | grep -qF "$entry"; then
+              echo "WARNING: Unexpected origin in CSP connect-src: $entry"
+            fi
+          done
+          echo "CSP verification complete"

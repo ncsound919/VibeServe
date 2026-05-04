@@ -1,0 +1,81 @@
+name: nexus-alpha-agent
+version: "1.0.0"
+
+model:
+  provider: anthropic
+  name: claude-sonnet-4-20250514
+  api_key: ${ANTHROPIC_API_KEY}
+
+# Memory & Context
+memory:
+  enabled: true
+  type: file
+  path: ./memory
+  max_history: 100
+
+# Tool Configuration
+tools:
+  mcpServers:
+    # GitHub MCP Server
+    github:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-github"]
+      env:
+        GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN}
+
+    # Filesystem MCP (read-only for security)
+    filesystem:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
+      enabledTools:
+        - read_file
+        - read_multiple_files
+        - list_directory
+
+    # MarkItDown for document conversion
+    markitdown:
+      command: npx
+      args: ["-y", "markitdown-mcp"]
+      url: http://host.docker.internal:3001
+
+    # Nexus Alpha internal MCP
+    nexus-alpha:
+      command: node
+      args: ["/app/nexus-mcp-server.js"]
+      env:
+        DATABASE_URL: ${DATABASE_URL}
+        API_KEY: ${NEXUS_API_KEY}
+
+  # Built-in tools
+  builtin:
+    enabled:
+      - bash
+      - read_file
+      - write_file
+      - edit_file
+      - glob
+      - grep
+      - web_fetch
+      - web_search
+
+# Agent Behavior
+agent:
+  max_turns: 50
+  timeout: 300000
+  system_prompt: |
+    You are Nexus Alpha, an AI-powered development assistant that helps
+    developers discover, analyze, and integrate open source tools.
+
+    Available capabilities:
+    - Search and analyze GitHub trending repos
+    - Read and convert documents (PDF, DOCX, etc.)
+    - Execute commands and manage files
+    - Query vector databases for context
+    - Manage git workflows
+
+    Always cite sources and provide actionable recommendations.
+
+# Logging
+logging:
+  level: info
+  file: ./logs/nanobot.log

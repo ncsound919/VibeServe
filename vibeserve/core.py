@@ -1,13 +1,16 @@
 """Core business logic: validation, critique, generators, memory, cache."""
 
 from __future__ import annotations
+import aiosqlite
 import asyncio
 import hashlib
 import json
 import logging
 import os
 import re
+import sqlite3
 import time
+from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,6 +59,8 @@ class Config:
     max_variants: int = 4
     evolution_threshold: float = 0.85
     min_score_to_store: float = 0.82
+    max_llm_calls: int = 50
+    max_cost: float = 1.0
 
 
 CONFIG = Config()
@@ -125,68 +130,80 @@ class SchemaValidator:
 class MemoryStore:
     def __init__(self, db_path: Path = CONFIG.memory_db):
         self.db_path = db_path
-        self._init_db()
+        self._initialized = False
+        self._lock = asyncio.Lock()
 
-    def _init_db(self):
-        import sqlite3
-        with sqlite3.connect(str(self.db_path)) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS specs (
-                    id TEXT PRIMARY KEY,
-                    page_type TEXT NOT NULL,
-                    score REAL NOT NULL DEFAULT 0.0,
-                    timestamp TEXT NOT NULL,
-                    spec_json TEXT NOT NULL
-                )
-            """)
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_page_type ON specs(page_type)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_score ON specs(score DESC)")
-            conn.commit()
+    async def _ensure_init(self):
+        """Lazily initialize DB on first use (async-safe)."""
+        if self._initialized:
+            return
+        async with self._lock:
+            if self._initialized:
+                return
+            async with aiosqlite.connect(str(self.db_path)) as conn:
+                await conn.execute("""
+                    CREATE TABLE IF NOT EXISTS specs (
+                        id TEXT PRIMARY KEY,
+                        page_type TEXT NOT NULL,
+                        score REAL NOT NULL DEFAULT 0.0,
+                        timestamp TEXT NOT NULL,
+                        spec_json TEXT NOT NULL
+                    )
+                """)
+                await conn.execute("CREATE INDEX IF NOT EXISTS idx_page_type ON specs(page_type)")
+                await conn.execute("CREATE INDEX IF NOT EXISTS idx_score ON specs(score DESC)")
+                await conn.commit()
+            self._initialized = True
 
-    def store(self, page_type: str, spec: Dict[str, Any], score: float):
+    async def store(self, page_type: str, spec: Dict[str, Any], score: float):
+        """Persist a high-scoring spec — non-blocking."""
         if score < CONFIG.min_score_to_store:
             return
-        import sqlite3
+        await self._ensure_init()
         spec_id = spec.get("metadata", {}).get("id", hashlib.sha256(
             f"{page_type}{time.time()}".encode()
         ).hexdigest()[:20])
         timestamp = datetime.now(timezone.utc).isoformat()
-        with sqlite3.connect(str(self.db_path)) as conn:
-            conn.execute(
+        async with aiosqlite.connect(str(self.db_path)) as conn:
+            await conn.execute(
                 "INSERT OR REPLACE INTO specs (id, page_type, score, timestamp, spec_json) VALUES (?, ?, ?, ?, ?)",
                 (spec_id, page_type, score, timestamp, json.dumps(spec))
             )
-            conn.commit()
+            await conn.commit()
         log.info(f"Stored spec {spec_id[:8]} for {page_type} (score: {score:.2f})")
 
-    def get(self, page_type: str, limit: int = 3) -> List[Dict[str, Any]]:
-        import sqlite3
-        with sqlite3.connect(str(self.db_path)) as conn:
-            conn.row_factory = sqlite3.Row
-            rows = conn.execute(
+    async def get(self, page_type: str, limit: int = 3) -> List[Dict[str, Any]]:
+        """Fetch top-scoring specs for a page type — non-blocking."""
+        await self._ensure_init()
+        async with aiosqlite.connect(str(self.db_path)) as conn:
+            conn.row_factory = aiosqlite.Row
+            async with conn.execute(
                 "SELECT spec_json, score FROM specs WHERE page_type = ? ORDER BY score DESC LIMIT ?",
                 (page_type, limit)
-            ).fetchall()
+            ) as cursor:
+                rows = await cursor.fetchall()
         return [{"score": row["score"], "spec": json.loads(row["spec_json"])} for row in rows]
 
-    def stats(self) -> Dict[str, Any]:
-        import sqlite3
+    async def stats(self) -> Dict[str, Any]:
+        """Return memory store statistics — non-blocking."""
         stats: Dict[str, Any] = {
             "total_stored_specs": 0, "by_page_type": {},
             "memory_usage_mb": 0, "oldest_spec": None, "highest_score": 0
         }
-        with sqlite3.connect(str(self.db_path)) as conn:
-            conn.row_factory = sqlite3.Row
-            rows = conn.execute(
+        await self._ensure_init()
+        async with aiosqlite.connect(str(self.db_path)) as conn:
+            conn.row_factory = aiosqlite.Row
+            async with conn.execute(
                 "SELECT page_type, COUNT(*) as cnt, MAX(score) as max_score, MIN(timestamp) as oldest "
                 "FROM specs GROUP BY page_type"
-            ).fetchall()
-            for row in rows:
-                stats["by_page_type"][row["page_type"]] = {
-                    "count": row["cnt"], "highest_score": row["max_score"], "oldest": row["oldest"]
-                }
-                stats["total_stored_specs"] += row["cnt"]
-                stats["highest_score"] = max(stats["highest_score"], row["max_score"])
+            ) as cursor:
+                rows = await cursor.fetchall()
+        for row in rows:
+            stats["by_page_type"][row["page_type"]] = {
+                "count": row["cnt"], "highest_score": row["max_score"], "oldest": row["oldest"]
+            }
+            stats["total_stored_specs"] += row["cnt"]
+            stats["highest_score"] = max(stats["highest_score"], row["max_score"])
         if self.db_path.exists():
             stats["memory_usage_mb"] = self.db_path.stat().st_size / (1024 * 1024)
         return stats
@@ -195,12 +212,12 @@ class MemoryStore:
 memory_store = MemoryStore()
 
 
-def store_successful_spec(page_type: str, spec: Dict[str, Any], score: float):
-    memory_store.store(page_type, spec, score)
+async def store_successful_spec(page_type: str, spec: Dict[str, Any], score: float):
+    await memory_store.store(page_type, spec, score)
 
 
-def get_similar_specs(page_type: str, limit: int = 3) -> List[Dict[str, Any]]:
-    return memory_store.get(page_type, limit)
+async def get_similar_specs(page_type: str, limit: int = 3) -> List[Dict[str, Any]]:
+    return await memory_store.get(page_type, limit)
 
 
 # ====================== CACHE ======================
@@ -351,14 +368,28 @@ class SpecGenerator:
         if not text or not isinstance(text, str):
             log.warning("[Security] _sanitize_input received non-string input")
             return ""
-        dangerous = [
-            "ignore previous", "system:", "assistant:", "```", "<|", "|>",
-            "DROP TABLE", "DELETE FROM", "INSERT INTO", "UNION SELECT",
-            "<script", "javascript:", "onerror=", "onload=",
-            "../", "\\x", "SELECT * FROM",
+        patterns = [
+            (r"ignore\s+previous", "", re.IGNORECASE),
+            (r"system:", "", re.IGNORECASE),
+            (r"assistant:", "", re.IGNORECASE),
+            (r"```", ""),
+            (r"<\|", ""),
+            (r"\|>", ""),
+            (r"DROP\s+TABLE", "", re.IGNORECASE),
+            (r"DELETE\s+FROM", "", re.IGNORECASE),
+            (r"INSERT\s+INTO", "", re.IGNORECASE),
+            (r"UNION\s+SELECT", "", re.IGNORECASE),
+            (r"<script", "", re.IGNORECASE),
+            (r"javascript:", "", re.IGNORECASE),
+            (r"onerror\s*=", "", re.IGNORECASE),
+            (r"onload\s*=", "", re.IGNORECASE),
+            (r"\.\./", ""),
+            (r"\\x", ""),
+            (r"SELECT\s+\*\s+FROM", "", re.IGNORECASE),
         ]
-        for pattern in dangerous:
-            text = text.replace(pattern, "")
+        for pattern in patterns:
+            flags = pattern[2] if len(pattern) > 2 else 0
+            text = re.sub(pattern[0], pattern[1], text, flags=flags)
         text = re.sub(r'\s+', ' ', text)
         sanitized = text[:max_len].strip()
         if sanitized != text[:max_len].strip():
@@ -709,12 +740,12 @@ class SystemAuditor:
 # ====================== CRITIQUE LOOP ======================
 class CritiqueLoop:
     def __init__(self, max_iterations: int = 3, quality_threshold: float = 0.80,
-                 generator_provider=None, critic_provider=None):
+                 generator_provider: Optional[str] = None, critic_provider: Optional[str] = None):
         self.max_iterations = max_iterations
         self.quality_threshold = quality_threshold
         self.critique = MultiAgentCritique()
         from vibeserve.providers import router
-        self.generator = router.get(generator_provider)
+        self.generator = router.get(generator_provider) if generator_provider else router.get()
         self.critic = router.get(critic_provider) if critic_provider else self.generator
 
     async def improve(self, initial_output: Dict[str, Any],
@@ -885,16 +916,30 @@ class TemplateLibrary:
 
     @classmethod
     def _mutate(cls, content: str, name: str) -> str:
-        mutations = _random.randint(1, 3)
-        for _ in range(mutations):
-            op = _random.choice(["color_variant", "spacing_shift", "font_swap"])
-            if op == "color_variant":
-                content = cls._shift_accent(content)
-            elif op == "spacing_shift":
-                content = cls._vary_spacing(content)
-            elif op == "font_swap":
-                content = cls._swap_font(content)
-        return f"# Design System: {name} (Monte Carlo seed: {_random.randint(1000,9999)})\n{content}"
+        original = content
+        for _ in range(5):
+            mutated = original
+            mutations = _random.randint(1, 3)
+            for _ in range(mutations):
+                op = _random.choice(["color_variant", "spacing_shift", "font_swap"])
+                if op == "color_variant":
+                    mutated = cls._shift_accent(mutated)
+                elif op == "spacing_shift":
+                    mutated = cls._vary_spacing(mutated)
+                elif op == "font_swap":
+                    mutated = cls._swap_font(mutated)
+            
+            # WCAG re-validation
+            colors = re.findall(r'#([0-9a-fA-F]{6})', mutated)
+            valid = True
+            for hex_val in colors:
+                hex_val = f"#{hex_val}"
+                if contrast_ratio(hex_val, "#FFFFFF") < 4.5 and contrast_ratio(hex_val, "#000000") < 4.5:
+                    valid = False
+                    break
+            if valid:
+                return f"# Design System: {name} (Monte Carlo seed: {_random.randint(1000,9999)})\n{mutated}"
+        return f"# Design System: {name} (Monte Carlo seed: {_random.randint(1000,9999)})\n{original}"
 
     @staticmethod
     def _shift_accent(content: str) -> str:

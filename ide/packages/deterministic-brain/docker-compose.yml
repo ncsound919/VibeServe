@@ -1,0 +1,9 @@
+deterministic-brain:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - BRAIN_API_PORT=8000
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped

@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "currentIteration": 0,
+  "maxIterations": 1,
+  "passThreshold": 0.8,
+  "history": []
+}

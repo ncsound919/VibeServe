@@ -7,9 +7,16 @@ __pycache__/
 
 # Generated output files
 benchmark_results.json
+trinity_benchmark_results.json
 loop_analysis.json
 audit_output.json
 *.log
+
+# Build / dist
+dist/
+build/
+*.egg-info/
+*.egg
 
 # OS files
 .DS_Store
@@ -20,3 +27,12 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Generated images (do not commit generated binary assets)
+generated-image*.png
+*.png
+*.jpg
+!docs/logo.png
+!docs/flyer.png
+!assets/logo.png
+!assets/flyer.png

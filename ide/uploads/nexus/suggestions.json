@@ -1,0 +1,35 @@
+[
+  {
+    "id": "sug_1777577092939_wzuf2a89z",
+    "benchmarkId": "LINT_SCORE",
+    "benchmarkName": "Code Quality",
+    "message": "Code Quality score 0/100 — Improve Code Quality: check configuration",
+    "actionable": "Improve Code Quality: check configuration",
+    "applied": false,
+    "scoreBefore": 0,
+    "outcome": "pending",
+    "createdAt": "2026-04-30T19:24:52.939Z"
+  },
+  {
+    "id": "sug_1777577092942_en3f3codg",
+    "benchmarkId": "SECURITY",
+    "benchmarkName": "Security Audit",
+    "message": "Security Audit score 0/100 — Improve Security Audit: check configuration",
+    "actionable": "Improve Security Audit: check configuration",
+    "applied": false,
+    "scoreBefore": 0,
+    "outcome": "pending",
+    "createdAt": "2026-04-30T19:24:52.942Z"
+  },
+  {
+    "id": "sug_1777577092946_nu0w8em33",
+    "benchmarkId": "BUNDLE_SIZE",
+    "benchmarkName": "Bundle Health",
+    "message": "Bundle Health score 67/100 — Improve Bundle Health: Bundle over 1 MB (1511 KB) — consider code splitting",
+    "actionable": "Improve Bundle Health: Bundle over 1 MB (1511 KB) — consider code splitting",
+    "applied": false,
+    "scoreBefore": 67,
+    "outcome": "pending",
+    "createdAt": "2026-04-30T19:24:52.946Z"
+  }
+]

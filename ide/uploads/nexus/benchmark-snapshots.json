@@ -1,0 +1,594 @@
+[
+  {
+    "timestamp": "2026-04-30T19:24:52.933Z",
+    "benchmarks": [
+      {
+        "id": "TYPE_SAFETY",
+        "name": "TypeScript Compilation",
+        "category": "Quality",
+        "currentScore": 75,
+        "targetScore": 95,
+        "weight": 0.8,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.933Z",
+        "affectedBy": [
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "BUNDLE_SIZE",
+        "name": "Bundle Health",
+        "category": "Performance",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "DEPS_AUDIT",
+        "name": "Unused Dependencies",
+        "category": "Maintenance",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "SECURITY",
+        "name": "Security Vulnerabilities",
+        "category": "Security",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 1,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Trivy",
+          "Semgrep",
+          "Gitleaks"
+        ]
+      },
+      {
+        "id": "LINT_SCORE",
+        "name": "Lint Errors",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.8,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Biome",
+          "Biome static analysis"
+        ]
+      },
+      {
+        "id": "TEST_COVERAGE",
+        "name": "E2E Pass Rate",
+        "category": "Testing",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.9,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "E2E Playwright"
+        ]
+      },
+      {
+        "id": "ACCESSIBILITY",
+        "name": "A11y Score",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.6,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": []
+      },
+      {
+        "id": "PERF_SCORE",
+        "name": "Build & Bundle Performance",
+        "category": "Performance",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.7,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Biome",
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "STRUCTURE",
+        "name": "Project Structure",
+        "category": "Architecture",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.6,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": []
+      },
+      {
+        "id": "TOKEN_EFFICIENCY",
+        "name": "Token Efficiency",
+        "category": "Optimization",
+        "currentScore": 0,
+        "targetScore": 80,
+        "weight": 0.5,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Graphify",
+          "TOON"
+        ]
+      }
+    ],
+    "overallScore": 9,
+    "grade": "F"
+  },
+  {
+    "timestamp": "2026-04-30T19:24:52.945Z",
+    "benchmarks": [
+      {
+        "id": "TYPE_SAFETY",
+        "name": "TypeScript Compilation",
+        "category": "Quality",
+        "currentScore": 75,
+        "targetScore": 95,
+        "weight": 0.8,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.933Z",
+        "affectedBy": [
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "BUNDLE_SIZE",
+        "name": "Bundle Health",
+        "category": "Performance",
+        "currentScore": 67,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.944Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "DEPS_AUDIT",
+        "name": "Unused Dependencies",
+        "category": "Maintenance",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "SECURITY",
+        "name": "Security Vulnerabilities",
+        "category": "Security",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 1,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.941Z",
+        "affectedBy": [
+          "Trivy",
+          "Semgrep",
+          "Gitleaks"
+        ]
+      },
+      {
+        "id": "LINT_SCORE",
+        "name": "Lint Errors",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.8,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.936Z",
+        "affectedBy": [
+          "Biome",
+          "Biome static analysis"
+        ]
+      },
+      {
+        "id": "TEST_COVERAGE",
+        "name": "E2E Pass Rate",
+        "category": "Testing",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.9,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "E2E Playwright"
+        ]
+      },
+      {
+        "id": "ACCESSIBILITY",
+        "name": "A11y Score",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.6,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": []
+      },
+      {
+        "id": "PERF_SCORE",
+        "name": "Build & Bundle Performance",
+        "category": "Performance",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.7,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Biome",
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "STRUCTURE",
+        "name": "Project Structure",
+        "category": "Architecture",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.6,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": []
+      },
+      {
+        "id": "TOKEN_EFFICIENCY",
+        "name": "Token Efficiency",
+        "category": "Optimization",
+        "currentScore": 0,
+        "targetScore": 80,
+        "weight": 0.5,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Graphify",
+          "TOON"
+        ]
+      }
+    ],
+    "overallScore": 15,
+    "grade": "F"
+  },
+  {
+    "timestamp": "2026-04-30T19:24:52.948Z",
+    "benchmarks": [
+      {
+        "id": "TYPE_SAFETY",
+        "name": "TypeScript Compilation",
+        "category": "Quality",
+        "currentScore": 75,
+        "targetScore": 95,
+        "weight": 0.8,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.933Z",
+        "affectedBy": [
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "BUNDLE_SIZE",
+        "name": "Bundle Health",
+        "category": "Performance",
+        "currentScore": 67,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.944Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "DEPS_AUDIT",
+        "name": "Unused Dependencies",
+        "category": "Maintenance",
+        "currentScore": 73,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.948Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "SECURITY",
+        "name": "Security Vulnerabilities",
+        "category": "Security",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 1,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.941Z",
+        "affectedBy": [
+          "Trivy",
+          "Semgrep",
+          "Gitleaks"
+        ]
+      },
+      {
+        "id": "LINT_SCORE",
+        "name": "Lint Errors",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.8,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.936Z",
+        "affectedBy": [
+          "Biome",
+          "Biome static analysis"
+        ]
+      },
+      {
+        "id": "TEST_COVERAGE",
+        "name": "E2E Pass Rate",
+        "category": "Testing",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.9,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "E2E Playwright"
+        ]
+      },
+      {
+        "id": "ACCESSIBILITY",
+        "name": "A11y Score",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.6,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": []
+      },
+      {
+        "id": "PERF_SCORE",
+        "name": "Build & Bundle Performance",
+        "category": "Performance",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.7,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Biome",
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "STRUCTURE",
+        "name": "Project Structure",
+        "category": "Architecture",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.6,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": []
+      },
+      {
+        "id": "TOKEN_EFFICIENCY",
+        "name": "Token Efficiency",
+        "category": "Optimization",
+        "currentScore": 0,
+        "targetScore": 80,
+        "weight": 0.5,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Graphify",
+          "TOON"
+        ]
+      }
+    ],
+    "overallScore": 22,
+    "grade": "F"
+  },
+  {
+    "timestamp": "2026-04-30T19:24:52.951Z",
+    "benchmarks": [
+      {
+        "id": "TYPE_SAFETY",
+        "name": "TypeScript Compilation",
+        "category": "Quality",
+        "currentScore": 75,
+        "targetScore": 95,
+        "weight": 0.8,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.933Z",
+        "affectedBy": [
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "BUNDLE_SIZE",
+        "name": "Bundle Health",
+        "category": "Performance",
+        "currentScore": 67,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.944Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "DEPS_AUDIT",
+        "name": "Unused Dependencies",
+        "category": "Maintenance",
+        "currentScore": 73,
+        "targetScore": 100,
+        "weight": 0.7,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.948Z",
+        "affectedBy": [
+          "Knip"
+        ]
+      },
+      {
+        "id": "SECURITY",
+        "name": "Security Vulnerabilities",
+        "category": "Security",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 1,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.941Z",
+        "affectedBy": [
+          "Trivy",
+          "Semgrep",
+          "Gitleaks"
+        ]
+      },
+      {
+        "id": "LINT_SCORE",
+        "name": "Lint Errors",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.8,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.936Z",
+        "affectedBy": [
+          "Biome",
+          "Biome static analysis"
+        ]
+      },
+      {
+        "id": "TEST_COVERAGE",
+        "name": "E2E Pass Rate",
+        "category": "Testing",
+        "currentScore": 0,
+        "targetScore": 100,
+        "weight": 0.9,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "E2E Playwright"
+        ]
+      },
+      {
+        "id": "ACCESSIBILITY",
+        "name": "A11y Score",
+        "category": "Quality",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.6,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": []
+      },
+      {
+        "id": "PERF_SCORE",
+        "name": "Build & Bundle Performance",
+        "category": "Performance",
+        "currentScore": 0,
+        "targetScore": 90,
+        "weight": 0.7,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Biome",
+          "Sequential-Thinking-MCP"
+        ]
+      },
+      {
+        "id": "STRUCTURE",
+        "name": "Project Structure",
+        "category": "Architecture",
+        "currentScore": 100,
+        "targetScore": 100,
+        "weight": 0.6,
+        "trend": "up",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.951Z",
+        "affectedBy": []
+      },
+      {
+        "id": "TOKEN_EFFICIENCY",
+        "name": "Token Efficiency",
+        "category": "Optimization",
+        "currentScore": 0,
+        "targetScore": 80,
+        "weight": 0.5,
+        "trend": "stable",
+        "previousScore": 0,
+        "lastUpdated": "2026-04-30T19:24:52.931Z",
+        "affectedBy": [
+          "Graphify",
+          "TOON"
+        ]
+      }
+    ],
+    "overallScore": 30,
+    "grade": "F"
+  }
+]

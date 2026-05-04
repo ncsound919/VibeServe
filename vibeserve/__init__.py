@@ -33,7 +33,9 @@ from vibeserve.core import (
 )
 from vibeserve.__main__ import (
     demo, vibe_demo, main,
-    vibe_architect_tool, vibe_code_tool, generate_ui_spec_tool,
+    vibe_architect_tool, vibe_code_tool, vibe_review_tool, vibe_verify_tool,
+    vibe_iterate_tool, vibe_test_tool, vibe_deploy_tool,
+    generate_ui_spec_tool,
     validate_ui_spec_tool, list_design_systems_tool, memory_stats_tool,
     vibe_design_tool, vibe_preview_tool, vibe_docs_tool,
     vibe_health_tool, vibe_audit_tool, vibe_compress_tool,
@@ -63,7 +65,8 @@ __all__ = [
     "SystemAuditor", "CritiqueLoop", "VibeTester", "VibeDeployer",
     "TemplateLibrary", "DesignUpgrader", "Config",
     "demo", "vibe_demo", "main",
-    "vibe_architect_tool", "vibe_code_tool", "generate_ui_spec_tool",
+    "vibe_architect_tool", "vibe_code_tool", "vibe_review_tool", "vibe_verify_tool",
+    "vibe_iterate_tool", "vibe_test_tool", "vibe_deploy_tool", "generate_ui_spec_tool",
     "validate_ui_spec_tool", "list_design_systems_tool", "memory_stats_tool",
     "vibe_design_tool", "vibe_preview_tool", "vibe_docs_tool",
     "vibe_health_tool", "vibe_audit_tool", "vibe_compress_tool",

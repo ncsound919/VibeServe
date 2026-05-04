@@ -1,0 +1,347 @@
+version: "3.9"
+
+services:
+  # ============================================
+  # DATABASE LAYER
+  # ============================================
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nexus-postgres
+    environment:
+      - POSTGRES_USER=nexus
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=nexus_alpha
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus_alpha"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # VECTOR & CACHE LAYER
+  # ============================================
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: nexus-qdrant
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-redis
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # OBSERVABILITY LAYER
+  # ============================================
+
+  langfuse:
+    image: ghcr.io/langfuse/langfuse:latest
+    container_name: nexus-langfuse
+    volumes:
+      - ./data/langfuse:/data
+    environment:
+      - DATABASE_URL=postgresql://nexus:${POSTGRES_PASSWORD}@postgres:5432/langfuse
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - SALT=${LANGFUSE_SALT}
+      - NODE_ENV=production
+    ports:
+      - "3001:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/public/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # MEMORY LAYER
+  # ============================================
+
+  mem0:
+    image: mem0ai/mem0:latest
+    container_name: nexus-mem0
+    volumes:
+      - mem0-data:/data
+    environment:
+      - MEM0_API_KEY=${MEM0_API_KEY}
+      - QDRANT_URL=http://qdrant:6333
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # MCP SERVERS
+  # ============================================
+
+  github-mcp:
+    image: ghcr.io/github/github-mcp-server:latest
+    container_name: nexus-github-mcp
+    environment:
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      - ./config/github-mcp:/data
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  filesystem-mcp:
+    image: mcp/server-filesystem:latest
+    container_name: nexus-filesystem-mcp
+    volumes:
+      - ./workspace:/workspace
+    command: ["/bin/sh", "-c", "npx -y @modelcontextprotocol/server-filesystem /workspace"]
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  sequential-thinking-mcp:
+    image: mcp/sequential-thinking:latest
+    container_name: nexus-sequential-thinking-mcp
+    command: ["/bin/sh", "-c", "npx -y @modelcontextprotocol/server-sequential-thinking"]
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # WORKFLOW ENGINE
+  # ============================================
+
+  temporal:
+    image: temporalio/auto-setup:1.30.1
+    container_name: nexus-temporal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=nexus
+      - POSTGRES_PWD=${POSTGRES_PASSWORD}
+      - POSTGRES_SEEDS=postgres
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development.yaml
+    ports:
+      - "7233:7233"
+    volumes:
+      - ./config/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  temporal-admin-tools:
+    image: temporalio/admin-tools:1.30.1
+    container_name: nexus-temporal-admin
+    depends_on:
+      temporal:
+        condition: service_started
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+    command: ["tctl", "namespace", "register", "nexus-alpha", "--retention", "30"]
+    networks:
+      - nexus-network
+
+  temporal-ui:
+    image: temporalio/ui:2.37.1
+    container_name: nexus-temporal-ui
+    depends_on:
+      temporal:
+        condition: service_started
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # AGENT CORE
+  # ============================================
+
+  nanobot:
+    image: ghcr.io/nanobot-ai/nanobot:latest
+    container_name: nexus-nanobot
+    volumes:
+      - ./config/nanobot:/app/config
+      - ./workspace:/workspace
+      - nanobot-memory:/app/memory
+    environment:
+      - NANOBOT_MODEL=claude-sonnet-4-20250514
+      - NANOBOT_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MEM0_API_KEY=${MEM0_API_KEY}
+      - QDRANT_URL=http://qdrant:6333
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_BASE_URL=http://langfuse:3000
+    ports:
+      - "3030:3030"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      mem0:
+        condition: service_started
+      github-mcp:
+        condition: service_started
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # MAIN APPLICATION
+  # ============================================
+
+  nexus-alpha:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: nexus-alpha
+    volumes:
+      - ./workspace:/workspace
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://nexus:${POSTGRES_PASSWORD}@postgres:5432/nexus_alpha
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - NANOBOT_URL=http://nanobot:3030
+      - LANGFUSE_URL=http://langfuse:3000
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MEM0_API_KEY=${MEM0_API_KEY}
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      nanobot:
+        condition: service_started
+      langfuse:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - nexus-network
+    restart: unless-stopped
+
+  # ============================================
+  # OPTIONAL: MONITORING STACK
+  # ============================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nexus-prometheus
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - nexus-network
+    profiles:
+      - monitoring
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nexus-grafana
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - ./data/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3030:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - nexus-network
+    profiles:
+      - monitoring
+    restart: unless-stopped
+
+# ============================================
+# VOLUMES
+# ============================================
+
+volumes:
+  mem0-data:
+  nanobot-memory:
+  data-postgres:
+  data-qdrant:
+  data-redis:
+  data-langfuse:
+  data-prometheus:
+  data-grafana:
+
+# ============================================
+# NETWORKS
+# ============================================
+
+networks:
+  nexus-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

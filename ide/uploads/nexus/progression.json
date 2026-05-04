@@ -1,0 +1,173 @@
+{
+  "level": 21,
+  "xp": 76697,
+  "xpToNext": 332525,
+  "totalXp": 741540,
+  "pipelineRuns": 1,
+  "pipelineWins": 1,
+  "pipelineStreak": 1,
+  "wikiPages": 0,
+  "wikiEdits": 0,
+  "agentsDeployed": 0,
+  "reposScanned": 0,
+  "reposBuilt": 1,
+  "searchQueries": 0,
+  "learningIterations": 0,
+  "insightsGenerated": 0,
+  "currentStreak": 1,
+  "longestStreak": 1,
+  "lastActive": "2026-04-30T19:44:02.453Z",
+  "badges": [
+    "level-2",
+    "level-3",
+    "level-4",
+    "level-5",
+    "level-6",
+    "level-7",
+    "level-8",
+    "level-9",
+    "level-10",
+    "level-11",
+    "level-12",
+    "level-13",
+    "level-14",
+    "level-15",
+    "level-16",
+    "level-17",
+    "level-18",
+    "level-19",
+    "level-20",
+    "level-21"
+  ],
+  "levelTitle": "Omniscient Oracle",
+  "recentWins": [
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.452Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.450Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.447Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.445Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.443Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.441Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.439Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.435Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.433Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.428Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.413Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.410Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.409Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.407Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.405Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.403Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.400Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.394Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.391Z"
+    },
+    {
+      "type": "xp",
+      "message": "Achievement: First Light",
+      "xp": 50,
+      "ts": "2026-04-30T19:44:02.389Z"
+    }
+  ],
+  "trendData": [
+    {
+      "label": "Apr 29",
+      "xp": 40,
+      "runs": 1,
+      "wins": 1
+    }
+  ]
+}

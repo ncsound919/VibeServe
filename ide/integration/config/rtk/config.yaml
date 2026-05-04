@@ -1,0 +1,56 @@
+# RTK (Token Reduction Kit) Configuration
+# Reduces LLM token consumption by 60-90% on common dev commands
+
+version: "1.0"
+
+# Commands to optimize
+commands:
+  # Git commands
+  git:
+    - git status
+    - git diff
+    - git log
+    - git branch
+    - git commit
+    - git push
+    - git pull
+
+  # GitHub CLI
+  gh:
+    - gh pr list
+    - gh pr view
+    - gh issue list
+    - gh run list
+    - gh repo view
+
+  # Package managers
+  npm:
+    - npm test
+    - npm run build
+    - npm list
+
+  # Docker
+  docker:
+    - docker ps
+    - docker logs
+    - docker inspect
+
+# Output filters
+filters:
+  # Remove boilerplate from command output
+  - type: truncate
+    max_lines: 100
+    context_lines: 10
+
+  - type: exclude
+    patterns:
+      - "*.map"
+      - "node_modules/**"
+      - ".git/**"
+      - "dist/**"
+
+# Integration with nanobot
+nanobot_integration:
+  enabled: true
+  prefix: "rtk"
+  auto_detect: true

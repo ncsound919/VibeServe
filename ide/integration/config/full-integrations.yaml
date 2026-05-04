@@ -1,0 +1,526 @@
+# ============================================
+# NEXUS ALPHA - FULL INTEGRATION CONFIG
+# ============================================
+# Version: 2.0
+# Updated: 2026-04-28
+
+# ============================================
+# CORE AGENT LAYER
+# ============================================
+
+core:
+  # Nanobot - Primary Agent Framework
+  nanobot:
+    enabled: true
+    config:
+      model: claude-sonnet-4-20250514
+      max_turns: 50
+      timeout: 300000
+
+      # Memory integration
+      memory:
+        enabled: true
+        provider: mem0
+        path: ./memory
+
+      # Built-in tools
+      tools:
+        - bash
+        - read_file
+        - write_file
+        - edit_file
+        - glob
+        - grep
+        - web_fetch
+        - web_search
+
+  # Yoyo Evolve - Alternative Rust Agent
+  yoyo:
+    enabled: false
+    config:
+      model: claude-sonnet-4-20250514
+
+# ============================================
+# MEMORY & CONTEXT
+# ============================================
+
+memory:
+  # Mem0 - Universal Memory (54K stars)
+  mem0:
+    enabled: true
+    config:
+      vector_store:
+        provider: qdrant
+        collection: mem0_memories
+      retrieval:
+        top_results: 5
+        min_relevance_score: 0.7
+
+  # Letta - Self-editing Memory (alternative)
+  letta:
+    enabled: false
+    config:
+      model: claude-sonnet-4-20250514
+      memory_tiers:
+        core: { max_tokens: 8000 }
+        recall: { max_tokens: 32000 }
+        archival: { unlimited: true }
+
+# ============================================
+# DATABASE LAYER
+# ============================================
+
+database:
+  # PostgreSQL - Primary DB
+  postgres:
+    enabled: true
+    config:
+      host: postgres
+      port: 5432
+      database: nexus_alpha
+      user: nexus
+    extensions:
+      - pgvector
+      - vector
+      - pg_graphql
+      - uuid-ossp
+
+  # Supabase - Extended Postgres
+  supabase:
+    enabled: false
+    config:
+      url: ${SUPABASE_URL}
+      anon_key: ${SUPABASE_ANON_KEY}
+      service_role_key: ${SUPABASE_SERVICE_KEY}
+    features:
+      - auth
+      - realtime
+      - storage
+      - postgrest
+      - postgres_meta
+
+  # Neo4j - Graph Database (for GraphRAG)
+  neo4j:
+    enabled: false
+    config:
+      uri: bolt://neo4j:7687
+      username: neo4j
+      password: ${NEO4J_PASSWORD}
+    plugins:
+      - apoc
+      - graph-data-science
+
+  # RushDB - Instant Graph DB
+  rushdb:
+    enabled: false
+    config:
+      neo4j_url: bolt://neo4j:7687
+      neo4j_username: neo4j
+      neo4j_password: ${NEO4J_PASSWORD}
+
+# ============================================
+# VECTOR & SEARCH
+# ============================================
+
+vector:
+  # Qdrant - Primary Vector DB
+  qdrant:
+    enabled: true
+    config:
+      url: http://qdrant:6333
+      api_key: ${QDRANT_API_KEY}
+      collections:
+        - name: mem0_memories
+          vectors: 1536
+        - name: knowledge_base
+          vectors: 1536
+        - name: code_embeddings
+          vectors: 1536
+
+  # pgvector - Postgres Vector Search
+  pgvector:
+    enabled: true
+    config:
+      dimensions: 1536
+      distance_metric: cosine
+
+# ============================================
+# WEB SEARCH & RESEARCH
+# ============================================
+
+search:
+  firecrawl:
+    enabled: true
+    config:
+      api_key: ${FIRECRAWL_API_KEY}
+      default_mode: agent
+
+  tavily:
+    enabled: true
+    config:
+      api_key: ${TAVILY_API_KEY}
+      search_depth: advanced
+      include_answer: true
+
+  exa:
+    enabled: false
+    config:
+      api_key: ${EXA_API_KEY}
+
+# ============================================
+# DOCUMENT PROCESSING
+# ============================================
+
+documents:
+  # MarkItDown - File to Markdown
+  markitdown:
+    enabled: true
+    config:
+      plugins:
+        - pdf
+        - docx
+        - pptx
+        - xlsx
+        - images
+
+  # Docling - Advanced PDF
+  docling:
+    enabled: false
+    config:
+      ocr: true
+      table_detection: true
+
+# ============================================
+# AUTHENTICATION
+# ============================================
+
+auth:
+  # Better Auth - Full-featured self-hosted
+  better_auth:
+    enabled: false
+    config:
+      provider: database
+      database:
+        type: postgres
+        connection_string: ${DATABASE_URL}
+
+  # Clerk - Managed Auth (alternative)
+  clerk:
+    enabled: false
+    config:
+      publishable_key: ${CLERK_PUBLISHABLE_KEY}
+      secret_key: ${CLERK_SECRET_KEY}
+
+  # Supabase Auth
+  supabase_auth:
+    enabled: false
+    config:
+      url: ${SUPABASE_URL}
+      anon_key: ${SUPABASE_ANON_KEY}
+
+# ============================================
+# MESSAGE QUEUE & JOBS
+# ============================================
+
+queue:
+  # BullMQ - Redis-based Queue
+  bullmq:
+    enabled: false
+    config:
+      redis:
+        host: redis
+        port: 6379
+      options:
+        connection:
+          maxRetriesPerRequest: null
+        concurrency: 10
+
+  # PGMQ - Postgres Message Queue
+  pgmq:
+    enabled: false
+    config:
+      database_url: ${DATABASE_URL}
+
+# ============================================
+# CACHE & SESSION
+# ============================================
+
+cache:
+  # Redis - Primary Cache
+  redis:
+    enabled: false
+    config:
+      host: redis
+      port: 6379
+      prefix: nexus:
+
+  # Upstash Redis (managed)
+  upstash:
+    enabled: false
+    config:
+      rest_api_url: ${UPSTASH_REDIS_REST_URL}
+      rest_api_token: ${UPSTASH_REDIS_REST_TOKEN}
+
+# ============================================
+# OBSERVABILITY
+# ============================================
+
+observability:
+  # Langfuse - LLM Observability
+  langfuse:
+    enabled: true
+    config:
+      public_key: ${LANGFUSE_PUBLIC_KEY}
+      secret_key: ${LANGFUSE_SECRET_KEY}
+      base_url: http://langfuse:3000
+
+  # Prometheus - Metrics
+  prometheus:
+    enabled: false
+    config:
+      scrape_interval: 15s
+      endpoints:
+        - job: nexus-alpha
+          static_configs:
+            - targets: [nexus-alpha:9090]
+        - job: nanobot
+          static_configs:
+            - targets: [nanobot:9090]
+
+  # Grafana - Visualization
+  grafana:
+    enabled: false
+    config:
+      url: http://grafana:3000
+      admin_user: admin
+
+  # Loki - Log Aggregation
+  loki:
+    enabled: false
+    config:
+      url: http://loki:3100
+
+  # Tempo - Distributed Tracing
+  tempo:
+    enabled: false
+    config:
+      url: http://tempo:4318
+
+# ============================================
+# MCP SERVERS
+# ============================================
+
+mcp:
+  # GitHub - Full API Access
+  github:
+    enabled: true
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-github"]
+      env:
+        GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN}
+
+  # Filesystem - Safe File Access
+  filesystem:
+    enabled: true
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"]
+      allowed_directories:
+        - /workspace
+
+  # PostgreSQL
+  postgres_mcp:
+    enabled: false
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-postgres"]
+      env:
+        DATABASE_URL: ${DATABASE_URL}
+
+  # Slack
+  slack:
+    enabled: false
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-slack"]
+      env:
+        SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+
+  # Notion
+  notion:
+    enabled: false
+    config:
+      command: npx
+      args: ["-y", "@modelcontextprotocol/server-notion"]
+      env:
+        NOTION_API_KEY: ${NOTION_API_KEY}
+
+  # Search - Web Search MCP
+  search:
+    enabled: false
+    config:
+      command: npx
+      args: ["-y", "mcp-server-search"]
+      env:
+        FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY}
+
+# ============================================
+# RAG CONFIGURATION
+# ============================================
+
+rag:
+  # LightRAG - Hybrid Vector + Knowledge Graph
+  lightrag:
+    enabled: false
+    config:
+      embedding:
+        provider: openai
+        model: text-embedding-3-small
+      retrieval:
+        vector_weight: 0.5
+        graph_weight: 0.3
+        keyword_weight: 0.2
+
+  # NexusRAG - Full Featured RAG
+  nexus_rag:
+    enabled: false
+    config:
+      embedding:
+        provider: openai
+        model: text-embedding-3-small
+      reranking:
+        provider: bge-reranker
+      chunk_size: 512
+
+  # Simple RAG (via nanobot)
+  simple:
+    enabled: true
+    config:
+      vector_store: qdrant
+      collection: knowledge_base
+      embedding_model: text-embedding-3-small
+      top_k: 5
+
+# ============================================
+# WORKFLOW ORCHESTRATION
+# ============================================
+
+workflow:
+  # n8n - Visual Automation
+  n8n:
+    enabled: false
+    config:
+      url: http://n8n:5678
+      encryption_key: ${N8N_ENCRYPTION_KEY}
+
+  # Temporal - Durable Execution
+  temporal:
+    enabled: false
+    config:
+      address: temporal:7233
+      namespace: default
+
+  # PgFlow - Postgres Workflows
+  pgflow:
+    enabled: false
+    config:
+      supabase_url: ${SUPABASE_URL}
+      supabase_key: ${SUPABASE_SERVICE_KEY}
+
+# ============================================
+# TOKEN OPTIMIZATION
+# ============================================
+
+optimization:
+  # RTK - Token Reduction
+  rtk:
+    enabled: false
+    config:
+      filters:
+        - type: truncate
+          max_lines: 100
+        - type: exclude
+          patterns:
+            - "*.map"
+            - "node_modules/**"
+            - ".git/**"
+      commands:
+        git:
+          - git status
+          - git diff
+          - git log
+          - git branch
+        gh:
+          - gh pr list
+          - gh pr view
+          - gh issue list
+
+# ============================================
+# AGENT SANDBOX
+# ============================================
+
+sandbox:
+  # SmolVM - MicroVM Isolation
+  smolvm:
+    enabled: false
+    config:
+      boot_timeout_ms: 500
+      allowed_domains:
+        - "*.github.com"
+        - "api.openai.com"
+        - "api.anthropic.com"
+      mounts:
+        - /workspace:/workspace:ro
+
+  # runtm - Agent Sandboxes
+  runtm:
+    enabled: false
+    config:
+      pool_size: 5
+      cleanup_timeout: 30
+
+# ============================================
+# ENVIRONMENT PRESETS
+# ============================================
+
+presets:
+  # Development - Full features, local
+  development:
+    - core.nanobot
+    - memory.mem0
+    - database.postgres
+    - vector.qdrant
+    - search.firecrawl
+    - search.tavily
+    - documents.markitdown
+    - mcp.github
+    - mcp.filesystem
+    - observability.langfuse
+    - rag.simple
+
+  # Production - Optimized, scalable
+  production:
+    - core.nanobot
+    - memory.mem0
+    - database.postgres
+    - database.supabase
+    - vector.qdrant
+    - search.firecrawl
+    - documents.markitdown
+    - mcp.github
+    - mcp.filesystem
+    - mcp.postgres_mcp
+    - observability.langfuse
+    - observability.prometheus
+    - observability.grafana
+    - queue.bullmq
+    - cache.redis
+    - auth.better_auth
+
+  # Minimal - Just core features
+  minimal:
+    - core.nanobot
+    - database.postgres
+    - mcp.github
+    - mcp.filesystem

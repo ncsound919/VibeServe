@@ -1,0 +1,271 @@
+# ============================================
+# NEXUS ALPHA - SERVICE WIRING DIAGRAM
+# ============================================
+# How all services connect and communicate
+
+# SERVICE CONNECTIVITY MATRIX
+# ===========================
+# Format: service: [incoming connections], [outgoing connections]
+
+connections:
+  # === NEXUS ALPHA (Main App) ===
+  nexus_alpha:
+    listens:
+      - http://0.0.0.0:3000
+    connects_to:
+      - postgres:5432      # Database
+      - qdrant:6333        # Vector search
+      - nanobot:3030      # Agent execution
+      - langfuse:3000     # Observability
+      - redis:6379        # Cache (optional)
+
+  # === NANOBOT (Agent Core) ===
+  nanobot:
+    listens:
+      - http://0.0.0.0:3030
+    connects_to:
+      - mem0:8000          # Memory layer
+      - qdrant:6333       # Vector retrieval
+      - firecrawl:8002    # Web search
+      - tavily:8003       # AI search
+      - github_api        # GitHub MCP
+      - filesystem        # File access
+
+  # === MEM0 (Memory Layer) ===
+  mem0:
+    listens:
+      - http://0.0.0.0:8000
+    connects_to:
+      - qdrant:6333       # Vector storage
+      - postgres:5432     # Metadata storage
+
+  # === QDRANT (Vector DB) ===
+  qdrant:
+    listens:
+      - http://0.0.0.0:6333  # REST
+      - grpc://0.0.0.0:6334 # gRPC
+    connects_to:
+      - postgres:5432     # Metadata (optional)
+
+  # === POSTGRES (Primary DB) ===
+  postgres:
+    listens:
+      - 0.0.0.0:5432
+    extensions:
+      - pgvector         # Vector operations
+      - postgrest        # REST API
+      - postgres_meta    # Management API
+
+  # === LANGFUSE (Observability) ===
+  langfuse:
+    listens:
+      - http://0.0.0.0:3001
+    connects_to:
+      - postgres:5432     # Storage
+
+  # === FIRECRAWL (Web Search) ===
+  firecrawl:
+    provider: cloud       # Or self-hosted
+    connects_to:
+      - external_internet # Web scraping
+
+  # === MARKDOWNS (Document Processing) ===
+  markitdown:
+    type: cli_tool
+    used_by:
+      - nanobot          # Via MCP
+
+  # === GITHUB MCP ===
+  github_mcp:
+    type: mcp_server
+    connects_to:
+      - github_api       # GitHub REST/GraphQL
+
+
+# DATA FLOW PATHS
+# ===============
+
+data_flows:
+  # 1. User Query → Response
+  user_query:
+    steps:
+      - user → nexus_alpha:3000
+      - nexus_alpha → nanobot:3030
+      - nanobot → qdrant:6333 (semantic search)
+      - nanobot → mem0:8000 (context recall)
+      - nanobot → firecrawl (web search if needed)
+      - nanobot → nexus_alpha
+      - nexus_alpha → user
+    trace: langfuse:3000
+
+  # 2. Document Ingestion → Vector Store
+  document_ingestion:
+    steps:
+      - user uploads doc → nexus_alpha
+      - nexus_alpha → markitdown (convert to markdown)
+      - nexus_alpha → embed_model (OpenAI)
+      - nexus_alpha → qdrant:6333 (store vectors)
+      - nexus_alpha → postgres:5432 (metadata)
+    trace: langfuse:3000
+
+  # 3. Memory Recall
+  memory_recall:
+    steps:
+      - query → mem0:8000
+      - mem0 → qdrant:6333 (vector search)
+      - mem0 → mem0 (rank & filter)
+      - mem0 → nanobot (context)
+    trace: langfuse:3000
+
+  # 4. GitHub Operations
+  github_operations:
+    steps:
+      - nanobot → github_mcp
+      - github_mcp → github_api
+      - github_mcp → nanobot
+      - nanobot → user
+    trace: langfuse:3000
+
+
+# ENVIRONMENT VARIABLES BY SERVICE
+# ===============================
+
+service_env:
+  nexus_alpha:
+    required:
+      - ANTHROPIC_API_KEY
+      - DATABASE_URL
+      - GITHUB_TOKEN
+    optional:
+      - QDRANT_URL
+      - LANGFUSE_PUBLIC_KEY
+      - LANGFUSE_SECRET_KEY
+
+  nanobot:
+    required:
+      - ANTHROPIC_API_KEY
+    optional:
+      - MEM0_API_KEY
+      - FIRECRAWL_API_KEY
+      - TAVILY_API_KEY
+
+  mem0:
+    required:
+      - MEM0_API_KEY
+    optional:
+      - QDRANT_URL
+
+  qdrant:
+    optional:
+      - QDRANT_API_KEY
+
+  langfuse:
+    required:
+      - LANGFUSE_PUBLIC_KEY
+      - LANGFUSE_SECRET_KEY
+      - DATABASE_URL
+
+  postgres:
+    required:
+      - POSTGRES_PASSWORD
+
+
+# PORT ALLOCATION
+# ===============
+
+ports:
+  # Core Services
+  3000:  nexus_alpha      # Main app
+  3030:  nanobot          # Agent
+  3001:  langfuse         # Observability
+  5432:  postgres         # Database
+
+  # Vector & Cache
+  6333:  qdrant_rest      # Qdrant REST
+  6334:  qdrant_grpc      # Qdrant gRPC
+  6379:  redis            # Cache (optional)
+
+  # Memory (optional)
+  8000:  mem0             # Mem0 API
+  7474:  neo4j_http       # Neo4j HTTP
+  7687:  neo4j_bolt       # Neo4j Bolt
+
+  # Monitoring (optional)
+  9090:  prometheus       # Metrics
+  3100:  loki             # Logs
+  4318:  tempo            # Traces
+
+
+# HEALTH CHECKS
+# =============
+
+health_checks:
+  nexus_alpha:
+    endpoint: /api/health
+    timeout: 5s
+
+  nanobot:
+    endpoint: /health
+    timeout: 5s
+
+  qdrant:
+    endpoint: /health
+    timeout: 5s
+
+  postgres:
+    command: pg_isready
+    timeout: 5s
+
+  mem0:
+    endpoint: /health
+    timeout: 5s
+
+  langfuse:
+    endpoint: /api/public/health
+    timeout: 5s
+
+
+# STARTUP ORDER
+# =============
+
+startup_order:
+  # Tier 1: Infrastructure (must start first)
+  - postgres
+  - qdrant
+  - redis
+
+  # Tier 2: Core Services
+  - mem0
+  - langfuse
+
+  # Tier 3: Agent & App
+  - nanobot
+  - nexus_alpha
+
+  # Tier 4: External Integrations
+  - github_mcp
+  - firecrawl
+
+
+# ENVIRONMENT TEMPLATES
+# ====================
+
+env_templates:
+  development:
+    # All services local, verbose logging
+    LOG_LEVEL: debug
+    DATABASE_URL: postgresql://nexus:dev@localhost:5432/nexus_alpha
+    QDRANT_URL: http://localhost:6333
+
+  staging:
+    # Remote services, moderate logging
+    LOG_LEVEL: info
+    DATABASE_URL: postgresql://nexus:${STAGE_PASSWORD}@staging-db:5432/nexus_alpha
+    QDRANT_URL: http://staging-qdrant:6333
+
+  production:
+    # Production config, minimal logging
+    LOG_LEVEL: warn
+    DATABASE_URL: postgresql://nexus:${PROD_PASSWORD}@prod-db:5432/nexus_alpha
+    QDRANT_URL: http://prod-qdrant:6333
+    QDRANT_API_KEY: ${QDRANT_API_KEY}

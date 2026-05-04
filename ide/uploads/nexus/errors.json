@@ -1,0 +1,125 @@
+[
+  {
+    "id": "err_1777578362301_5hr3ir1aj",
+    "message": "Deterministic brain timed out after 15s",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "RAG Context Sync",
+    "timestamp": "2026-04-30T19:46:02.301Z",
+    "context": {
+      "sourceRepos": "test/repo"
+    },
+    "stack": "Error: Deterministic brain timed out after 15s\n    at Timeout._onTimeout (C:\\Users\\User\\Desktop\\Nexus-Alpha-main\\src\\server\\brainToolService.ts:70:14)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)",
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777578347078_a72stqn3v",
+    "message": "Deterministic brain timed out after 15s",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "RAG Context Sync",
+    "timestamp": "2026-04-30T19:45:47.078Z",
+    "context": {
+      "sourceRepos": "test/repo"
+    },
+    "stack": "Error: Deterministic brain timed out after 15s\n    at Timeout._onTimeout (C:\\Users\\User\\Desktop\\Nexus-Alpha-main\\src\\server\\brainToolService.ts:70:14)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)",
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777578231709_ej5qt6uq3",
+    "message": "Test error",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "test",
+    "timestamp": "2026-04-30T19:43:51.709Z",
+    "context": {
+      "source": "e2e"
+    },
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777577852324_o4zk6nhnt",
+    "message": "Deterministic brain timed out after 15s",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "RAG Context Sync",
+    "timestamp": "2026-04-30T19:37:32.324Z",
+    "context": {
+      "sourceRepos": "test/repo"
+    },
+    "stack": "Error: Deterministic brain timed out after 15s\n    at Timeout._onTimeout (C:\\Users\\User\\Desktop\\Nexus-Alpha-main\\src\\server\\brainToolService.ts:70:14)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)",
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777577837862_etee659yr",
+    "message": "Deterministic brain timed out after 15s",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "RAG Context Sync",
+    "timestamp": "2026-04-30T19:37:17.862Z",
+    "context": {
+      "sourceRepos": "test/repo"
+    },
+    "stack": "Error: Deterministic brain timed out after 15s\n    at Timeout._onTimeout (C:\\Users\\User\\Desktop\\Nexus-Alpha-main\\src\\server\\brainToolService.ts:70:14)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)",
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777577717910_1lub4tfgl",
+    "message": "Test error",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "test",
+    "timestamp": "2026-04-30T19:35:17.910Z",
+    "context": {
+      "source": "e2e"
+    },
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777577264671_madkxjyzi",
+    "message": "Deterministic brain timed out after 15s",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "RAG Context Sync",
+    "timestamp": "2026-04-30T19:27:44.671Z",
+    "context": {
+      "sourceRepos": "test/repo"
+    },
+    "stack": "Error: Deterministic brain timed out after 15s\n    at Timeout._onTimeout (C:\\Users\\User\\Desktop\\Nexus-Alpha-main\\src\\server\\brainToolService.ts:70:14)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)",
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777577250121_3vnngf59t",
+    "message": "Deterministic brain timed out after 15s",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "RAG Context Sync",
+    "timestamp": "2026-04-30T19:27:30.121Z",
+    "context": {
+      "sourceRepos": "test/repo"
+    },
+    "stack": "Error: Deterministic brain timed out after 15s\n    at Timeout._onTimeout (C:\\Users\\User\\Desktop\\Nexus-Alpha-main\\src\\server\\brainToolService.ts:70:14)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)",
+    "resolved": false,
+    "recoveryAttempts": 0
+  },
+  {
+    "id": "err_1777577092733_mebeap398",
+    "message": "Test error",
+    "category": "unknown",
+    "severity": "low",
+    "phase": "test",
+    "timestamp": "2026-04-30T19:24:52.733Z",
+    "context": {
+      "source": "e2e"
+    },
+    "resolved": false,
+    "recoveryAttempts": 0
+  }
+]
