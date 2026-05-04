@@ -56,6 +56,27 @@ class StructuredLogger:
         log.warning(f"[Structured] {data}")
 
 
+# ====================== INPUT SANITIZATION ======================
+def sanitize_for_display(text: str) -> str:
+    """Strip HTML tags, control characters, and null bytes from user-facing output.
+    
+    Prevents XSS in any context where tool output is rendered.
+    """
+    if not isinstance(text, str):
+        text = str(text)
+    # Remove null bytes
+    text = text.replace("\x00", "")
+    # Strip HTML tags
+    text = re.sub(r"<[^>]+>", "", text)
+    # Remove dangerous HTML event attributes (onerror, onclick, etc.)
+    text = re.sub(r"\b(on\w+)\s*=", "", text, flags=re.IGNORECASE)
+    # Remove ANSI escape sequences
+    text = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
+    # Remove other control characters (keep newlines and tabs)
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+    return text
+
+
 # ====================== WCAG VALIDATION ======================
 def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
     hex_color = hex_color.lstrip('#')

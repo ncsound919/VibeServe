@@ -114,7 +114,7 @@ export const useMonorepoStore = create<MonorepoStore>()((set, get) => ({
                 monorepoType = 'npm';
               }
             } else {
-              monorepoType = type as any;
+              monorepoType = type as "turbo" | "nx" | "lerna" | "yarn";
             }
             break;
           }

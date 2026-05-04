@@ -214,7 +214,7 @@ function extractRelevantLines(fileContent: string, errorLine: number): string {
 
 function validateStrategy(s: string): DiagnosisResult['fixStrategy'] {
   const valid: DiagnosisResult['fixStrategy'][] = ['replace', 'add_import', 'add_dep', 'fix_config', 'retry', 'unknown'];
-  return valid.includes(s as any) ? (s as DiagnosisResult['fixStrategy']) : 'unknown';
+  return valid.includes(s as 'retry' | 'add_dep' | 'fix_code' | 're_architect') ? (s as DiagnosisResult['fixStrategy']) : 'unknown';
 }
 
 function regexFallbackDiagnosis(

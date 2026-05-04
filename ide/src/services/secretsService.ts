@@ -21,7 +21,7 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = session?.access_token;
   
   const headers = {
-    ...options.headers as any,
+    ...options.headers as Record<string, string>,
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
   };

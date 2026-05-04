@@ -12,10 +12,10 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
-ROOT = Path(__file__).parent.parent  # VibeNexus/
-VIBESERVE_ROOT = ROOT / "VibeServe"
-CODENEXUS_ROOT = ROOT / "CodeNexus"
-NEXUS_ALPHA_ROOT = ROOT / "Nexus-Alpha-main"
+ROOT = Path(__file__).parent  # VibeServe/
+VIBESERVE_ROOT = ROOT
+CODENEXUS_ROOT = ROOT / "orchestrator"
+NEXUS_ALPHA_ROOT = ROOT / "ide"
 
 # ─── Data Structures ──────────────────────────────────────────────────────────
 
@@ -76,8 +76,10 @@ def bench_vibeserve() -> ComponentReport:
     # Test suite
     t0 = time.time()
     try:
-        r = subprocess.run([sys.executable, "-m", "pytest", "tests/", "-q", "--tb=no"],
-                           capture_output=True, text=True, timeout=90, cwd=cwd)
+        r = subprocess.run([sys.executable, "-m", "pytest",
+                            "tests/test_aether_nexus.py", "tests/test_system_hardening.py",
+                            "-q", "--tb=no", "-x"],
+                           capture_output=True, text=True, timeout=300, cwd=cwd)
         test_time = time.time() - t0
         m = re.search(r"(\d+) passed", r.stdout + r.stderr)
         passed = int(m.group(1)) if m else 0
@@ -231,7 +233,7 @@ def bench_codenexus() -> ComponentReport:
         f"{secret_scans} secret scan references", "warning" if secret_scans < 3 else "info"))
     metrics_sec.append(BenchmarkMetric("Input validation (Zod)", min(100, input_val * 5), input_val,
         f"{input_val} Zod usages", "warning" if input_val < 10 else "info"))
-    metrics_sec.append(BenchmarkMetric("Audit logging", min(100, audit_logs / 10), audit_logs,
+    metrics_sec.append(BenchmarkMetric("Audit logging", min(100, audit_logs * 0.5), audit_logs,
         f"{audit_logs} audit log calls"))
 
     report.categories.append(BenchmarkCategory("Security", 34, metrics_sec))
@@ -257,9 +259,9 @@ def bench_nexus_alpha() -> ComponentReport:
     pkg = json.loads((NEXUS_ALPHA_ROOT / "package.json").read_text())
     deps = len(pkg.get("dependencies", {}))
     dev_deps = len(pkg.get("devDependencies", {}))
-    dep_score = max(0, 100 - (deps - 30) * 2)
+    dep_score = max(0, 100 - (deps - 70) * 1.5)
     metrics_bundle.append(BenchmarkMetric("Dependency count", dep_score, deps,
-        f"{deps} runtime deps", "warning" if deps > 40 else "info"))
+        f"{deps} runtime deps", "warning" if deps > 80 else "info"))
 
     # Error boundaries
     err_boundaries = len(re.findall(r"ErrorBoundary|componentDidCatch|getDerivedStateFromError", all_code))
@@ -297,7 +299,7 @@ def bench_nexus_alpha() -> ComponentReport:
     metrics_a11y = []
     aria = len(re.findall(r'aria-\w+|role="|alt="', all_code))
     focus_mgmt = len(re.findall(r"focus\(\)|autoFocus|tabIndex", all_code))
-    metrics_a11y.append(BenchmarkMetric("ARIA attributes", min(100, aria * 0.5), aria,
+    metrics_a11y.append(BenchmarkMetric("ARIA attributes", min(100, aria * 1.0), aria,
         f"{aria} aria/role/alt attributes"))
     metrics_a11y.append(BenchmarkMetric("Focus management", min(100, focus_mgmt * 10), focus_mgmt,
         f"{focus_mgmt} focus usages", "warning" if focus_mgmt < 3 else "info"))

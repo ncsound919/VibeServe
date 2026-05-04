@@ -89,7 +89,7 @@ export default function PlanReviewTab() {
         </div>
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0">
+      <div className="flex-1 flex gap-6 min-h-0" role="tabpanel" aria-label="Plan Review View">
         {/* Left: Step List */}
         <div className="w-80 flex flex-col gap-4">
           <div className="glass-card rounded-2xl p-4 border-white/5">

@@ -58,7 +58,7 @@ test.describe('Desktop - Privileged API Scoping', () => {
     await page.goto('/');
 
     const hasElectronAPI = await page.evaluate(() => {
-      return typeof (window as any).electronAPI !== 'undefined';
+      return typeof (window as unknown as { electronAPI?: unknown }).electronAPI !== 'undefined';
     });
 
     // In Playwright browser tests, electronAPI should not be exposed

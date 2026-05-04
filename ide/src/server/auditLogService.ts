@@ -9,7 +9,7 @@ export interface AuditEntry {
   actor: string;
   action: string;
   target: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
   status: 'success' | 'failure' | 'warning';
 }
 

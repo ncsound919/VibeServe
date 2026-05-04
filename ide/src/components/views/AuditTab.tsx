@@ -13,7 +13,7 @@ export function AuditTab() {
   const filteredEvents = useMemo(() => {
     return getEvents({
       agentId: selectedAgentId || undefined,
-      eventType: eventFilter !== 'all' ? eventFilter as any : undefined,
+      eventType: eventFilter !== 'all' ? eventFilter as 'auth_failed' | 'access_denied' | 'rbac_denied' | 'rate_limit_exceeded' | 'quota_exceeded' | 'codegen_success' | 'codegen_failure' | 'editor_write' | 'codegen_plan' : undefined,
       limit: 100,
     });
   }, [selectedAgentId, eventFilter, events]);
@@ -29,7 +29,7 @@ export function AuditTab() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-4 p-4 overflow-hidden">
+    <div className="h-full flex flex-col gap-4 p-4 overflow-hidden" role="tabpanel" aria-label="Audit Log View">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <BarChart3 className="w-6 h-6" />

@@ -46,7 +46,7 @@ export function CodeEditor({
   useEffect(() => {
     if (!editorRef.current || readOnly) return;
 
-    const monaco = (window as any).monaco;
+    const monaco = (window as unknown as { monaco: unknown }).monaco;
     if (!monaco) return;
 
     const model = monaco.editor.getActiveModel();

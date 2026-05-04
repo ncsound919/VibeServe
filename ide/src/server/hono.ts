@@ -315,7 +315,7 @@ app.post('/api/brain/query', requireRole(['admin', 'agent-runner']), strictLimit
   const body = await readJson<{ query?: string; lane?: string; verbose?: boolean }>(c);
   if (!body?.query) return c.json({ error: 'query is required' }, 400);
   try {
-    const result = await runDeterministicBrain({ query: body.query, lane: body.lane as any, verbose: body.verbose });
+    const result = await runDeterministicBrain({ query: body.query, lane: body.lane as 'fast' | 'reasoning' | 'deep', verbose: body.verbose });
     return c.json({ result, ts: Date.now() });
   } catch (error) {
     return c.json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
@@ -372,7 +372,7 @@ app.post('/api/autocoder/generate', requireRole(['admin', 'system']), strictLimi
     taskId,
     pattern: body.pattern,
     name: body.name,
-    options: body.options as any,
+    options: body.options as Record<string, unknown>,
   });
 
   return c.json(result, result.success ? 200 : 500);
@@ -414,7 +414,7 @@ app.post('/api/coding/generate', requireRole(['admin', 'user']), strictLimiter, 
     description: body.description,
     templateId: body.templateId, // Passing templateId if user selected one
     userId: user.sub,
-  } as any);
+  } as Parameters<typeof codingService.generateApp>[0]);
 
   if (result.success) {
     await logAuditEvent({
@@ -818,6 +818,19 @@ let wsServer: WebSocketServer | null = null;
 const MAX_WS_CLIENTS = Number(process.env.MAX_WS_CLIENTS ?? 200);
 /** Track user subs per websocket connection without `as any` */
 const wsUserMap = new WeakMap<WebSocket, string>();
+/** Rate limit bad WS messages per user to prevent flood attacks */
+const badMessageCounts = new Map<string, number>();
+
+// Stale connection reaper: prune dead sockets every 30s
+setInterval(() => {
+  for (const client of clients) {
+    if (client.readyState !== WebSocket.OPEN && client.readyState !== WebSocket.CONNECTING) {
+      clients.delete(client);
+    }
+  }
+  // Reset bad message counters periodically
+  badMessageCounts.clear();
+}, 30_000).unref();
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 (async () => {
@@ -828,6 +841,9 @@ const wsUserMap = new WeakMap<WebSocket, string>();
     process.exit(1);
   }
   }
+
+  // Initialize audit service directory
+  await initAuditService();
 
   const queueReady = await initPipelineQueue();
   console.log(`[Q] BullMQ pipeline queue ${queueReady ? 'connected' : 'unavailable (simulated mode)'}`);
@@ -849,7 +865,7 @@ const wsUserMap = new WeakMap<WebSocket, string>();
     if (AUTH_BYPASS) console.warn('[WARN] Auth bypass is ON — do not use NEXUS_AUTH_BYPASS=true in production');
   });
 
-  wsServer = new WebSocketServer({ server: httpServer as any, path: '/ws' });
+  wsServer = new WebSocketServer({ server: httpServer as unknown as import('http').Server, path: '/ws' });
   wsServer.on('connection', async (ws, req) => {
     if (clients.size >= MAX_WS_CLIENTS) {
       ws.close(1013, 'Server at capacity');
@@ -877,8 +893,8 @@ const wsUserMap = new WeakMap<WebSocket, string>();
         
         // Quota: Limit WS connections per user
         let userConns = 0;
-        for (const ws of clients) {
-          if (wsUserMap.get(ws) === sub) userConns++;
+        for (const existingClient of clients) {
+          if (wsUserMap.get(existingClient) === sub) userConns++;
         }
         if (userConns >= 5) {
           await logAuditEvent({ actor: sub, action: 'ws_quota_exceeded', target: '/ws', status: 'failure', metadata: { connections: userConns } }).catch(() => {});
@@ -904,7 +920,16 @@ const wsUserMap = new WeakMap<WebSocket, string>();
       try {
         const msg = JSON.parse(raw.toString());
         if (msg.type === 'ping') ws.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
-      } catch { /* ignore */ }
+      } catch {
+        // Rate limit bad messages: close connection after repeated parse failures
+        const key = `badmsg_${sub}`;
+        const count = (badMessageCounts.get(key) ?? 0) + 1;
+        badMessageCounts.set(key, count);
+        if (count > 10) {
+          ws.close(1003, 'Too many malformed messages');
+          badMessageCounts.delete(key);
+        }
+      }
     });
   });
 

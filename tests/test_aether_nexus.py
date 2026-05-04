@@ -233,7 +233,8 @@ async def test_multi_agent_critique():
     assert "Accessibility" in critique.advocate.role
     print("  ✅ Agent roles correctly assigned")
 
-def test_memory_system():
+@pytest.mark.asyncio
+async def test_memory_system():
     """Test successful spec storage and retrieval with cleanup"""
     import sqlite3
     from vibeserve import CONFIG
@@ -242,9 +243,9 @@ def test_memory_system():
     test_id = f"test_memory_{int(time.time())}"
     test_spec["metadata"]["id"] = test_id
     
-    store_successful_spec("test_page", test_spec, score=0.88)
+    await store_successful_spec("test_page", test_spec, score=0.88)
     
-    similar = get_similar_specs("test_page", limit=5)
+    similar = await get_similar_specs("test_page", limit=5)
     assert len(similar) > 0, "Should retrieve stored specs"
     print(f"  ✅ Retrieved {len(similar)} similar spec(s)")
     
@@ -424,13 +425,13 @@ async def test_local_provider_connection():
     
     provider = LocalProvider()
     try:
-        # Simple connectivity check
-        result = await provider.call("Respond with just the word: OK", temperature=0.0)
+        # Simple connectivity check with a short timeout to fail fast
+        result = await asyncio.wait_for(provider.call("Respond with just the word: OK", temperature=0.0), timeout=1.0)
         if result:
             print(f"  ✅ Local provider connected: {provider.model}")
         else:
             print("  ⚠️ Local provider running but returned no response")
-    except Exception as e:
+    except (Exception, asyncio.TimeoutError) as e:
         pytest.skip(f"Local provider not reachable: {e}")
 
 def test_prompt_injection_sanitization_with_providers():

@@ -11,8 +11,8 @@ import { createClient, type SupabaseClient, type User, type Session } from "@sup
 let SUPABASE_URL = "";
 let SUPABASE_KEY = "";
 try {
-  SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL ?? "";
-  SUPABASE_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY ?? "";
+  SUPABASE_URL = (import.meta as unknown as { env?: { VITE_SUPABASE_URL?: string } }).env?.VITE_SUPABASE_URL ?? "";
+  SUPABASE_KEY = (import.meta as unknown as { env?: { VITE_SUPABASE_ANON_KEY?: string } }).env?.VITE_SUPABASE_ANON_KEY ?? "";
 } catch (e) {
   SUPABASE_URL = process.env.VITE_SUPABASE_URL ?? "";
   SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY ?? "";

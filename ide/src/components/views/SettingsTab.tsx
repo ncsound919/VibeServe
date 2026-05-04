@@ -55,7 +55,7 @@ function PrivacyModePanel() {
         <h2 className="text-sm font-medium text-white">AI Provider</h2>
       </div>
 
-      <div className="p-4 rounded-lg border border-[#2d2e32] bg-[#0a0a0c]/50">
+      <div className="p-4 rounded-lg border border-[#2d2e32] bg-[#0a0a0c]/50" role="tabpanel" aria-label="Settings View">
         <div className="flex items-center justify-between">
           <div>
             <span className="text-[11px] font-mono text-white">Privacy Mode / Offline</span>

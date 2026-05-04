@@ -113,7 +113,7 @@ class CollaborationService {
     if (!state) return [];
 
     const users: CollaborationUser[] = [];
-    const userMap = state.doc.getMap('users') as any;
+    const userMap = state.doc.getMap('users') as unknown as { set: (k: string, v: unknown) => void, delete: (k: string) => void };
     
     userMap.forEach((value: any, key: string) => {
       if (key !== this.currentUserId && Date.now() - value.timestamp < 30000) {

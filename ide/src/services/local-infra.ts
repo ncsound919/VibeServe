@@ -58,7 +58,7 @@ function load() {
   try {
     const data = JSON.parse(readFileSync(file, 'utf-8'));
     for (const [name, col] of Object.entries(data)) {
-      const c = col as any;
+      const c = col as Record<string, unknown>;
       const points = new Map<string | number, QdrantPoint>();
       if (c.points) for (const p of c.points) points.set(p.id, p);
       collections.set(name, { name, vectors: c.vectors, points });

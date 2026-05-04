@@ -33,7 +33,7 @@ export function SystemPanel() {
         arch: 'x64',
         nodeVersion: process.versions?.node || '20.x',
         cpus: navigator.hardwareConcurrency || 4,
-        totalMemory: `${Math.round((navigator as any).deviceMemory || 8)} GB`,
+        totalMemory: `${Math.round((navigator as unknown as { deviceMemory?: number }).deviceMemory || 8)} GB`,
         homeDir: 'C:\\Users\\User',
       });
 

@@ -709,7 +709,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_JWT_SECRET) {
     console.warn('Supabase environment variables not configured. Skipping JWT verification.')
-    ;(req as any).userId = 'dev-user'
+    ;(req as unknown as { userId: string }).userId = 'dev-user'
     next()
     return
   }
@@ -721,7 +721,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
         res.status(401).json({ error: 'Invalid or expired token' })
         return
       }
-      ;(req as any).userId = user.id
+      ;(req as unknown as { userId: string }).userId = user.id
       next()
     })
   })
@@ -737,7 +737,7 @@ const router = Router()
 router.get('/', (req, res) => {
   res.json({
     message: 'Protected user data',
-    userId: (req as any).userId,
+    userId: (req as unknown as { userId: string }).userId,
   })
 })
 

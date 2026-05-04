@@ -72,7 +72,7 @@ async function authorizeTool(name: string, args: any): Promise<void> {
 
   // 2. Guardrails Check
   const { validateAction } = useGuardrailsStore.getState();
-  const { allowed, reason } = validateAction(policy.category as any, JSON.stringify(args));
+  const { allowed, reason } = validateAction(policy.category as 'read' | 'write' | 'execute' | 'network' | 'admin', JSON.stringify(args));
   if (!allowed) {
     await logAuditEvent({
       actor,

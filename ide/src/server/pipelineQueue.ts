@@ -4,6 +4,7 @@ import { broadcastService } from './broadcastService';
 import { createConnection } from 'net';
 import { trackError } from '../services/errorTrackingService';
 import { trackPipelineRun } from '../services/gamificationService';
+import { logAuditEvent } from './auditLogService';
 
 export interface PipelineJob {
   repos: string[];
@@ -324,7 +325,7 @@ export async function enqueuePipeline(repos: string[], userId: string, agentId?:
   return { id: `simulated-${Date.now()}`, simulated: true };
 }
 
-export async function getJobStatus(jobId: string, userId: string): Promise<any> {
+export async function getJobStatus(jobId: string, userId: string): Promise<Record<string, unknown>> {
   if (!queue) throw new Error('Queue not initialized');
   const job = await queue.getJob(jobId);
   if (!job) throw new Error('Job not found');
