@@ -1,12 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL
-  || process.env.VITE_SUPABASE_URL
+const isBrowser = typeof window !== 'undefined';
+
+const getEnv = (key: string): string | undefined => {
+  if (isBrowser) {
+    return (import.meta.env as Record<string, string>)[key];
+  }
+  return process.env[key];
+};
+
+const SUPABASE_URL = getEnv('VITE_SUPABASE_URL') 
+  || process.env.SUPABASE_URL
   || 'https://aganpaepissvuamstmol.supabase.co';
 
-// Module-level runtime; dotenv MUST have loaded .env.local before this file is imported.
-// In server/index.ts, `dotenv.config()` runs at the top before importing integrationService.
-const key = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || '';
+const key = getEnv('VITE_SUPABASE_ANON_KEY') || process.env.SUPABASE_ANON_KEY || '';
 
 if (!key) {
   console.warn('Supabase URL or Key not configured');

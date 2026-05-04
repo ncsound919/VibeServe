@@ -1,14 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
-// Heavy Node-only packages that must never be bundled for the browser
 const NODE_EXTERNALS = [
-  'child_process',
-  'url',
-  'path',
   'fs',
+  'path',
+  'child_process',
   'os',
   'crypto',
   'net',
@@ -33,15 +30,19 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    nodePolyfills({
-      // Only polyfill modules that are actually imported in browser code.
-      // Heavy modules (fs, net, tls) are kept external so they never hit the browser bundle.
-      include: ['path', 'process', 'os', 'crypto', 'stream', 'util', 'events', 'buffer', 'url', 'zlib'],
-    }),
   ],
+  resolve: {
+    alias: {
+      buffer: 'buffer/',
+      process: 'process/',
+    },
+  },
   server: {
     port: 3000,
     host: "0.0.0.0",
+    optimizeDeps: {
+      include: ['buffer', 'process'],
+    },
     proxy: {
       "/api": { target: "http://localhost:3002", changeOrigin: true },
       "/ws": { target: "ws://localhost:3002", ws: true },

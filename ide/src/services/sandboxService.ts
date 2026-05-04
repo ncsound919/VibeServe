@@ -100,6 +100,7 @@ export class SandboxService {
     files?: Record<string, string>,
     startTime: number = Date.now()
   ): Promise<SandboxExecutionResult> {
+    if (typeof window !== 'undefined') return { success: false, exitCode: 1, stdout: '', stderr: 'Not available in browser', durationMs: 0, containerId: '' };
     if (!this.isDockerAvailable()) {
       throw new Error('Docker is not available. Please install Docker or use sandbox type "none"');
     }

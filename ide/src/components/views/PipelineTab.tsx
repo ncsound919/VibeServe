@@ -1,30 +1,30 @@
 import { useState, useRef, type ChangeEvent } from 'react';
 import { Activity, Search, PlayCircle, Upload, FolderUp, Gauge, Network, Cpu, GitBranch, Plus, Check, Loader2, Shield, Brain, Wrench, ArrowRight } from 'lucide-react';
-import { SectionHeader } from '../components/SectionHeader';
-import { ActivePipelineRun } from '../features/pipeline/ActivePipelineRun';
-import { PipelineVisualizer } from '../features/pipeline/PipelineVisualizer';
-import { PullRequestList } from '../features/pipeline/PullRequestList';
-import { usePipelineStore } from '../stores/usePipelineStore';
-import { useWorkspaceStore } from '../stores/useWorkspaceStore';
-import type { PipelineExecutionData, BuildStepData, CustomAgentData, RepoTrend, AgentAssessment } from '../types';
+import { SectionHeader } from '../SectionHeader';
+import { ActivePipelineRun } from '../../features/pipeline/ActivePipelineRun';
+import { PipelineVisualizer } from '../../features/pipeline/PipelineVisualizer';
+import { PullRequestList } from '../../features/pipeline/PullRequestList';
+import { usePipelineStore } from '../../stores/usePipelineStore';
+import { useWorkspaceStore } from '../../stores/useWorkspaceStore';
+import type { PipelineExecutionData, BuildStepData, CustomAgentData, RepoTrend, AgentAssessment } from '../../types';
 
 interface PipelineTabProps {
-  activeRun: PipelineExecutionData | null;
-  buildPipeline: BuildStepData[];
-  customAgents: CustomAgentData[];
-  onReset: () => void;
-  onLaunch: () => void;
-  onBrowseRepos: () => void;
+  activeRun?: PipelineExecutionData | null;
+  buildPipeline?: BuildStepData[];
+  customAgents?: CustomAgentData[];
+  onReset?: () => void;
+  onLaunch?: () => void;
+  onBrowseRepos?: () => void;
   trendingRepos?: RepoTrend[];
 }
 
 export const PipelineTab = ({
-  activeRun,
-  buildPipeline,
-  customAgents,
-  onReset,
-  onLaunch,
-  onBrowseRepos,
+  activeRun = null,
+  buildPipeline = [],
+  customAgents = [],
+  onReset = () => {},
+  onLaunch = () => {},
+  onBrowseRepos = () => {},
   trendingRepos = [],
 }: PipelineTabProps) => {
   const [uploading, setUploading] = useState(false);

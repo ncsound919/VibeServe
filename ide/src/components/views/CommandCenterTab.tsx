@@ -4,12 +4,12 @@
  */
 
 import { Terminal as TerminalIcon, Cpu, CheckCircle2, Box, Zap } from 'lucide-react';
-import { SectionHeader } from '../components/SectionHeader';
-import { CLITerminal } from '../features/cli/CLITerminal';
-import { MCPBridgeStatus } from '../features/mcp/MCPBridgeStatus';
-import { AgentForge } from '../features/agents/AgentForge';
-import { IntegrationHubPanel } from '../features/integrations/IntegrationHubPanel';
-import type { DashboardData, CLIStateData } from '../types';
+import { SectionHeader } from '../SectionHeader';
+import { CLITerminal } from '../../features/cli/CLITerminal';
+import { MCPBridgeStatus } from '../../features/mcp/MCPBridgeStatus';
+import { AgentForge } from '../../features/agents/AgentForge';
+import { IntegrationHubPanel } from '../../features/integrations/IntegrationHubPanel';
+import type { DashboardData, CLIStateData } from '../../types';
 
 interface CommandCenterTabProps {
   data: DashboardData;

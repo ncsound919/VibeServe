@@ -5,11 +5,11 @@
 
 import { useState } from 'react';
 import { Search, Terminal } from 'lucide-react';
-import { SectionHeader } from '../components/SectionHeader';
-import { NexusBrowser } from '../features/browser/NexusBrowser';
-import { BrowserHarnessPanel } from '../features/browser/BrowserHarnessPanel';
-import type { PipelineExecutionData } from '../types';
-import { cn } from '../lib/utils';
+import { SectionHeader } from '../SectionHeader';
+import { NexusBrowser } from '../../features/browser/NexusBrowser';
+import { BrowserHarnessPanel } from '../../features/browser/BrowserHarnessPanel';
+import type { PipelineExecutionData } from '../../types';
+import { cn } from '../../lib/utils';
 
 interface NexusBrowserTabProps {
   browserContext?: string;

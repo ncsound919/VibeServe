@@ -4,7 +4,7 @@
  * Displays status for Codeix and Serena services.
  */
 import { motion } from 'motion/react';
-import { Database, Share2, Search, Zap, Code, Shield } from 'lucide-react';
+import { Database, Share2, Search, Zap, Code, Shield, Activity } from 'lucide-react';
 import { useCodeixStore } from '../../services/codeixService';
 import { useSerenaStore } from '../../services/serenaService';
 import { cn } from '../../lib/utils';

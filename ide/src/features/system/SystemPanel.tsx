@@ -31,7 +31,7 @@ export function SystemPanel() {
       setSystemInfo({
         platform: 'win32',
         arch: 'x64',
-        nodeVersion: process.versions?.node || '20.x',
+        nodeVersion: typeof process !== 'undefined' && process.versions?.node ? process.versions.node : '20.x',
         cpus: navigator.hardwareConcurrency || 4,
         totalMemory: `${Math.round((navigator as unknown as { deviceMemory?: number }).deviceMemory || 8)} GB`,
         homeDir: 'C:\\Users\\User',

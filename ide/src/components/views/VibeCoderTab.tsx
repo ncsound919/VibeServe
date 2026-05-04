@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, ArrowRight, RotateCcw } from 'lucide-react';
-import { VibeCoderProgress } from '../features/vibecoder/VibeCoderProgress';
-import { VibeCoderResult } from '../features/vibecoder/VibeCoderResult';
+import { VibeCoderProgress } from '../../features/vibecoder/VibeCoderProgress';
+import { VibeCoderResult } from '../../features/vibecoder/VibeCoderResult';
 
 type PipelinePhase = 'generating' | 'building' | 'testing' | 'done' | 'error';
 

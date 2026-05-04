@@ -6,9 +6,9 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Github, RefreshCcw, ExternalLink, CheckCircle2, Activity, Zap, Radio, Search, Loader2 } from 'lucide-react';
-import { SectionHeader } from '../components/SectionHeader';
-import { cn } from '../lib/utils';
-import type { RepoTrend, PipelineExecutionData } from '../types';
+import { SectionHeader } from '../SectionHeader';
+import { cn } from '../../lib/utils';
+import type { RepoTrend, PipelineExecutionData } from '../../types';
 
 interface RepoAnalysisTabProps {
   repos: RepoTrend[];

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { PreviewPanel } from '../components/PreviewPanel';
-import { DiffViewer } from '../components/DiffViewer';
+import { PreviewPanel } from '../PreviewPanel';
+import { DiffViewer } from '../DiffViewer';
 import { GitCompare, Eye, Layers } from 'lucide-react';
 
 export default function ChangesTab() {

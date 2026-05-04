@@ -27,6 +27,7 @@ export const DebtRadar = () => {
           },
           body: JSON.stringify({ content: 'export const test = () => { if(true) { if(false) { // TODO: fix this } } }' })
         });
+        if (!res.ok) return;
         const data = await res.json();
         setReport(data);
       } catch (err) {

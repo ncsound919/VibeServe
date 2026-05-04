@@ -210,6 +210,7 @@ export const useSemanticSearch = create<SemanticSearchStore>()(
       isSearching: false,
 
       indexWorkspace: async (rootPath: string) => {
+        if (typeof window !== 'undefined') return;
         set({ isIndexing: true });
         
         try {

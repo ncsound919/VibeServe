@@ -152,6 +152,7 @@ export const useCodebaseIntelligence = create<CodebaseIntelligenceStore>()((set,
   isIndexing: false,
 
   indexWorkspace: async (rootPath: string) => {
+    if (typeof window !== 'undefined') return;
     set({ isIndexing: true });
     
     try {
@@ -178,6 +179,9 @@ export const useCodebaseIntelligence = create<CodebaseIntelligenceStore>()((set,
           } else if (entry.isFile()) {
             const ext = entry.name.substring(entry.name.lastIndexOf('.'));
             if (CODE_EXTS.includes(ext)) {
+              // Guard: skip if running in browser without Node.js
+              if (typeof require === 'undefined') continue;
+              
               const relativePath = relative(rootPath, fullPath);
               const content = readFileSync(fullPath, 'utf-8');
               const symbols = parseSimpleSymbols(content, relativePath);
@@ -187,12 +191,16 @@ export const useCodebaseIntelligence = create<CodebaseIntelligenceStore>()((set,
                 
                 const existing = newCallGraph.get(symbol.id) || { symbolId: symbol.id, calls: [], calledBy: [] };
                 
-                const calledSymbols = content.match(new RegExp(`${symbol.name}\\s*\\(`, 'g'));
-                if (calledSymbols) {
-                  for (const called of calledSymbols) {
-                    const funcMatch = called.match(/(\w+)\\s*\\(/);
-                    if (funcMatch) {
-                      existing.calls.push(funcMatch[1]);
+                // Guard against invalid regex from symbol names
+                const safeName = symbol.name?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || '';
+                if (safeName) {
+                  const calledSymbols = content.match(new RegExp(`${safeName}\\s*\\(`, 'g'));
+                  if (calledSymbols) {
+                    for (const called of calledSymbols) {
+                      const funcMatch = called.match(/(\w+)\s*\(/);
+                      if (funcMatch) {
+                        existing.calls.push(funcMatch[1]);
+                      }
                     }
                   }
                 }

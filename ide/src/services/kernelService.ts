@@ -17,8 +17,9 @@ export interface KernelProcess {
 
 export class KernelService {
   private processes: Map<string, KernelProcess> = new Map();
-  private ram: string[] = []; // Simple FIFO context stack
+  private ram: string[] = [];
   private readonly MAX_RAM_TOKENS = 32000;
+  private startTime = Date.now();
 
   constructor() {
     logger.info('NexusKernel', 'Kernel initialized. Managing context RAM and tool interrupts.');
@@ -90,10 +91,13 @@ export class KernelService {
   }
 
   getKernelStatus() {
+    const uptime = typeof process !== 'undefined' && typeof process.uptime === 'function'
+      ? process.uptime()
+      : (Date.now() - this.startTime) / 1000;
     return {
       activeProcesses: [...this.processes.values()].filter(p => p.status !== 'terminated'),
       ramUsage: this.ram.length,
-      uptime: process.uptime()
+      uptime
     };
   }
 }

@@ -66,6 +66,7 @@ const WORKSPACE_FILES = [
 ];
 
 async function fileExists(path: string): Promise<boolean> {
+  if (typeof window !== 'undefined') return false;
   try {
     const { accessSync } = await import('fs');
     accessSync(path);
@@ -76,6 +77,7 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 async function readJsonFile(path: string): Promise<any> {
+  if (typeof window !== 'undefined') return null;
   try {
     const { readFileSync } = await import('fs');
     return JSON.parse(readFileSync(path, 'utf-8'));
@@ -90,6 +92,7 @@ export const useMonorepoStore = create<MonorepoStore>()((set, get) => ({
   buildCache: {},
 
   detectMonorepo: async (rootPath: string) => {
+    if (typeof window !== 'undefined') return;
     set({ isDetecting: true });
 
     try {

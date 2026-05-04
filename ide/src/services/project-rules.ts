@@ -91,6 +91,7 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
   },
 
   saveRulesToDisk: async (rootPath) => {
+    if (typeof window !== 'undefined') return;
     try {
       const { writeFileSync, mkdirSync, existsSync } = await import('fs');
       const { join } = await import('path');
@@ -103,6 +104,7 @@ export const useRulesStore = create<RulesStore>((set, get) => ({
   },
 
   loadFromDisk: async (rootPath) => {
+    if (typeof window !== 'undefined') return false;
     try {
       const { readFileSync, existsSync } = await import('fs');
       const { join } = await import('path');

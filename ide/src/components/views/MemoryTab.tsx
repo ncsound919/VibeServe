@@ -5,8 +5,8 @@ import {
   RefreshCw, Trash2, Search, BarChart3, Eye, 
   Clock, Zap, TrendingUp, Activity
 } from 'lucide-react';
-import { useMemoryStore } from '../core/agents/memory/memoryStore';
-import type { MemoryTier, Memory } from '../core/agents/memory/memoryTypes';
+import { useMemoryStore } from '../../core/agents/memory/memoryStore';
+import type { MemoryTier, Memory } from '../../core/agents/memory/memoryTypes';
 
 const tierIcons: Record<MemoryTier, React.ReactNode> = {
   episodic: <Clock className="w-4 h-4" />,

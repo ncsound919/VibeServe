@@ -4,9 +4,9 @@
  */
 
 import { Zap } from 'lucide-react';
-import { SectionHeader } from '../components/SectionHeader';
-import { YouTubePulse } from '../features/youtube/YouTubePulse';
-import type { VideoItem } from '../types';
+import { SectionHeader } from '../SectionHeader';
+import { YouTubePulse } from '../../features/youtube/YouTubePulse';
+import type { VideoItem } from '../../types';
 
 interface YouTubePulseTabProps {
   videos: VideoItem[];

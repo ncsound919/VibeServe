@@ -181,6 +181,7 @@ export const useCodeixStore = create<CodeixStore>()((set, get) => ({
   stats: null,
 
   createIndex: async (rootPath, options = {}) => {
+    if (typeof window !== 'undefined') return {} as PortableIndex;
     set({ isIndexing: true });
 
     try {
@@ -343,6 +344,7 @@ export const useCodeixStore = create<CodeixStore>()((set, get) => ({
   },
 
   saveIndex: async (rootPath) => {
+    if (typeof window !== 'undefined') return;
     const { index } = get();
     if (!index) return;
     try {
@@ -356,6 +358,7 @@ export const useCodeixStore = create<CodeixStore>()((set, get) => ({
   },
 
   loadFromDisk: async (rootPath) => {
+    if (typeof window !== 'undefined') return false;
     try {
       const { readFileSync, existsSync } = await import('fs');
       const { join } = await import('path');

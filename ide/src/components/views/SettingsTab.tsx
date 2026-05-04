@@ -101,7 +101,7 @@ function PrivacyModePanel() {
 
               <div className="text-[9px] text-[#4a4b50] space-y-1">
                 <p>Zero API keys required — all processing runs on your hardware</p>
-                <p className="text-emerald-400/70 mt-1">Endpoint: {typeof process !== 'undefined' && (process.env.OLLAMA_HOST || 'http://localhost:11434')}</p>
+                <p className="text-emerald-400/70 mt-1">Endpoint: {import.meta.env.VITE_OLLAMA_HOST || 'http://localhost:11434'}</p>
               </div>
             </div>
           </div>

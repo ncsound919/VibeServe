@@ -182,7 +182,7 @@ const fallbackResponses: Record<string, (query: string, docs: { content: string 
 };
 
 export async function callGeminiWithFallback<T>(prompt: string, intent: string = 'general'): Promise<T> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
   // Try server-side proxy first (hides API key from browser)
   if (typeof window !== 'undefined') {
@@ -258,7 +258,7 @@ export async function callGemini<T>(prompt: string, retries = 3): Promise<T> {
 }
 
 export async function callGeminiMultimodal(prompt: string, imageData: string, mimeType: string = "image/png"): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     logger.warn('geminiService', 'No API key for multimodal, using fallback');
     return "Multimodal analysis requires a valid Gemini API key. [Mock: This looks like a UI design with a button and a list.]";
@@ -384,7 +384,7 @@ export async function fetchNewsAndVideos(): Promise<{
 }> {
   let newsArticles: NewsItem[] = [];
   try {
-    const apiKey = process.env.GNEWS_API_KEY || '560ecca5e9e47a2b02bd4e85159b75ad';
+    const apiKey = import.meta.env.VITE_GNEWS_API_KEY || '560ecca5e9e47a2b02bd4e85159b75ad';
     const res = await fetch(`https://gnews.io/api/v4/top-headlines?category=technology&lang=en&apikey=${apiKey}`);
     if (res.ok) {
       const data = await res.json();

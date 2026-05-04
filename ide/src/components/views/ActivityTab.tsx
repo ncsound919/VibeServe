@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Activity, Box, Calendar, ChevronRight, Code, FolderOpen, RefreshCcw, AlertTriangle, Clock, Layers } from 'lucide-react';
-import { usePipelineStore } from '../stores/usePipelineStore';
-import { cn } from '../lib/utils';
+import { usePipelineStore } from '../../stores/usePipelineStore';
+import { cn } from '../../lib/utils';
 
 interface GeneratedApp {
   name: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CodeEditor } from '../components/CodeEditor';
+import { CodeEditor } from '../CodeEditor';
 import { 
   FileCode, 
   FolderOpen, 
