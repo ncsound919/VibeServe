@@ -46,7 +46,7 @@ def resource_memory_stats() -> str:
 @mcp_server.resource("aether://version")
 def resource_version() -> str:
     return json.dumps({
-        "version": "2.0.0", "codename": "VibeServe",
+        "version": "1.1.0", "codename": "VibeServe",
         "tools": 27, "resources": 5, "prompts": 6,
         "providers": ["openai", "deepseek", "openrouter", "local", "opencode"],
         "pipeline": ["architect->code->review->verify->iterate->test->deploy"],

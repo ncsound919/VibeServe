@@ -2,7 +2,7 @@
 
 <img src="https://github.com/ncsound919/VibeServe/blob/main/nu%20image.png?raw=true" alt="VibeServe" width="100%" />
 
-# VibeServe v2.0
+# VibeServe v1.1
 ### *The Ultimate Agentic IDE, Orchestrator, and MCP Backend*
 
 [![CI](https://github.com/ncsound919/VibeServe/actions/workflows/ci.yml/badge.svg)](https://github.com/ncsound919/VibeServe/actions/workflows/ci.yml)
@@ -12,7 +12,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-compatible-00FF9F.svg)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Benchmark](https://img.shields.io/badge/Trinity_Benchmark-83.7%2F100-00FF9F.svg)](#benchmark)
+[![Benchmark](https://img.shields.io/badge/Trinity_Benchmark-91.9%2F100-00FF9F.svg)](#benchmark)
 
 </div>
 
