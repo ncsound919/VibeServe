@@ -75,8 +75,8 @@ def main():
     elif "--interactive" in sys.argv:
         asyncio.run(_interactive_loop())
     else:
-        server = _LazyMCP.build()
-        server.run()
+        log.info("Starting VibeServe MCP server...")
+        mcp_server.run()
 
 async def _interactive_loop():
     print("\n  VibeServe v2.0 — Interactive Mode\n  Type 'help' for commands | 'exit' to quit")
@@ -127,7 +127,7 @@ async def _interactive_loop():
                 print("""
   V2.0 FEATURES
   clone <url>            Reverse-engineer any live site
-  palette <#hex>         One color → full design system
+  palette <#hex>         One color \u2192 full design system
   multiverse <intent>    Same UI in React/Vue/Svelte/HTML
   doctor                 Diagnose + auto-repair code (via API)
   search <query>         Natural-language search over memory
