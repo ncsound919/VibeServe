@@ -273,6 +273,17 @@
           "label": {
             "type": "string"
           },
+          "region": {
+            "type": "string",
+            "description": "ID of layout region this component belongs to"
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "IDs of layout regions this component belongs to (multi-region support)"
+            }
+          },
           "purpose": {
             "type": "string"
           },
@@ -291,6 +302,12 @@
               },
               "icon": {
                 "type": "string"
+              },
+              "level": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 6,
+                "description": "Semantic heading level (1-6). Only applies when type is 'heading'."
               }
             }
           },
@@ -433,4 +450,3 @@
     }
   }
 }
-
