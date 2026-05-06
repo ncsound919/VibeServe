@@ -7,6 +7,15 @@ import { v4 as uuidv4 } from 'uuid';
 const PORT = process.env.CODEX_PORT ? parseInt(process.env.CODEX_PORT, 10) : 3001;
 const MCP_PORT = process.env.VIBESERVE_MCP_PORT ? parseInt(process.env.VIBESERVE_MCP_PORT, 10) : 4300;
 
+const WS_SECRET = process.env.VIBESERVE_WS_SECRET || process.env.VIBESERVE_API_SECRET || '';
+const AUTH_ENABLED = WS_SECRET.length > 0;
+
+function verifyToken(token: unknown): boolean {
+  if (!AUTH_ENABLED) return true;
+  if (typeof token !== 'string') return false;
+  return token === WS_SECRET;
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -121,8 +130,22 @@ class Orchestrator {
   }
 }
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   let sandboxId = '';
+
+  const url = new URL(req.url || '/', `http://${req.headers.host}`);
+  const token = url.searchParams.get('token') || req.headers['x-api-key'];
+
+  if (!verifyToken(token)) {
+    ws.send(JSON.stringify({
+      type: 'error',
+      status: 'unauthorized',
+      message: 'Invalid or missing auth token',
+    }));
+    ws.close(4001, 'Unauthorized');
+    return;
+  }
+
   console.log('[WS] Client connected. ', ws.ip);
 
   ws.on('message', (data) => {
