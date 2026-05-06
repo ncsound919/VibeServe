@@ -12,6 +12,9 @@ from vibeserve.tools.v4_tools import *  # noqa: F403
 from vibeserve.tools.v5_tools import *  # noqa: F403
 from vibeserve.tools.integration_tools import *  # noqa: F403
 from vibeserve.tools.pipeline_tools import *  # noqa: F403
+from vibeserve.tools.agenda import *  # noqa: F403
+from vibeserve.tools.repo_indexer import *  # noqa: F403
+from vibeserve.tools.github_sync import *  # noqa: F403
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 log = logging.getLogger("VibeServe")
