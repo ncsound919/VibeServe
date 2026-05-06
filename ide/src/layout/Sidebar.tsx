@@ -1,7 +1,7 @@
 import { useState, type ElementType } from 'react';
 import {
-  Sparkles, BarChart3, Terminal, Activity, Zap, History, Settings,
-  ChevronDown, ChevronRight, LayoutDashboard, Workflow,
+  Sparkles, Activity, Terminal, History, Settings,
+  ChevronDown, ChevronRight,
   Shield, Brain, FileCode, GitCompare, Database, Eye, Package, Cpu,
   Wand2, Trophy, ClipboardList,
 } from 'lucide-react';
@@ -22,18 +22,14 @@ const PRIMARY_ITEMS: { icon: ElementType; label: TabName }[] = [
 ];
 
 const ADVANCED_ITEMS: { icon: ElementType; label: TabName }[] = [
-  { icon: BarChart3, label: 'Overview' },
   { icon: Activity, label: 'Pipeline' },
-  { icon: Zap, label: 'Activity' },
-  { icon: History, label: 'History' },
   { icon: Shield, label: 'Audit' },
-  { icon: Brain, label: 'Mission Control' },
   { icon: GitCompare, label: 'Changes' },
-  { icon: Terminal, label: 'Command Center' },
   { icon: Settings, label: 'Settings' },
   { icon: Package, label: 'Extensions' },
   { icon: Cpu, label: 'System' },
   { icon: Trophy, label: 'Agent Eval' },
+  { icon: Brain, label: 'Mission Control' },
 ];
 
 interface SidebarProps {
@@ -45,8 +41,8 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   return (
-    <aside className="w-20 lg:w-64 border-r border-[#1a1b1e] min-h-[calc(100vh-64px)] hidden md:flex flex-col" role="navigation" aria-label="Main navigation">
-      <nav className="p-4 flex flex-col gap-1 flex-1">
+    <aside className="w-20 lg:w-64 border-r border-[#21262d] min-h-[calc(100vh-64px)] hidden md:flex flex-col bg-[#161b22]/50" role="navigation" aria-label="Main navigation">
+      <nav className="p-3 flex flex-col gap-0.5 flex-1">
         {PRIMARY_ITEMS.map((item) => (
           <button
             key={item.label}
@@ -55,13 +51,13 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
             aria-current={activeTab === item.label ? 'page' : undefined}
             onClick={() => onTabChange(item.label)}
             className={cn(
-              'flex items-center gap-3 p-3 rounded-lg transition-all group focus-visible:ring-2 focus-visible:ring-emerald-500/50',
+              'flex items-center gap-3 p-2.5 rounded-lg transition-all group focus-visible:ring-2 focus-visible:ring-[#58a6ff]/50',
               activeTab === item.label
-                ? 'bg-emerald-500/10 text-emerald-400'
-                : 'text-[#9CA3AF] hover:bg-[#151619] hover:text-white',
+                ? 'bg-[#1f6feb]/10 text-[#58a6ff] border border-[#1f6feb]/20'
+                : 'text-[#8b949e] hover:bg-[#21262d] hover:text-[#c9d1d9]',
             )}
           >
-            <item.icon size={20} />
+            <item.icon size={18} />
             <span className="hidden lg:block text-sm font-medium">{item.label}</span>
           </button>
         ))}
@@ -69,13 +65,13 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         <button
           onClick={() => setAdvancedOpen(!advancedOpen)}
           className={cn(
-            'flex items-center gap-3 p-3 rounded-lg transition-all group mt-2 text-[#6B7280] hover:text-[#9CA3AF] hover:bg-[#151619] focus-visible:ring-2 focus-visible:ring-emerald-500/50',
+            'flex items-center gap-3 p-2.5 rounded-lg transition-all group mt-2 text-[#484f58] hover:text-[#8b949e] hover:bg-[#21262d] focus-visible:ring-2 focus-visible:ring-[#58a6ff]/50',
           )}
           aria-expanded={advancedOpen}
           aria-controls="advanced-nav-items"
           aria-label="Toggle advanced navigation"
         >
-          {advancedOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {advancedOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <span className="hidden lg:block text-xs font-semibold uppercase tracking-wider">Advanced</span>
         </button>
 
@@ -87,13 +83,13 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
             aria-current={activeTab === item.label ? 'page' : undefined}
             onClick={() => onTabChange(item.label)}
             className={cn(
-              'flex items-center gap-3 p-3 rounded-lg transition-all group focus-visible:ring-2 focus-visible:ring-emerald-500/50',
+              'flex items-center gap-3 p-2.5 rounded-lg transition-all group focus-visible:ring-2 focus-visible:ring-[#58a6ff]/50',
               activeTab === item.label
-                ? 'bg-emerald-500/10 text-emerald-400'
-                : 'text-[#9CA3AF] hover:bg-[#151619] hover:text-white',
+                ? 'bg-[#1f6feb]/10 text-[#58a6ff] border border-[#1f6feb]/20'
+                : 'text-[#8b949e] hover:bg-[#21262d] hover:text-[#c9d1d9]',
             )}
           >
-            <item.icon size={20} />
+            <item.icon size={18} />
             <span className="hidden lg:block text-sm font-medium">{item.label}</span>
           </button>
         ))}

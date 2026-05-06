@@ -1,214 +1,307 @@
 /**
- * Yjs Real-Time Collaboration Service
- * 
- * Integrates Yjs CRDT for:
- * - Real-time collaborative editing
- * - Shared cursors and selections
- * - Presence awareness
- * - Conflict-free document sync
- * 
- * Based on Yjs (21K stars) - fastest CRDT implementation
+ * Real-time collaboration service using yjs.
+ * Manages yjs document, WebSocket sync, awareness (cursors), and Monaco binding.
  */
 import * as Y from 'yjs';
-import { IndexeddbPersistence } from 'y-indexeddb';
+import type { editor as MonacoEditor } from 'monaco-editor';
 
-export interface CollaborationUser {
-  id: string;
+export interface CollaboratorPresence {
   name: string;
   color: string;
   cursor?: { line: number; column: number };
-  selection?: { start: number; end: number };
+  selection?: { startLine: number; startColumn: number; endLine: number; endColumn: number };
 }
 
-export interface CollaborationState {
+const COLORS = ['#58a6ff', '#3fb950', '#d29922', '#f85149', '#a371f7', '#79c0ff', '#56d364', '#e3b341'];
+
+let colorIndex = 0;
+function nextColor(): string {
+  const c = COLORS[colorIndex % COLORS.length];
+  colorIndex++;
+  return c;
+}
+
+class CollabSession {
   doc: Y.Doc;
-  awareness: Map<number, CollaborationUser>;
-  provider: IndexeddbPersistence | null;
-}
+  room: string;
+  userName: string;
+  userColor: string;
+  ws: WebSocket | null = null;
+  textBinding: Y.Text | null = null;
+  editor: MonacoEditor.IStandaloneCodeEditor | null = null;
+  monaco: MonacoEditor.IStandaloneCodeEditor | null = null;
+  remoteDecorations: Map<string, string[]> = new Map(); // userId -> decorationIds
+  onPresenceChange?: (presences: CollaboratorPresence[]) => void;
+  isConnected = false;
+  reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  destroyed = false;
+  onConnectionChange?: (connected: boolean) => void;
 
-export interface TextDocument {
-  id: string;
-  content: Y.Text;
-  filename: string;
-}
-
-const userColors = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e',
-  '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
-];
-
-class CollaborationService {
-  private docs: Map<string, CollaborationState> = new Map();
-  private currentUserId: string = '';
-  private currentUserName: string = 'Anonymous';
-  private currentUserColor: string = userColors[0];
-
-  initialize(userId: string, userName: string): void {
-    this.currentUserId = userId;
-    this.currentUserName = userName;
-    const colorIndex = Math.floor(Math.random() * userColors.length);
-    this.currentUserColor = userColors[colorIndex];
+  constructor(room: string, userName: string) {
+    this.doc = new Y.Doc();
+    this.room = room;
+    this.userName = userName;
+    this.userColor = nextColor();
   }
 
-  createDocument(documentId: string, filename: string): TextDocument {
-    let state = this.docs.get(documentId);
-    
-    if (!state) {
-      const doc = new Y.Doc();
-      
-      const persistence = new IndexeddbPersistence(`nexus-collab-${documentId}`, doc);
-      
-      persistence.on('synced', () => {
-        console.log('[Collaboration] Document synced to IndexedDB:', documentId);
+  async connect(url: string) {
+    this.ws = new WebSocket(url);
+    this.ws.binaryType = 'arraybuffer';
+
+    this.ws.onopen = () => {
+      this.isConnected = true;
+      this.onConnectionChange?.(true);
+
+      // Send initial sync step 1
+      const state = Y.encodeStateAsUpdate(this.doc);
+      this.ws?.send(state as unknown as BufferSource);
+
+      // Announce presence
+      this.sendPresence();
+    };
+
+    this.ws.onmessage = (event) => {
+      if (event.data instanceof ArrayBuffer) {
+        // Binary update
+        try {
+          Y.applyUpdate(this.doc, new Uint8Array(event.data));
+        } catch {
+          // Invalid update
+        }
+      } else if (typeof event.data === 'string') {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'presence' && msg.userId !== this.userName) {
+            this.onPresenceChange?.(msg.presences ?? []);
+          }
+        } catch {
+          // Ignore
+        }
+      }
+    };
+
+    this.ws.onclose = () => {
+      this.isConnected = false;
+      this.onConnectionChange?.(false);
+      if (!this.destroyed) {
+        this.reconnectTimer = setTimeout(() => this.connect(url), 2000);
+      }
+    };
+
+    this.ws.onerror = () => {
+      // handled by onclose
+    };
+
+    // Listen for yjs doc changes -> send to server
+    this.doc.on('update', (update: Uint8Array) => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws.send(update as unknown as BufferSource);
+      }
+    });
+  }
+
+  private sendPresence() {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(
+        JSON.stringify({
+          type: 'presence',
+          userId: this.userName,
+          presences: [
+            {
+              name: this.userName,
+              color: this.userColor,
+              cursor: null,
+            },
+          ],
+        }),
+      );
+    }
+  }
+
+  /**
+   * Bind yjs to a Monaco editor model for real-time collaboration.
+   */
+  bindEditor(editor: MonacoEditor.IStandaloneCodeEditor) {
+    this.editor = editor;
+
+    // Get or create the shared text type for this room
+    const ytext = this.doc.getText(this.room);
+
+    // Set initial content from Monaco
+    if (ytext.length === 0) {
+      this.doc.transact(() => {
+        ytext.insert(0, editor.getValue());
       });
-
-      const content = doc.getText(filename);
-      
-      state = {
-        doc,
-        awareness: new Map(),
-        provider: persistence,
-      };
-      
-      this.docs.set(documentId, state);
     }
 
-    return {
-      id: documentId,
-      content: state.doc.getText(filename),
-      filename,
-    };
-  }
+    // yjs -> Monaco
+    ytext.observe((event: Y.YTextEvent) => {
+      const model = editor.getModel();
+      if (!model) return;
 
-  getDocument(documentId: string): Y.Doc | null {
-    return this.docs.get(documentId)?.doc || null;
-  }
-
-  updateCursor(documentId: string, line: number, column: number): void {
-    const state = this.docs.get(documentId);
-    if (!state) return;
-
-    const userMap = state.doc.getMap('users');
-    userMap.set(this.currentUserId, {
-      line,
-      column,
-      timestamp: Date.now(),
+      let index = 0;
+      event.delta.forEach((d: { retain?: number; delete?: number; insert?: string | object }) => {
+        if (d.retain) {
+          index += d.retain;
+        } else if (d.delete) {
+          const startPos = model.getPositionAt(index);
+          const endPos = model.getPositionAt(index + (d.delete as number));
+          editor.executeEdits('collab', [
+            {
+              range: {
+                startLineNumber: startPos.lineNumber,
+                startColumn: startPos.column,
+                endLineNumber: endPos.lineNumber,
+                endColumn: endPos.column,
+              },
+              text: '',
+            },
+          ]);
+        } else if (d.insert) {
+          const insertText = typeof d.insert === 'string' ? d.insert : '';
+          const pos = model.getPositionAt(index);
+          editor.executeEdits('collab', [
+            {
+              range: {
+                startLineNumber: pos.lineNumber,
+                startColumn: pos.column,
+                endLineNumber: pos.lineNumber,
+                endColumn: pos.column,
+              },
+              text: insertText,
+            },
+          ]);
+          index += insertText.length;
+        }
+      });
     });
-  }
 
-  updateSelection(documentId: string, start: number, end: number): void {
-    const state = this.docs.get(documentId);
-    if (!state) return;
+    // Monaco -> yjs
+    editor.onDidChangeModelContent((e) => {
+      // Don't sync our own collaborative edits back
+      if (e.isFlush) return;
 
-    const selectionMap = state.doc.getMap('selections');
-    selectionMap.set(this.currentUserId, {
-      start,
-      end,
-      timestamp: Date.now(),
-    });
-  }
-
-  getActiveUsers(documentId: string): CollaborationUser[] {
-    const state = this.docs.get(documentId);
-    if (!state) return [];
-
-    const users: CollaborationUser[] = [];
-    const userMap = state.doc.getMap('users') as unknown as { set: (k: string, v: unknown) => void, delete: (k: string) => void };
-    
-    userMap.forEach((value: any, key: string) => {
-      if (key !== this.currentUserId && Date.now() - value.timestamp < 30000) {
-        users.push({
-          id: key,
-          name: key.split('-')[0] || 'Anonymous',
-          color: userColors[Math.abs(key.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % userColors.length],
-          cursor: value.cursor,
+      this.doc.transact(() => {
+        e.changes.forEach((change) => {
+          const startOffset = editor.getModel()?.getOffsetAt({
+            lineNumber: change.range.startLineNumber,
+            column: change.range.startColumn,
+          });
+          if (startOffset !== undefined) {
+            ytext.delete(startOffset, change.rangeLength);
+            ytext.insert(startOffset, change.text);
+          }
         });
-      }
+      });
     });
 
-    return users;
-  }
-
-  getDocumentState(documentId: string): Uint8Array | null {
-    const state = this.docs.get(documentId);
-    if (!state) return null;
-    return Y.encodeStateAsUpdate(state.doc);
-  }
-
-  mergeDocumentState(documentId: string, stateUpdate: Uint8Array): void {
-    const state = this.docs.get(documentId);
-    if (!state) return;
-    Y.applyUpdate(state.doc, stateUpdate);
-  }
-
-  deleteDocument(documentId: string): void {
-    const state = this.docs.get(documentId);
-    if (state) {
-      state.doc.destroy();
-      if (state.provider) {
-        state.provider.destroy();
+    // Cursor awareness
+    editor.onDidChangeCursorPosition((e) => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws.send(
+          JSON.stringify({
+            type: 'presence',
+            userId: this.userName,
+            presences: [
+              {
+                name: this.userName,
+                color: this.userColor,
+                cursor: {
+                  line: e.position.lineNumber,
+                  column: e.position.column,
+                },
+              },
+            ],
+          }),
+        );
       }
-      this.docs.delete(documentId);
+    });
+  }
+
+  /**
+   * Show remote cursor decorations in the editor.
+   */
+  updateRemoteCursors(presences: CollaboratorPresence[]) {
+    if (!this.editor || !this.monaco) return;
+
+    const model = this.editor.getModel();
+    if (!model) return;
+
+    // Clear old decorations
+    for (const [, ids] of this.remoteDecorations) {
+      if (ids.length) {
+        try {
+          model.deltaDecorations(ids, []);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    this.remoteDecorations.clear();
+
+    // Add new decorations for each remote user
+    for (const presence of presences) {
+      if (!presence.cursor) continue;
+
+      const ids = model.deltaDecorations([], [
+        {
+          range: {
+            startLineNumber: presence.cursor.line,
+            startColumn: presence.cursor.column,
+            endLineNumber: presence.cursor.line,
+            endColumn: presence.cursor.column + 1,
+          },
+          options: {
+            className: 'remote-cursor-decoration',
+            after: {
+              content: presence.name,
+              inlineClassName: 'remote-cursor-label',
+            },
+          },
+        },
+      ]);
+      this.remoteDecorations.set(presence.name, ids);
     }
   }
 
-  observeChanges(documentId: string, callback: (event: Y.YEvent<any>[]) => void): () => void {
-    const state = this.docs.get(documentId);
-    if (!state) return () => {};
-
-    const content = state.doc.getText('content');
-    content.observe(callback);
-
-    return () => content.unobserve(callback);
-  }
-
-  getCurrentUser() {
-    return {
-      id: this.currentUserId,
-      name: this.currentUserName,
-      color: this.currentUserColor,
-    };
-  }
-
-  getAllDocuments(): string[] {
-    return Array.from(this.docs.keys());
-  }
-
-  destroy(): void {
-    this.docs.forEach((state) => {
-      state.doc.destroy();
-      if (state.provider) {
-        state.provider.destroy();
-      }
-    });
-    this.docs.clear();
+  disconnect() {
+    this.destroyed = true;
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (this.ws) {
+      this.ws.onclose = null;
+      this.ws.close();
+      this.ws = null;
+    }
+    this.doc.destroy();
+    this.isConnected = false;
+    this.onConnectionChange?.(false);
   }
 }
 
-export const collaborationService = new CollaborationService();
+/**
+ * Active collaboration sessions, keyed by room name.
+ */
+const sessions = new Map<string, CollabSession>();
 
-export function createSharedDocument(documentId: string, filename: string): TextDocument {
-  return collaborationService.createDocument(documentId, filename);
+export function getCollabSession(
+  room: string,
+  userName: string,
+  serverUrl: string = `ws://${location.host}/ws/collab`,
+): CollabSession {
+  const key = `${room}:${userName}`;
+  if (sessions.has(key)) return sessions.get(key)!;
+
+  const session = new CollabSession(room, userName);
+  sessions.set(key, session);
+  session.connect(`${serverUrl}?room=${encodeURIComponent(room)}`);
+  return session;
 }
 
-export function getCollaborators(documentId: string): CollaborationUser[] {
-  return collaborationService.getActiveUsers(documentId);
+export function disconnectAllCollabSessions() {
+  for (const session of sessions.values()) {
+    session.disconnect();
+  }
+  sessions.clear();
 }
 
-export function updateCursorPosition(documentId: string, line: number, column: number): void {
-  collaborationService.updateCursor(documentId, line, column);
-}
-
-export function updateSelectionRange(documentId: string, start: number, end: number): void {
-  collaborationService.updateSelection(documentId, start, end);
-}
-
-export function getDocumentUpdate(documentId: string): Uint8Array | null {
-  return collaborationService.getDocumentState(documentId);
-}
-
-export function mergeDocumentUpdate(documentId: string, update: Uint8Array): void {
-  collaborationService.mergeDocumentState(documentId, update);
-}
-
-export { Y };
+export type { CollabSession };

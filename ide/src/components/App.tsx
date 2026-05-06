@@ -1,5 +1,5 @@
 /** @license SPDX-License-Identifier: Apache-2.0 */
-import { lazy, Suspense, Component, type ReactNode } from 'react';
+import { lazy, Suspense, Component, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Header } from '../layout/Header';
@@ -11,6 +11,11 @@ import { LicenseGate } from './views/LicenseGate';
 import { GlobalCommandBar } from './GlobalCommandBar';
 import { useNexusApp } from '../hooks/useNexusApp';
 import { TrajectorySidebar } from './TrajectorySidebar';
+import { ChatPanel } from './ChatPanel';
+import { InlineComposer } from './InlineComposer';
+import { InlineDiffOverlay, type DiffChange } from './InlineDiffOverlay';
+import { ShortcutsModal } from './ShortcutsModal';
+import type { TabName } from '../stores/useAppStore';
 
 // ── Per-tab error boundary ──────────────────────────────────────────────────
 interface TabEBState { hasError: boolean; error: Error | null }
@@ -23,7 +28,7 @@ class TabErrorBoundary extends Component<{ name: string; children: ReactNode }, 
     return { hasError: true, error };
   }
   componentDidCatch(error: Error) {
-    console.error(`[Nexus] Error in tab "${this.props.name}":`, error);
+    console.error(`[VibeServe] Error in tab "${this.props.name}":`, error);
   }
   render() {
     if (this.state.hasError) {
@@ -68,7 +73,7 @@ function TabLoader() {
   return (
     <div className="flex items-center justify-center h-full min-h-[200px]" role="status" aria-label="Loading tab content">
       <motion.div
-        className="w-8 h-8 rounded-full border-2 border-emerald-500/30 border-t-emerald-500"
+        className="w-8 h-8 rounded-full border-2 border-[#58a6ff]/30 border-t-[#58a6ff]"
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
       />
@@ -83,24 +88,112 @@ export default function App() {
     activeTab, setActiveTab,
     nexusSystemStatus,
     activeRun,
-    selectedRepos,
     refetch,
   } = useNexusApp();
 
+  const [chatOpen, setChatOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [diffChanges, setDiffChanges] = useState<DiffChange[]>([]);
+  const [diffVisible, setDiffVisible] = useState(false);
+  const [shortcutsVisible, setShortcutsVisible] = useState(false);
+
+  // Cmd+I handler
+  useEffect(() => {
+    let lastK = 0;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === 'i' && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        setComposerOpen((prev) => !prev);
+      }
+      // Ctrl+K Ctrl+S sequence
+      if (mod && e.key === 'k') {
+        lastK = Date.now();
+      }
+      if (mod && e.key === 's' && Date.now() - lastK < 500) {
+        e.preventDefault();
+        setShortcutsVisible(true);
+        lastK = 0;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleApplyChanges = useCallback((changes: DiffChange[]) => {
+    setDiffChanges(changes);
+    setDiffVisible(true);
+    setComposerOpen(false);
+  }, []);
+
+  const handleDiffAcceptFile = useCallback(async (fileName: string) => {
+    const change = diffChanges.find((c) => c.fileName === fileName);
+    if (!change) return;
+
+    setDiffChanges((prev) =>
+      prev.map((c) =>
+        c.fileName === fileName ? { ...c, verifying: true } : c,
+      ),
+    );
+
+    try {
+      await fetch('/api/editor/file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: fileName, content: change.newContent }),
+      });
+
+      setDiffChanges((prev) =>
+        prev.map((c) =>
+          c.fileName === fileName
+            ? { ...c, applied: true, verifying: false, verified: true, verificationStatus: 'passing' }
+            : c,
+        ),
+      );
+    } catch {
+      setDiffChanges((prev) =>
+        prev.map((c) =>
+          c.fileName === fileName
+            ? { ...c, verifying: false, verificationStatus: 'failing' }
+            : c,
+        ),
+      );
+    }
+  }, [diffChanges]);
+
+  const handleDiffRejectFile = useCallback((fileName: string) => {
+    setDiffChanges((prev) =>
+      prev.map((c) => (c.fileName === fileName ? { ...c, rejected: true } : c)),
+    );
+  }, []);
+
+  const handleDiffAcceptAll = useCallback(async () => {
+    const pending = diffChanges.filter((c) => !c.applied && !c.rejected);
+    for (const c of pending) {
+      await handleDiffAcceptFile(c.fileName);
+    }
+    setDiffVisible(false);
+    setDiffChanges([]);
+  }, [diffChanges, handleDiffAcceptFile]);
+
+  const handleDiffRejectAll = useCallback(() => {
+    setDiffVisible(false);
+    setDiffChanges([]);
+  }, []);
+
   // Don't block render while license check is still loading
-  if (appLicensed === false) return <LicenseGate onUnlock={() => refetch()} />;
+  if (appLicensed === false) return <LicenseGate onActivate={() => refetch()} />;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] flex flex-col" role="application" aria-label="Nexus Alpha IDE">
+    <div className="min-h-screen bg-[#0d1117] flex flex-col" role="application" aria-label="VibeServe IDE">
       {/* Top glow decoration */}
-      <div className="pointer-events-none fixed top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+      <div className="pointer-events-none fixed top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#58a6ff]/40 to-transparent" />
 
       <Header
         loading={loading}
-        latency={latency}
-        nexusSystemStatus={nexusSystemStatus}
-        activeRun={activeRun}
-        onRefetch={refetch}
+        onRefresh={refetch}
+        chatOpen={chatOpen}
+        onChatToggle={() => setChatOpen((prev) => !prev)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -109,14 +202,14 @@ export default function App() {
         <main className="flex-1 overflow-auto p-4 md:p-6" role="main" aria-label="Content area">
           <TabErrorBoundary name={activeTab}>
             <Suspense fallback={<TabLoader />}>
-              {activeTab === 'Overview' && (
+              {activeTab === 'Overview' && data && (
                 <OverviewTab
                   data={data}
                   nexusSystemStatus={nexusSystemStatus}
-                  onTabChange={setActiveTab}
+                  onTabChange={(tab: string) => setActiveTab(tab as TabName)}
                 />
               )}
-              {activeTab === 'Composer' && <ComposerTab selectedRepos={selectedRepos} />}
+              {activeTab === 'Composer' && <ComposerTab />}
               {activeTab === 'Command Center' && <CommandCenterTab />}
               {activeTab === 'Pipeline' && <PipelineTab />}
               {activeTab === 'Activity' && <ActivityTab />}
@@ -138,10 +231,35 @@ export default function App() {
         </main>
 
         <TrajectorySidebar />
+        <ChatPanel isOpen={chatOpen} onToggle={() => setChatOpen(false)} />
       </div>
 
       <Footer />
-      <GlobalCommandBar onTabChange={setActiveTab} />
+      <GlobalCommandBar />
+
+      {/* Cmd+I Inline Composer */}
+      <InlineComposer
+        visible={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        onApplyChanges={handleApplyChanges}
+      />
+
+      {/* Batch diff review after agent edits */}
+      <InlineDiffOverlay
+        changes={diffChanges}
+        visible={diffVisible}
+        onAcceptAll={handleDiffAcceptAll}
+        onRejectAll={handleDiffRejectAll}
+        onAcceptFile={handleDiffAcceptFile}
+        onRejectFile={handleDiffRejectFile}
+        onClose={() => {
+          setDiffVisible(false);
+          setDiffChanges([]);
+        }}
+      />
+
+      {/* Keyboard shortcuts cheatsheet */}
+      <ShortcutsModal visible={shortcutsVisible} onClose={() => setShortcutsVisible(false)} />
     </div>
   );
 }

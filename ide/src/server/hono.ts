@@ -610,6 +610,29 @@ app.get('/api/editor/tree/:appId', requireRole(['admin', 'user']), (c) => {
   return c.json({ tree });
 });
 
+app.get('/api/editor/files', requireRole(['admin', 'user']), (c) => {
+  const user = c.get('user');
+  const apps = listGeneratedApps(user.sub);
+  const allFiles: Array<{ path: string; name: string; appId: string }> = [];
+  for (const app of apps) {
+    const tree = listAppFiles(app.id, user.sub);
+    if (tree) {
+      const flatten = (nodes: any[], prefix: string) => {
+        for (const node of nodes) {
+          const fullPath = `${prefix}/${node.name}`;
+          if (node.type === 'file') {
+            allFiles.push({ path: fullPath, name: node.name, appId: app.id });
+          } else if (node.type === 'dir' && node.children) {
+            flatten(node.children, fullPath);
+          }
+        }
+      };
+      flatten(tree, app.id);
+    }
+  }
+  return c.json({ files: allFiles });
+});
+
 app.get('/api/editor/file', requireRole(['admin', 'user']), (c) => {
   const user = c.get('user');
   const filePath = c.req.query('path');
@@ -692,6 +715,113 @@ app.post('/api/coding/plan/apply', requireRole(['admin', 'user']), strictLimiter
   }).catch(() => {});
 
   return c.json({ success: true, message: 'Plan application initiated' });
+});
+
+// ─── Agent Mode API (Cmd+I inline editing) ─────────────────────────────────
+app.post('/api/agent/edit', requireRole(['admin', 'user']), strictLimiter, async (c) => {
+  try {
+    const body = await readJson<{
+      prompt: string;
+      context?: string;
+      openFile?: { path: string; language: string; content: string };
+    }>(c);
+    if (!body?.prompt) return c.json({ error: 'prompt required' }, 400);
+
+    const user = c.get('user');
+    const key = (await secretsManager.get(user.sub, 'GEMINI_API_KEY')) || process.env.GEMINI_API_KEY;
+    if (!key) return c.json({ error: 'GEMINI_API_KEY not configured' }, 503);
+
+    // Build the planning prompt
+    const fileContext = body.openFile
+      ? `\nCurrently open file (${body.openFile.path}):\n\`\`\`${body.openFile.language}\n${body.openFile.content.slice(0, 2000)}\n\`\`\``
+      : '';
+    const extraContext = body.context ? `\nProject context:\n${body.context.slice(0, 1500)}` : '';
+
+    const planPrompt = `You are an expert software engineer. The user wants you to make code changes. 
+
+## User Request
+${body.prompt}
+${fileContext}
+${extraContext}
+
+## Instructions
+1. Plan the changes: identify which files need to be created or modified
+2. For each file, provide the COMPLETE new file content (not just changes)
+3. Return a JSON object with this exact structure:
+{
+  "summary": "Brief description of changes",
+  "plan": ["Step 1: ...", "Step 2: ..."],
+  "files": [
+    {
+      "path": "src/file.ts",
+      "action": "modify" or "create" or "delete",
+      "language": "typescript",
+      "content": "complete new file content here"
+    }
+  ]
+}
+
+CRITICAL: Return ONLY valid JSON. No markdown fences, no explanations outside the JSON. Every file.content must be the COMPLETE file after changes, not just the diff.`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: planPrompt }] }],
+            generationConfig: {
+              maxOutputTokens: 4096,
+              temperature: 0.3,
+            },
+          }),
+          signal: controller.signal,
+        },
+      );
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return c.json({ error: `API error ${res.status}` }, 502);
+
+      const data = (await res.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+
+      // Extract JSON from response (handle markdown fences)
+      let jsonStr = rawText.trim();
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) jsonStr = jsonMatch[0];
+
+      const plan = JSON.parse(jsonStr);
+
+      return c.json({
+        summary: plan.summary ?? '',
+        plan: plan.plan ?? [],
+        files: (plan.files ?? []).map((f: any) => ({
+          path: f.path ?? 'unknown',
+          action: f.action ?? 'modify',
+          language: f.language ?? 'typescript',
+          content: f.content ?? '',
+        })),
+      });
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e instanceof SyntaxError) {
+        return c.json({
+          summary: 'Failed to parse plan. Try again with a clearer prompt.',
+          plan: [],
+          files: [],
+        }, 422);
+      }
+      throw e;
+    }
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : 'Agent error' }, 503);
+  }
 });
 
 // ─── Intelligence & RAG API ──────────────────────────────────────────────────
@@ -944,6 +1074,56 @@ app.post('/api/proxy/cli/stream', requireRole(['admin', 'user']), strictLimiter,
   }
 });
 
+// ─── AI Inline Completions ────────────────────────────────────────────────────
+app.post('/api/ai/complete', requireRole(['admin', 'user']), strictLimiter, async (c) => {
+  try {
+    const body = await readJson<{
+      prompt: string;
+      language: string;
+      fileName: string;
+      maxTokens: number;
+      temperature: number;
+    }>(c);
+    if (!body?.prompt) return c.json({ error: 'prompt required' }, 400);
+
+    const user = c.get('user');
+    const key = (await secretsManager.get(user.sub, 'GEMINI_API_KEY')) || process.env.GEMINI_API_KEY;
+    if (!key) return c.json({ error: 'GEMINI_API_KEY not configured' }, 503);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 700);
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: body.prompt }] }],
+            generationConfig: {
+              maxOutputTokens: body.maxTokens ?? 50,
+              temperature: body.temperature ?? 0.1,
+              stopSequences: ['\n\n', '```'],
+            },
+          }),
+          signal: controller.signal,
+        },
+      );
+      clearTimeout(timeoutId);
+      if (!res.ok) return c.json({ error: `API error ${res.status}` }, 502);
+      const data = (await res.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      return c.json({ completion: text });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (e) {
+    return c.json({ error: e instanceof Error ? e.message : 'Completion error' }, 503);
+  }
+});
+
 // ─── Secrets Management ───────────────────────────────────────────────────────
 app.get('/api/secrets', requireRole(['admin', 'user']), async (c) => {
   const user = c.get('user');
@@ -1102,6 +1282,63 @@ setInterval(() => {
     for (const client of clients) {
       if (client.readyState === WebSocket.OPEN) client.send(json);
     }
+  });
+
+  // ─── yjs Collaboration Relay ──────────────────────────────────────────────
+  const collabRooms = new Map<string, Set<WebSocket>>();
+  const collabWss = new WebSocketServer({ server: httpServer as unknown as import('http').Server, path: '/ws/collab' });
+
+  collabWss.on('connection', (ws, req) => {
+    let room = '';
+    try {
+      const url = new URL(req.url ?? '/', `http://localhost`);
+      room = url.searchParams.get('room') || 'default';
+    } catch { /* use default */ }
+
+    if (!collabRooms.has(room)) collabRooms.set(room, new Set());
+    collabRooms.get(room)!.add(ws);
+
+    ws.on('message', (raw) => {
+      const roomClients = collabRooms.get(room);
+      if (!roomClients) return;
+
+      if (raw instanceof Buffer || raw instanceof ArrayBuffer) {
+        const buffer = raw instanceof ArrayBuffer ? Buffer.from(raw) : raw;
+        for (const client of roomClients) {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(buffer);
+          }
+        }
+      } else {
+        try {
+          const msg = JSON.parse(raw.toString());
+          // Broadcast JSON awareness/sync messages to all others
+          for (const client of roomClients) {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify(msg));
+            }
+          }
+        } catch {
+          // Ignore invalid messages
+        }
+      }
+    });
+
+    ws.on('close', () => {
+      const roomClients = collabRooms.get(room);
+      if (roomClients) {
+        roomClients.delete(ws);
+        if (roomClients.size === 0) collabRooms.delete(room);
+      }
+    });
+
+    ws.on('error', () => {
+      const roomClients = collabRooms.get(room);
+      if (roomClients) {
+        roomClients.delete(ws);
+        if (roomClients.size === 0) collabRooms.delete(room);
+      }
+    });
   });
 })();
 
