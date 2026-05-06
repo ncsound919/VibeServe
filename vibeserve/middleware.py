@@ -177,13 +177,15 @@ def audit_tool(func: Callable):
             }
 
         t0 = time.monotonic()
-        await audit.log_invocation(tool_name, identity, inputs)
+        await audit.log_invocation(tool_name, identity, inputs, outcome="started")
         try:
             result = await func(ctx, *args, **kwargs)
             elapsed = (time.monotonic() - t0) * 1000
+            # Check for semantic errors returned as dicts (validation failures, etc.)
+            outcome = "error" if isinstance(result, dict) and result.get("status") == "error" else "success"
             await audit.log_invocation(
                 tool_name, identity, inputs,
-                outcome="success", duration_ms=elapsed,
+                outcome=outcome, duration_ms=elapsed,
             )
             return result
         except Exception as e:

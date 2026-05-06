@@ -86,6 +86,7 @@ class CrossRepoIndex:
 
         ri = RepoIndex(repo_key=repo_key, repo_path=str(path), repo_name=repo_name)
         patterns = {
+            ".md": self._parse_md,
             ".ts": self._parse_ts,
             ".tsx": self._parse_tsx,
             ".js": self._parse_js,
@@ -112,6 +113,26 @@ class CrossRepoIndex:
                     ri.symbols.extend(symbols)
                 except Exception:
                     pass
+
+        # Collect remaining files (extensionless documents, configs, etc.)
+        for f in path.rglob("*"):
+            if f.is_dir():
+                continue
+            parts = set(f.parts)
+            if parts & ignore_dirs:
+                continue
+            rel = str(f.relative_to(path))
+            if rel in source_files:
+                continue
+            source_files.append(rel)
+            # Try parsing as markdown if no extension (skip .gitignore and binary files)
+            try:
+                content = f.read_text(errors="replace")
+                if not Path(rel).suffix and Path(rel).name != '.gitignore':
+                    symbols = self._parse_md(str(f), content, rel)
+                    ri.symbols.extend(symbols)
+            except Exception:
+                pass
 
         for test_pattern in ["**/test_*.py", "**/*_test.py", "**/*.test.ts",
                              "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx",
@@ -316,6 +337,36 @@ class CrossRepoIndex:
             elif isinstance(node, ast.ClassDef):
                 symbols.append(Symbol(name=node.name, kind="class", file_path=rel,
                                       repo_key="", line=node.lineno, exported=not node.name.startswith("_")))
+        return symbols
+
+    def _parse_md(self, full_path: str, content: str, rel: str) -> List[Symbol]:
+        """Extract headings and code blocks from markdown files."""
+        symbols = []
+        for m in re.finditer(r'^(#{1,6})\s+(.+)$', content, re.MULTILINE):
+            level = len(m.group(1))
+            title = m.group(2).strip()
+            symbols.append(Symbol(
+                name=title[:80],
+                kind="section" if level <= 2 else "subsection",
+                file_path=rel,
+                repo_key="",
+                line=content[:m.start()].count('\n') + 1,
+                exported=False,
+                docstring=f"H{level}: {title[:80]}",
+            ))
+        # Extract code blocks with language hints
+        for m in re.finditer(r'```(\w+)?\n(.+?)```', content, re.DOTALL):
+            lang = m.group(1) or "text"
+            code = m.group(2).strip()[:200]
+            symbols.append(Symbol(
+                name=f"codeblock[{lang}]@{rel}",
+                kind="codeblock",
+                file_path=rel,
+                repo_key="",
+                line=content[:m.start()].count('\n') + 1,
+                exported=False,
+                docstring=code[:200],
+            ))
         return symbols
 
 
