@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type PanelId = 'explorer' | 'search' | 'git' | 'debug' | 'integrations' | 'settings';
+export type PanelId = 'explorer' | 'search' | 'git' | 'debug' | 'integrations' | 'settings' | 'agenda' | 'background' | 'career-library' | 'suggestions';
 export type AutonomyMode = 'ide' | 'copilot' | 'pipeline';
 
 export interface EditorTab {

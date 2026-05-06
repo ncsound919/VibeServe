@@ -10,6 +10,10 @@ import { GitPanel } from './panels/GitPanel';
 import { DebugPanel } from './panels/DebugPanel';
 import { IntegrationsPanel } from './panels/IntegrationsPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
+import { AgendaPanel } from './panels/AgendaPanel';
+import { BackgroundWorkPanel } from './panels/BackgroundWorkPanel';
+import { CareerLibraryPanel } from './panels/CareerLibraryPanel';
+import { ActiveSuggestionsPanel } from './panels/ActiveSuggestionsPanel';
 import { ComposerPanel } from './ai/ComposerPanel';
 import { AgentQueue } from './ai/AgentQueue';
 import { CodeEditor } from './components/CodeEditor';
@@ -31,6 +35,10 @@ const PANEL_COMPONENTS: Record<PanelId, React.FC> = {
   debug: DebugPanel,
   integrations: IntegrationsPanel,
   settings: SettingsPanel,
+  agenda: AgendaPanel,
+  background: BackgroundWorkPanel,
+  'career-library': CareerLibraryPanel,
+  suggestions: ActiveSuggestionsPanel,
 };
 
 const BOTTOM_COMPONENTS: Record<string, React.FC> = {

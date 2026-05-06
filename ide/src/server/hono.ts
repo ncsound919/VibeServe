@@ -232,6 +232,24 @@ app.post('/api/pipeline/run', requireRole(['admin', 'system']), strictLimiter, a
   return c.json({ started: true, executionId: result.id, mode: 'simulated' });
 });
 
+app.post('/api/pipeline/mcp_call', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { tool, args } = body;
+    if (!tool) return c.json({ error: 'tool name required' }, 400);
+
+    let result: any;
+    if (vibeServeClient) {
+      result = await vibeServeClient.callTool(tool, args || {});
+    } else {
+      result = { status: 'error', error: 'MCP client not initialized' };
+    }
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ status: 'error', error: error.message });
+  }
+});
+
 app.get('/api/pipeline/status/:id', requireRole(['admin', 'user']), strictLimiter, async (c) => {
   const user = c.get('user');
   const jobId = c.req.param('id');

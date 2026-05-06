@@ -6,6 +6,10 @@ const PANELS: { id: PanelId; icon: React.FC; tooltip: string; shortcut: string }
   { id: 'search', icon: Icons.Search, tooltip: 'Search', shortcut: 'Ctrl+Shift+F' },
   { id: 'git', icon: Icons.Git, tooltip: 'Source Control', shortcut: 'Ctrl+Shift+G' },
   { id: 'debug', icon: Icons.Debug, tooltip: 'Debug', shortcut: 'F5' },
+  { id: 'agenda', icon: Icons.Agenda, tooltip: 'Agenda', shortcut: 'Ctrl+Shift+A' },
+  { id: 'background', icon: Icons.Background, tooltip: 'Background Work', shortcut: 'Ctrl+Shift+B' },
+  { id: 'career-library', icon: Icons.Library, tooltip: 'Career Library', shortcut: 'Ctrl+Shift+L' },
+  { id: 'suggestions', icon: Icons.Suggestions, tooltip: 'Active Suggestions', shortcut: 'Ctrl+Shift+S' },
   { id: 'integrations', icon: Icons.Integrations, tooltip: 'Integrations', shortcut: 'Ctrl+Shift+I' },
   { id: 'settings', icon: Icons.Settings, tooltip: 'Settings', shortcut: 'Ctrl+,' },
 ];
