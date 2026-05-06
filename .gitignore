@@ -35,6 +35,7 @@ ide/node_modules/
 # Generated apps (pipeline output, never commit)
 ide/generated-apps/
 generated-apps/
+ide/uploads/
 
 # Test outputs
 test-results/
