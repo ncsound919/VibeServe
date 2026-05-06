@@ -1,6 +1,5 @@
 """LiveReload - Wrap HTML with live-reload and dev server"""
 import logging
-from typing import Any, Dict
 
 log = logging.getLogger("VibeServe.features.live_reload")
 

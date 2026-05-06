@@ -1,37 +1,16 @@
-"""VibeServe v2.0 entry point — registers all tools including v2.0 feature tools."""
+"""VibeServe integration tools — Supabase, Vercel, GitHub, editor config."""
 
-from __future__ import annotations
-import asyncio
 import json
-import logging
-import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from vibeserve.models import CodeFile, ArchitectureDecision, VibePlan
-from vibeserve.core import (
-    CONFIG, DEFAULT_DESIGN_SYSTEM, memory_store, cache_manager,
-    store_successful_spec, get_similar_specs,
-    SchemaValidator, SpecGenerator, MultiAgentCritique,
-    VibeArchitect, VibeImplementer, VibeVerifier, VibeCodeReviewer,
-    SystemAuditor, CritiqueLoop, VibeTester, VibeDeployer,
-    TemplateLibrary, DesignUpgrader,
+from vibeserve.tools._tool_deps import (
+    SupabaseConnector, VercelConnector, GitHubConnector, EditorBridge,
 )
-from vibeserve.utils import (
-    TOON, Graphify, SentryTracker, Context7Provider,
-    SupabaseConnector, VercelConnector, GitHubConnector,
-    CloudflareConnector, GoogleConnector, EditorBridge,
-    contrast_ratio,
-)
-from vibeserve.core import PlaywrightBridge
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-log = logging.getLogger("VibeServe")
-
-
 from vibeserve.server import mcp_server
+
+
 @mcp_server.tool(name="supabase_query", description="Query a Supabase table.")
-async def supabase_query_tool(ctx, table: str, select: str = "*", filters: Optional[Dict[str, Any]] = None, limit: int = 10) -> Dict[str, Any]:
+async def supabase_query_tool(ctx, table: str, select: str = "*", filters=None, limit: int = 10) -> Dict[str, Any]:
     return await SupabaseConnector.query(table, select, filters, limit)
 
 @mcp_server.tool(name="supabase_insert", description="Insert a row into a Supabase table.")
@@ -60,4 +39,3 @@ async def editor_config_tool(ctx, editor: str = "vscode", project_name: str = "v
     else:
         config = {"cursor_rules": EditorBridge.cursor_rules("mcp-server")}
     return {"status": "success", "editor": editor, "config": config}
-

@@ -4,26 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 
-from vibeserve.models import CodeFile, ArchitectureDecision, VibePlan
-from vibeserve.core import (
-    CONFIG, DEFAULT_DESIGN_SYSTEM, memory_store, cache_manager,
-    store_successful_spec, get_similar_specs,
-    SchemaValidator, SpecGenerator, MultiAgentCritique,
-    VibeArchitect, VibeImplementer, VibeVerifier, VibeCodeReviewer,
-    SystemAuditor, CritiqueLoop, VibeTester, VibeDeployer,
-    TemplateLibrary, DesignUpgrader,
-)
-from vibeserve.utils import (
-    TOON, Graphify, SentryTracker, Context7Provider,
-    SupabaseConnector, VercelConnector, GitHubConnector,
-    CloudflareConnector, GoogleConnector, EditorBridge,
-    contrast_ratio,
-)
-from vibeserve.core import PlaywrightBridge
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 log = logging.getLogger("VibeServe")
@@ -76,7 +57,7 @@ def main():
         asyncio.run(_interactive_loop())
     else:
         log.info("Starting VibeServe MCP server...")
-        mcp_server.run()
+        mcp_server.build().run()
 
 async def _interactive_loop():
     print("\n  VibeServe v2.0 — Interactive Mode\n  Type 'help' for commands | 'exit' to quit")

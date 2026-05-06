@@ -1,14 +1,12 @@
 """Utility functions: WCAG, TOON, Graphify, logging, connectors."""
 
 from __future__ import annotations
-import hashlib
 import json
 import logging
 import os
-import random
 import re
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pathlib import Path
 
@@ -282,28 +280,68 @@ class Graphify:
 
 # ====================== SENTRY TRACKER ======================
 class SentryTracker:
-    _events: List[Dict[str, Any]] = []
+    """Real Sentry SDK integration with backward-compat shim.
+
+    Configure via SENTRY_DSN env var. Without DSN, SDK operates in no-op mode.
+    """
+    _initialized = False
+
+    @classmethod
+    def _ensure_init(cls):
+        if cls._initialized:
+            return
+        import sentry_sdk
+        from sentry_sdk.integrations.logging import LoggingIntegration
+        dsn = os.getenv("SENTRY_DSN", "")
+        sentry_sdk.init(
+            dsn=dsn if dsn else None,
+            traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+            profiles_sample_rate=float(os.getenv("SENTRY_PROFILES_SAMPLE_RATE", "0.0")),
+            environment=os.getenv("SENTRY_ENVIRONMENT", "production"),
+            integrations=[LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)],
+        )
+        cls._initialized = True
 
     @classmethod
     def track(cls, event: str, data: Dict[str, Any] = None):
         from datetime import datetime, timezone
-        entry = {
-            "event": event,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "data": data or {}
-        }
-        cls._events.append(entry)
+        cls._ensure_init()
+        import sentry_sdk
+        sentry_sdk.add_breadcrumb(
+            category="vibeserve",
+            message=event,
+            level="info",
+            data=data or {},
+            timestamp=datetime.now(timezone.utc),
+        )
         log.info(f"[Sentry] {event}: {json.dumps(data)[:200]}" if data else f"[Sentry] {event}")
 
     @classmethod
+    def capture_error(cls, error: Exception, context: Dict[str, Any] = None):
+        cls._ensure_init()
+        import sentry_sdk
+        sentry_sdk.capture_exception(error)
+        if context:
+            sentry_sdk.set_context("vibeserve", context)
+        log.error(f"[Sentry] Captured error: {error}")
+
+    @classmethod
+    def capture_message(cls, message: str, level: str = "info", data: Dict[str, Any] = None):
+        cls._ensure_init()
+        import sentry_sdk
+        sentry_sdk.capture_message(message, level=level)
+        log.info(f"[Sentry] {message}")
+
+    @classmethod
     def flush(cls) -> List[Dict[str, Any]]:
-        events = cls._events.copy()
-        cls._events.clear()
-        return events
+        cls._ensure_init()
+        import sentry_sdk
+        sentry_sdk.flush()
+        return []
 
     @classmethod
     def errors(cls) -> List[Dict[str, Any]]:
-        return [e for e in cls._events if "error" in e["event"].lower()]
+        return []
 
 
 # ====================== CONTEXT 7 ======================
@@ -376,26 +414,29 @@ class VercelConnector:
 
     @staticmethod
     async def list_deployments(limit: int = 5) -> dict:
-        resp = await httpx.AsyncClient(timeout=15).get(
-            f"https://api.vercel.com/v6/deployments?limit={limit}",
-            headers=VercelConnector._headers()
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(
+                f"https://api.vercel.com/v6/deployments?limit={limit}",
+                headers=VercelConnector._headers()
+            )
         return {"status": resp.status_code, "deployments": resp.json().get("deployments", []) if resp.status_code == 200 else []}
 
     @staticmethod
     async def list_projects() -> dict:
-        resp = await httpx.AsyncClient(timeout=15).get(
-            "https://api.vercel.com/v9/projects",
-            headers=VercelConnector._headers()
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(
+                "https://api.vercel.com/v9/projects",
+                headers=VercelConnector._headers()
+            )
         return {"status": resp.status_code, "projects": resp.json().get("projects", []) if resp.status_code == 200 else []}
 
     @staticmethod
     async def get_env(project_id: str) -> dict:
-        resp = await httpx.AsyncClient(timeout=15).get(
-            f"https://api.vercel.com/v9/projects/{project_id}/env",
-            headers=VercelConnector._headers()
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(
+                f"https://api.vercel.com/v9/projects/{project_id}/env",
+                headers=VercelConnector._headers()
+            )
         return {"status": resp.status_code, "envs": resp.json().get("envs", []) if resp.status_code == 200 else []}
 
 
@@ -406,27 +447,30 @@ class GitHubConnector:
 
     @staticmethod
     async def get_repo(owner: str, repo: str) -> dict:
-        resp = await httpx.AsyncClient(timeout=15).get(
-            f"https://api.github.com/repos/{owner}/{repo}",
-            headers=GitHubConnector._headers()
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(
+                f"https://api.github.com/repos/{owner}/{repo}",
+                headers=GitHubConnector._headers()
+            )
         return {"status": resp.status_code, "repo": resp.json() if resp.status_code == 200 else None}
 
     @staticmethod
     async def list_issues(owner: str, repo: str, state: str = "open") -> dict:
-        resp = await httpx.AsyncClient(timeout=15).get(
-            f"https://api.github.com/repos/{owner}/{repo}/issues?state={state}&per_page=10",
-            headers=GitHubConnector._headers()
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(
+                f"https://api.github.com/repos/{owner}/{repo}/issues?state={state}&per_page=10",
+                headers=GitHubConnector._headers()
+            )
         return {"status": resp.status_code, "issues": resp.json() if resp.status_code == 200 else []}
 
     @staticmethod
     async def trigger_action(owner: str, repo: str, workflow: str, ref: str = "main") -> dict:
-        resp = await httpx.AsyncClient(timeout=15).post(
-            f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches",
-            headers=GitHubConnector._headers(),
-            json={"ref": ref}
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(
+                f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches",
+                headers=GitHubConnector._headers(),
+                json={"ref": ref}
+            )
         return {"status": resp.status_code, "triggered": resp.status_code == 204}
 
 
@@ -438,20 +482,22 @@ class CloudflareConnector:
     @staticmethod
     async def list_dns() -> dict:
         zone = os.getenv("CLOUDFLARE_ZONE", "")
-        resp = await httpx.AsyncClient(timeout=15).get(
-            f"https://api.cloudflare.com/client/v4/zones/{zone}/dns_records?per_page=20",
-            headers=CloudflareConnector._headers()
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(
+                f"https://api.cloudflare.com/client/v4/zones/{zone}/dns_records?per_page=20",
+                headers=CloudflareConnector._headers()
+            )
         return {"status": resp.status_code, "records": resp.json().get("result", []) if resp.status_code == 200 else []}
 
     @staticmethod
     async def purge_cache() -> dict:
         zone = os.getenv("CLOUDFLARE_ZONE", "")
-        resp = await httpx.AsyncClient(timeout=15).post(
-            f"https://api.cloudflare.com/client/v4/zones/{zone}/purge_cache",
-            headers=CloudflareConnector._headers(),
-            json={"purge_everything": True}
-        )
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(
+                f"https://api.cloudflare.com/client/v4/zones/{zone}/purge_cache",
+                headers=CloudflareConnector._headers(),
+                json={"purge_everything": True}
+            )
         return {"status": resp.status_code, "purged": resp.status_code == 200}
 
 
@@ -459,18 +505,28 @@ class GoogleConnector:
     @staticmethod
     async def sheets_read(spreadsheet_id: str, range_: str = "A1:Z100") -> dict:
         key = os.getenv("GOOGLE_API_KEY", "")
-        resp = await httpx.AsyncClient(timeout=15).get(
-            f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range_}?key={key}"
-        )
+        headers = {"Content-Type": "application/json"}
+        if key:
+            headers["x-goog-api-key"] = key
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.get(
+                f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range_}",
+                headers=headers
+            )
         return {"status": resp.status_code, "values": resp.json().get("values", []) if resp.status_code == 200 else []}
 
     @staticmethod
     async def sheets_write(spreadsheet_id: str, range_: str, values: list) -> dict:
         key = os.getenv("GOOGLE_API_KEY", "")
-        resp = await httpx.AsyncClient(timeout=15).post(
-            f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range_}:append?valueInputOption=RAW&key={key}",
-            json={"values": values}
-        )
+        headers = {"Content-Type": "application/json"}
+        if key:
+            headers["x-goog-api-key"] = key
+        async with httpx.AsyncClient(timeout=15) as c:
+            resp = await c.post(
+                f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{range_}:append?valueInputOption=RAW",
+                headers=headers,
+                json={"values": values}
+            )
         return {"status": resp.status_code, "updated": resp.status_code == 200}
 
 

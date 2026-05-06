@@ -1,6 +1,6 @@
 """SemanticSearch - Natural language search over spec memory"""
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 log = logging.getLogger("VibeServe.features.search")
 

@@ -26,9 +26,9 @@ services:
       timeout: 5s
       retries: 5
 
-  aether-nexus:
+  vibeserve:
     build: .
-    container_name: aether-nexus
+    container_name: vibeserve
     depends_on:
       ollama:
         condition: service_healthy
@@ -36,14 +36,12 @@ services:
       - DEFAULT_LLM_PROVIDER=local
       - LOCAL_LLM_URL=http://ollama:11434/v1
       - LOCAL_LLM_MODEL=llama3.2
-    ports:
-      - "8000:8000"
+      - VIBESERVE_WORKSPACE=/app
     volumes:
-      - ./mcp_ui_optimizer_v4.py:/app/mcp_ui_optimizer_v4.py:ro
-      - aether_cache:/app/.aether_prime_cache
-      - aether_memory:/app/.aether_prime_memory
+      - vibeserve_cache:/app/.aether_prime_cache
+      - vibeserve_memory:/app/.aether_prime_memory
 
 volumes:
   ollama_data:
-  aether_cache:
-  aether_memory:
+  vibeserve_cache:
+  vibeserve_memory:

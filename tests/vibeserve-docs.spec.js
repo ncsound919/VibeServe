@@ -1,9 +1,12 @@
 // Playwright test for VibeServe docs/index.html
 const { test, expect } = require('@playwright/test');
+const path = require('path');
+
+const DOCS_PATH = `file://${path.resolve(__dirname, '..', 'docs', 'index.html')}`;
 
 test.describe('VibeServe Docs', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('file://C:/Users/User/Desktop/AetherNexus-MCP-main/docs/index.html');
+    await page.goto(DOCS_PATH);
     await page.waitForLoadState('networkidle');
   });
 

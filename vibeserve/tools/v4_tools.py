@@ -1,38 +1,24 @@
-"""VibeServe v2.0 entry point — registers all tools including v2.0 feature tools."""
+"""VibeServe v4 tools — UI spec generation, validation, design systems, memory."""
 
-from __future__ import annotations
-import asyncio
+import hashlib
 import json
-import logging
-import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-from vibeserve.models import CodeFile, ArchitectureDecision, VibePlan
-from vibeserve.core import (
+from vibeserve.tools._tool_deps import (
     CONFIG, DEFAULT_DESIGN_SYSTEM, memory_store, cache_manager,
-    store_successful_spec, get_similar_specs,
-    SchemaValidator, SpecGenerator, MultiAgentCritique,
-    VibeArchitect, VibeImplementer, VibeVerifier, VibeCodeReviewer,
-    SystemAuditor, CritiqueLoop, VibeTester, VibeDeployer,
-    TemplateLibrary, DesignUpgrader,
+    store_successful_spec, SchemaValidator, SpecGenerator,
+    contrast_ratio, log,
 )
-from vibeserve.utils import (
-    TOON, Graphify, SentryTracker, Context7Provider,
-    SupabaseConnector, VercelConnector, GitHubConnector,
-    CloudflareConnector, GoogleConnector, EditorBridge,
-    contrast_ratio,
-)
-from vibeserve.core import PlaywrightBridge
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-log = logging.getLogger("VibeServe")
-
-
 from vibeserve.server import mcp_server
+
+
+def _clip(spec: dict, max_keys: int = 10) -> dict:
+    return {k: spec[k] for k in list(spec.keys())[:max_keys]} if spec else {}
+
+
 @mcp_server.tool(name="generate_ui_spec", description="Generate a production-ready UI specification with multi-agent critique, WCAG AAA validation, and design system enforcement")
 async def generate_ui_spec_tool(ctx, page_type: str, requirements: List[str],
-    design_system: Optional[Dict[str, Any]] = None, target_audience: str = "general users", use_cache: bool = True) -> Dict[str, Any]:
+    design_system=None, target_audience: str = "general users", use_cache: bool = True) -> Dict[str, Any]:
     import hashlib
     try:
         ds = design_system or DEFAULT_DESIGN_SYSTEM
@@ -106,4 +92,3 @@ async def list_design_systems_tool(ctx) -> Dict[str, Any]:
 async def memory_stats_tool(ctx) -> Dict[str, Any]:
     await ctx.info("[memory] Gathering stats...")
     return memory_store.stats()
-

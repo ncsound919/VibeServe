@@ -1,9 +1,8 @@
 """Data models, schemas, and enums for VibeServe."""
 
 from __future__ import annotations
-from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timezone
-from dataclasses import dataclass, asdict, field
+from typing import List, Dict, Any
+from dataclasses import dataclass, field
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
@@ -134,3 +133,67 @@ class IterationResult:
     critique: Dict[str, Any] = field(default_factory=dict)
     passed: bool = False
     files_changed: List[str] = field(default_factory=list)
+
+
+# ====================== RESPONSE DTOs ======================
+
+class ToolResponse(BaseModel):
+    status: str = "success"
+
+
+class SpecResponse(ToolResponse):
+    page_type: str = ""
+    selected_specification: Dict[str, Any] = Field(default_factory=dict)
+    alternatives: List[Dict[str, Any]] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    critique: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ArchitectResponse(ToolResponse):
+    plan: Dict[str, Any] = Field(default_factory=dict)
+    decision_count: int = 0
+    risk_count: int = 0
+
+
+class CodeResponse(ToolResponse):
+    files: List[Dict[str, Any]] = Field(default_factory=list)
+    file_count: int = 0
+    quality: Dict[str, Any] = Field(default_factory=dict)
+    total_lines: int = 0
+
+
+class ReviewResponse(ToolResponse):
+    consensus_score: float = 0.0
+    recommendation: str = ""
+    agent_reviews: Dict[str, Any] = Field(default_factory=dict)
+    line_level_issues: List[Dict[str, Any]] = Field(default_factory=list)
+    files_reviewed: int = 0
+    critical_issues: int = 0
+
+
+class VerifyResponse(ToolResponse):
+    results: Dict[str, Any] = Field(default_factory=dict)
+    all_passed: bool = True
+
+
+class IterateResponse(ToolResponse):
+    final_output: Dict[str, Any] = Field(default_factory=dict)
+    iterations: List[Dict[str, Any]] = Field(default_factory=list)
+    iterations_used: int = 0
+    final_score: float = 0.0
+    converged: bool = False
+    score_improvement: float = 0.0
+
+
+class TestResponse(ToolResponse):
+    test_files: List[Dict[str, Any]] = Field(default_factory=list)
+    test_count: int = 0
+    quality: Dict[str, Any] = Field(default_factory=dict)
+    framework: str = ""
+
+
+class DeployResponse(ToolResponse):
+    project: str = ""
+    targets: List[str] = Field(default_factory=list)
+    configs: Dict[str, Any] = Field(default_factory=dict)
+    environment_variables: Dict[str, Any] = Field(default_factory=dict)

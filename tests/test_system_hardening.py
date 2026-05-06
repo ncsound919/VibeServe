@@ -17,7 +17,6 @@ import json
 import os
 import sys
 import time
-import re
 from pathlib import Path
 
 import pytest
@@ -98,20 +97,20 @@ def test_toon_compress_special_characters():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def test_critique_loop_creation():
-    from vibeserve.core import CritiqueLoop
+    from vibeserve.tools.core_logic import CritiqueLoop
     loop = CritiqueLoop(max_iterations=1, quality_threshold=0.5)
     assert loop.max_iterations == 1
     assert loop.quality_threshold == 0.5
 
 
 def test_critique_loop_zero_iterations():
-    from vibeserve.core import CritiqueLoop
+    from vibeserve.tools.core_logic import CritiqueLoop
     loop = CritiqueLoop(max_iterations=0, quality_threshold=0.5)
     assert loop.max_iterations == 0
 
 
 def test_critique_loop_threshold_boundary():
-    from vibeserve.core import CritiqueLoop
+    from vibeserve.tools.core_logic import CritiqueLoop
     # Threshold at 1.0 means nothing passes
     loop = CritiqueLoop(max_iterations=3, quality_threshold=1.0)
     assert loop.quality_threshold == 1.0
@@ -201,7 +200,6 @@ def test_benchmark_system_runs_without_error():
     """The benchmark system itself should not crash."""
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from benchmark_system import bench_vibeserve, grade
-    import subprocess
     from unittest.mock import patch
     
     # Mock subprocess.run to prevent infinite recursion (benchmark runs tests, which run benchmark...)
@@ -239,7 +237,7 @@ def test_benchmark_grade_boundaries():
 async def test_concurrent_memory_writes():
     """Simulate concurrent writes to the memory store."""
     try:
-        from vibeserve.core import MemoryStore
+        from vibeserve.tools.core_logic import MemoryStore
         import tempfile
         store = MemoryStore(db_path=Path(tempfile.mktemp(suffix=".db")))
         

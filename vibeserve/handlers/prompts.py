@@ -1,35 +1,8 @@
-"""VibeServe v2.0 entry point — registers all tools including v2.0 feature tools."""
-
-from __future__ import annotations
-import asyncio
-import json
-import logging
-import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
-from vibeserve.models import CodeFile, ArchitectureDecision, VibePlan
-from vibeserve.core import (
-    CONFIG, DEFAULT_DESIGN_SYSTEM, memory_store, cache_manager,
-    store_successful_spec, get_similar_specs,
-    SchemaValidator, SpecGenerator, MultiAgentCritique,
-    VibeArchitect, VibeImplementer, VibeVerifier, VibeCodeReviewer,
-    SystemAuditor, CritiqueLoop, VibeTester, VibeDeployer,
-    TemplateLibrary, DesignUpgrader,
-)
-from vibeserve.utils import (
-    TOON, Graphify, SentryTracker, Context7Provider,
-    SupabaseConnector, VercelConnector, GitHubConnector,
-    CloudflareConnector, GoogleConnector, EditorBridge,
-    contrast_ratio,
-)
-from vibeserve.core import PlaywrightBridge
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-log = logging.getLogger("VibeServe")
-
+"""VibeServe MCP prompts."""
 
 from vibeserve.server import mcp_server
+
+
 @mcp_server.prompt()
 def prompt_architecture(intent: str = "", constraints: str = "") -> str:
     return f"Architecture plan for: {intent}\nConstraints: {constraints}\n\nUse vibe_architect."
@@ -53,4 +26,3 @@ def prompt_test_generation(code: str = "") -> str:
 @mcp_server.prompt()
 def prompt_deployment(target: str = "vercel") -> str:
     return f"Generate deployment config for {target}: build, env, runtime, health checks."
-

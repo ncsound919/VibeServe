@@ -1,6 +1,6 @@
 """VibeTimeMachine - Browse and restore spec history"""
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 log = logging.getLogger("VibeServe.features.timemachine")
 

@@ -3,15 +3,13 @@
 Skips silently if no LLM provider is configured."""
 
 import asyncio
-import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from vibeserve import (
-    vibe_architect_tool, vibe_review_tool, vibe_verify_tool,
-    router, CodeFile, VibeVerifier
+    vibe_architect_tool, vibe_review_tool, router, VibeVerifier
 )
 
 class Ctx:

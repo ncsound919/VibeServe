@@ -21,8 +21,8 @@ from vibeserve.utils import (
     SupabaseConnector, VercelConnector, GitHubConnector,
     CloudflareConnector, GoogleConnector, EditorBridge,
 )
-from vibeserve.core import PlaywrightBridge, CacheManager
-from vibeserve.core import (
+from vibeserve.tools.core_logic import PlaywrightBridge, CacheManager
+from vibeserve.tools.core_logic import (
     CONFIG, CONTENT_GUIDELINES, DESIGN_UPGRADES,
     DEFAULT_DESIGN_SYSTEM, memory_store, cache_manager,
     store_successful_spec, get_similar_specs, validate_wcag_contrast,

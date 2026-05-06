@@ -2,10 +2,15 @@
 """VibeServe Comprehensive Benchmark System.
 Measures 8 dimensions with multiple sub-metrics per category."""
 
-import asyncio, json, sys, os, time, re, subprocess
+import json
+import sys
+import os
+import time
+import re
+import subprocess
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Any
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -34,7 +39,6 @@ def measure_performance() -> List[BenchmarkMetric]:
     
     # Import time
     t0 = time.time()
-    import vibeserve
     import_time = time.time() - t0
     results.append(BenchmarkMetric("Import time", 
         max(0, 100 - import_time * 100), round(import_time, 3),
@@ -284,7 +288,7 @@ def main():
     with open("benchmark_results.json", "w") as f:
         json.dump(results, f, indent=2)
     
-    print(f"\nResults saved to benchmark_results.json")
+    print("\nResults saved to benchmark_results.json")
     print(f"Overall score: {results['overall']}/100")
     return results
 

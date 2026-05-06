@@ -1,52 +1,39 @@
-"""VibeServe v2.0 entry point — registers all tools including v2.0 feature tools."""
+"""VibeServe MCP resources."""
 
-from __future__ import annotations
-import asyncio
 import json
-import logging
-import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 
-from vibeserve.models import CodeFile, ArchitectureDecision, VibePlan
-from vibeserve.core import (
-    CONFIG, DEFAULT_DESIGN_SYSTEM, memory_store, cache_manager,
-    store_successful_spec, get_similar_specs,
-    SchemaValidator, SpecGenerator, MultiAgentCritique,
-    VibeArchitect, VibeImplementer, VibeVerifier, VibeCodeReviewer,
-    SystemAuditor, CritiqueLoop, VibeTester, VibeDeployer,
-    TemplateLibrary, DesignUpgrader,
+from vibeserve.tools._tool_deps import (
+    DEFAULT_DESIGN_SYSTEM, memory_store, get_similar_specs,
 )
-from vibeserve.utils import (
-    TOON, Graphify, SentryTracker, Context7Provider,
-    SupabaseConnector, VercelConnector, GitHubConnector,
-    CloudflareConnector, GoogleConnector, EditorBridge,
-    contrast_ratio,
-)
-from vibeserve.core import PlaywrightBridge
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-log = logging.getLogger("VibeServe")
-
-
 from vibeserve.server import mcp_server
+
+
 @mcp_server.resource("design://systems/default")
 def resource_default_design_system() -> str:
+    import json
     return json.dumps(DEFAULT_DESIGN_SYSTEM, indent=2)
 
 @mcp_server.resource("design://tokens/{token_type}")
 def resource_design_tokens(token_type: str) -> str:
+    import json
     tokens = DEFAULT_DESIGN_SYSTEM.get("tokens", {})
     return json.dumps(tokens.get(token_type, {"error": f"Unknown: {token_type}", "available": list(tokens.keys())}), indent=2)
 
 @mcp_server.resource("memory://stats")
-def resource_memory_stats() -> str:
-    return json.dumps(memory_store.stats(), indent=2)
+async def resource_memory_stats() -> str:
+    import json
+    return json.dumps(await memory_store.stats(), indent=2)
 
 @mcp_server.resource("aether://version")
 def resource_version() -> str:
+    import json
+    from importlib.metadata import version as pkg_version
+    try:
+        v = pkg_version("vibeserve")
+    except Exception:
+        v = "1.1.0"
     return json.dumps({
-        "version": "1.1.0", "codename": "VibeServe",
+        "version": v, "codename": "VibeServe",
         "tools": 27, "resources": 5, "prompts": 6,
         "providers": ["openai", "deepseek", "openrouter", "local", "opencode"],
         "pipeline": ["architect->code->review->verify->iterate->test->deploy"],
@@ -57,7 +44,7 @@ def resource_version() -> str:
     }, indent=2)
 
 @mcp_server.resource("spec://examples/{page_type}")
-def resource_spec_example(page_type: str) -> str:
-    specs = get_similar_specs(page_type, limit=1)
+async def resource_spec_example(page_type: str) -> str:
+    import json
+    specs = await get_similar_specs(page_type, limit=1)
     return json.dumps(specs[0]["spec"] if specs else {"error": f"No specs for {page_type}"}, indent=2)
-
