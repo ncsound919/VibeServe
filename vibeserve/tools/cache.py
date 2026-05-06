@@ -56,15 +56,18 @@ class CacheManager:
     def set(self, cache_key: str, result: Dict[str, Any]) -> bool:
         self._evict_if_needed()
         f = self.cache_dir / f"{cache_key}.json"
+        tmp = self.cache_dir / f".{cache_key}.tmp"
         try:
             cache_data = {"timestamp": time.time(), "result": result}
             payload = json.dumps(cache_data)
-            with open(f, "w") as fh:
+            with open(tmp, "w") as fh:
                 json.dump({"checksum": hashlib.sha256(payload.encode()).hexdigest(),
                            "data": cache_data}, fh)
+            tmp.replace(f)
             return True
         except Exception as e:
             log.warning(f"[CacheManager] Failed to write cache {cache_key}: {e}")
+            tmp.unlink(missing_ok=True)
             return False
 
 

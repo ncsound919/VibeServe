@@ -42,3 +42,31 @@ def verify_token(token: str) -> Dict[str, Any]:
 
 def is_auth_enabled() -> bool:
     return bool(_get_secret())
+
+
+def require_scope(required_scope: str):
+    """Decorator that enforces JWT scope on tool handlers.
+
+    Usage:
+        @require_scope("mcp:write")
+        async def my_tool(ctx, ...): ...
+    """
+    import functools
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(ctx, *args, **kwargs):
+            if not is_auth_enabled():
+                return await func(ctx, *args, **kwargs)
+            token = getattr(ctx, "auth_token", None)
+            if not token:
+                return {"status": "error", "error": "Authentication required", "code": "UNAUTHORIZED"}
+            try:
+                claims = verify_token(token)
+            except PermissionError as e:
+                return {"status": "error", "error": str(e), "code": "UNAUTHORIZED"}
+            scopes = set(claims.get("scope", "").split())
+            if required_scope not in scopes and "mcp:admin" not in scopes:
+                return {"status": "error", "error": f"Missing scope: {required_scope}", "code": "FORBIDDEN"}
+            return await func(ctx, *args, **kwargs)
+        return wrapper
+    return decorator

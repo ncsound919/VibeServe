@@ -32,7 +32,7 @@ jobs:
         run: mypy vibeserve/ --ignore-missing-imports
 
       - name: Run tests with coverage
-        run: pytest tests/ -v --tb=short --cov=vibeserve --cov-report=term-missing --cov-fail-under=50
+        run: pytest tests/ -v --tb=short --cov=vibeserve --cov-report=term-missing --cov-fail-under=60
         env:
           OPENAI_API_KEY: "sk-test-mock"
           DEEPSEEK_API_KEY: ""
@@ -48,3 +48,17 @@ jobs:
         with:
           path: ./
           base: HEAD~1
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Node dependencies
+        run: npm install
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E tests
+        run: npx playwright test tests/vibeserve-docs.spec.js

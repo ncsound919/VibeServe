@@ -54,7 +54,7 @@ include = ["vibeserve", "vibeserve.*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = ["--cov=vibeserve", "--cov-report=term-missing", "--cov-fail-under=50"]
+addopts = ["--cov=vibeserve", "--cov-report=term-missing", "--cov-fail-under=60"]
 
 [tool.coverage.run]
 source = ["vibeserve"]
