@@ -1,0 +1,7 @@
+2 validation errors for call[vibe_code_tool]
+ctx
+  Missing required argument [type=missing_argument, input_value={'intent': 'Create React ...pelineProgressStore"]}'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/missing_argument
+plan
+  Input should be a valid dictionary [type=dict_type, input_value='{"target":"react-typescr...ipelineProgressStore"]}', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.13/v/dict_type
