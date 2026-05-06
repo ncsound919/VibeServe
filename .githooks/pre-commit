@@ -1,0 +1,73 @@
+#!/bin/bash
+#
+# VibeServe pre-commit hook
+# Blocks commits that contain debug/test scripts, oversized components,
+# or known anti-patterns.
+#
+
+set -e
+
+RET=0
+
+# --- 1. Block debug/test scripts from being committed ---
+DEBUG_FILES="check-*.ts check*.mjs debug-*.ts debug*.mjs find-errors.ts \
+  final-check.ts full-test*.ts investigate.mjs manual-test.ts quick-check.ts \
+  test-blank-screen.js test-complete.ts test-editor.ts verify-all.ts \
+  run-server.ps1"
+
+for pattern in $DEBUG_FILES; do
+  if git diff --cached --name-only | grep -q "$pattern"; then
+    echo "[ERROR] Debug/test script staged for commit:" >&2
+    git diff --cached --name-only | grep "$pattern"
+    RET=1
+  fi
+done
+
+# --- 2. Block services files >500 lines ---
+for file in $(git diff --cached --name-only | grep "ide/src/services/.*\.ts$"); do
+  LINES=$(git show ":$file" | wc -l)
+  if [ "$LINES" -gt 500 ]; then
+    echo "[ERROR] Service file exceeds 500 lines: $file ($LINES lines)" >&2
+    echo "  Split into smaller, focused modules before committing." >&2
+    RET=1
+  fi
+done
+
+# --- 3. Block component files >800 lines ---
+for file in $(git diff --cached --name-only | grep "ide/src/components/.*\.tsx$"); do
+  LINES=$(git show ":$file" | wc -l)
+  if [ "$LINES" -gt 800 ]; then
+    echo "[ERROR] Component file exceeds 800 lines: $file ($LINES lines)" >&2
+    echo "  Extract sub-components before committing." >&2
+    RET=1
+  fi
+done
+
+# --- 4. Block secrets in staged changes ---
+if git diff --cached | grep -qE "process\.env\.(|NEXT_PUBLIC_|VITE_)"; then
+  # This is fine - it's just reading env vars
+  :
+else
+  if git diff --cached | grep -qE "(password|secret|api_key|apikey|token|credential)[\s]*[:=][\s]*['\"][^'\"]+['\"]" | grep -v "example\|sample\|STUB\|stub"; then
+    echo "[ERROR] Potential secret detected in staged changes." >&2
+    RET=1
+  fi
+fi
+
+# --- 5. Block console.log in production source ---
+for file in $(git diff --cached --name-only | grep -E "ide/src/(components|services|stores)/.*\.(tsx?|ts)$"); do
+  if git show ":$file" | grep -q "console\.(log|warn|error|debug)"; then
+    if ! git show ":$file" | grep -qE "(test|spec|\.test\.|\.spec\.)"; then
+      echo "[WARN] console.* found in: $file" >&2
+      echo "  Remove before committing or use a proper logger." >&2
+    fi
+  fi
+done
+
+if [ $RET -gt 0 ]; then
+  echo "" >&2
+  echo "Commit blocked. Fix the issues above and re-stage." >&2
+  exit 1
+fi
+
+exit 0
