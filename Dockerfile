@@ -1,13 +1,22 @@
-FROM python:3.10-slim
+FROM python:3.12-slim@sha256:1127090f9fff0b9ec338f3b6fe80437ada404d465085fe996d5f8cfd8fe6c123
+# digest for python:3.12-slim as of 2025-05
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir fastmcp pydantic httpx python-dotenv
+RUN groupadd -r vibeserve && useradd -r -g vibeserve vibeserve
 
-COPY mcp_ui_optimizer_v4.py .
+COPY pyproject.toml README.md ./
+RUN pip install --no-cache-dir .
 
-RUN mkdir -p .aether_prime_cache .aether_prime_memory
+COPY vibeserve/ vibeserve/
 
-EXPOSE 8000
+RUN mkdir -p .aether_prime_cache .aether_prime_memory && chown -R vibeserve:vibeserve /app
 
-CMD ["python", "mcp_ui_optimizer_v4.py"]
+ENV DEFAULT_LLM_PROVIDER=local
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD python -c "import sys; sys.exit(0)"
+
+USER vibeserve
+
+CMD ["python", "-m", "vibeserve"]

@@ -1,4 +1,9 @@
 from typing import Optional
+import logging
+
+log = logging.getLogger("VibeServe")
+
+
 class _LazyMCP:
     _tools: list = []
     _resources: list = []
@@ -50,16 +55,6 @@ class _LazyMCP:
 
 mcp_server = _LazyMCP
 _LazyMCP.init("VibeServe")
-
-CONTENT_GUIDELINES = """
-CRITICAL CONTENT RULES:
-NO FABRICATION:
-- NEVER invent statistics, testimonials, quotes, or named users.
-- NEVER use SaaS copy: "Free Trial", "Pricing Plans", "Sign Up", "Enterprise Tier".
-MUST INCLUDE: Logo, actual features from plan, pipeline diagram, quick start, donate link.
-STRUCTURAL: Valid HTML, ARIA labels, relative asset paths, current year.
-"""
-
 
 def _clip(d, *_):
     return {k: v for k, v in d.items() if not k.startswith("_")}
