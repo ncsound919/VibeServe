@@ -18,7 +18,8 @@ print("\n=== STEP 1: INDEX REPO ===")
 ri = _cross_repo.index_repo(repo_path=REPO, repo_key="tap919", repo_name="Tap919 Middleman")
 print(f"Indexed: {ri.file_count} files, {ri.symbol_count} symbols, {len(ri.test_files)} tests")
 for s in ri.symbols[:15]:
-    print(f"  [{s.kind}] {s.name[:60]} @ {s.file_path}")
+    name = s.name[:60].encode('ascii', errors='replace').decode('ascii')
+    print(f"  [{s.kind}] {name} @ {s.file_path}")
 
 # Step 2: Build code graph
 print("\n=== STEP 2: BUILD CODE GRAPH ===")
@@ -98,7 +99,8 @@ if stats['nodes'] > 0:
     q = graph.query("middleman")
     print(f"  Query 'middleman': {q['count']} matches")
     for m in q['results'][:5]:
-        print(f"    [{m['kind']}] {m['name'][:40]} @ {m['file_path']}")
+        name = m['name'][:40].encode('ascii','replace').decode()
+        print(f"    [{m['kind']}] {name} @ {m['file_path']}")
 
     ctx = graph.context("Middleman")
     if ctx.symbol:
@@ -108,4 +110,38 @@ if stats['nodes'] > 0:
 
 print("\n" + "=" * 60)
 print("FULL CYCLE COMPLETE")
+print("=" * 60)
+
+# Step 6: Run vibe_architect with DeepSeek
+print("\n=== STEP 6: VIBE_ARCHITECT (DeepSeek) ===")
+print("  Generating architecture plan...")
+
+import asyncio
+from vibeserve.tools.v5_tools import vibe_architect_tool
+
+class MockCtx:
+    async def info(self, msg): pass
+    async def report_progress(self, cur, total, msg): pass
+
+async def architect():
+    result = await vibe_architect_tool(
+        ctx=MockCtx(),
+        intent="Build Tap919 Middleman: API monetization gateway between AI agents and LLM providers. Usage-based billing (Stripe), request metering, provider adapters (OpenAI/Anthropic/DeepSeek), kill-switch, Cloudflare Worker storefront, FastAPI backend.",
+        constraints=["Production-ready", "Observable (tracing)", "Multi-tenant", "Rate limiting"],
+        target_stack="python"
+    )
+    plan = result.get("plan", {})
+    decisions = plan.get("decisions", [])
+    print(f"  ADRs generated: {len(decisions)}")
+    for d in decisions:
+        name = d.get('title','?').encode('ascii','replace').decode()
+        print(f"    [{d.get('id','?')}] {name} (confidence: {d.get('confidence',0)})")
+    print(f"  Decision count: {result.get('decision_count',0)}")
+    print(f"  Risk count: {result.get('risk_count',0)}")
+    return result
+
+architect_result = asyncio.run(architect())
+
+print("\n" + "=" * 60)
+print("ALL 6 STAGES COMPLETE")
 print("=" * 60)

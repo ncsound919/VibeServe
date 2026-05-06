@@ -210,6 +210,55 @@ export async function initPipelineQueue(): Promise<boolean> {
           logs: [`Job ${job.id}: Initializing pipeline for ${job.data.repos.length} repos`],
         };
 
+        // Try real code-gen pipeline via MCP if client is available
+        const client = getVibeServeClient();
+        if (client && job.data.repos.length > 0) {
+          const repoPath = job.data.repos[0];
+          try {
+            update({ currentStep: 'Architect', progress: 5 });
+            const archResult: any = await client.callTool({ name: 'vibe_architect', arguments: {
+              intent: `Build a production application for the repository at ${repoPath}`,
+              target_stack: 'python',
+              constraints: ['Clean architecture', 'Type-safe', 'Testable'],
+            }});
+
+            if (archResult?.status === 'success' && archResult?.plan) {
+              exec.logs.push('[architect] Plan generated successfully');
+              exec.steps.push({ name: 'architect', status: 'completed', logs: [`Generated ${archResult.decision_count} ADRs`] });
+
+              update({ currentStep: 'Code Generation', progress: 35 });
+              const codeResult: any = await client.callTool({ name: 'vibe_code', arguments: {
+                intent: `Build a production application for ${repoPath}`,
+                plan: archResult.plan,
+                target_language: 'python',
+              }});
+
+              if (codeResult?.status === 'success') {
+                exec.logs.push(`[code] Generated ${codeResult.file_count} files (${codeResult.total_lines} lines)`);
+                exec.steps.push({ name: 'code', status: 'completed', logs: [`${codeResult.file_count} files, ${codeResult.total_lines} lines`] });
+                update({ progress: 70 });
+
+                // Save generated files to workspace
+                if (codeResult?.files) {
+                  for (const file of codeResult.files) {
+                    exec.logs.push(`[code]  ${file.path} (${file.language || 'text'})`);
+                  }
+                }
+              } else {
+                exec.logs.push(`[code] Generation returned non-success: ${JSON.stringify(codeResult).slice(0, 200)}`);
+              }
+            } else {
+              exec.logs.push(`[architect] No plan generated (status: ${archResult?.status || 'unknown'})`);
+            }
+
+            update({ currentStep: 'Complete', progress: 100, status: 'success' });
+            return exec;
+          } catch (err: any) {
+            exec.logs.push(`[pipeline] MCP code-gen failed: ${err.message}. Falling back to analysis pipeline.`);
+            // Fall through to simulated analysis below
+          }
+        }
+
         const update = (partial: Partial<PipelineExecution>) => {
           Object.assign(exec, partial);
           broadcastService.broadcast({ type: 'pipeline:update', execution: exec });
