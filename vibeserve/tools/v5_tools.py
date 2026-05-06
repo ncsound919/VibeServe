@@ -1,4 +1,8 @@
-"""VibeServe v5 tools — full pipeline: architect, code, review, verify, iterate, test, deploy."""
+"""VibeServe v5 tools — full pipeline: architect, code, review, verify, iterate, test, deploy.
+
+All handlers use Pydantic DTO serialization (model_dump), input validation,
+and the audit_tool decorator for rate limiting + audit logging + correlation IDs.
+"""
 
 import json
 from typing import Any, Dict, List
@@ -11,11 +15,19 @@ from vibeserve.tools._tool_deps import (
     Context7Provider, TOON, Graphify, memory_store,
 )
 from vibeserve.server import mcp_server
+from vibeserve.middleware import audit_tool
+from vibeserve.models import (
+    ArchitectInput, CodeInput, ReviewInput, VerifyInput, IterateInput,
+    TestInput, DeployInput, DesignInput, BuildProInput, DocsInput,
+    BenchmarkInput,
+)
 
 
 @mcp_server.tool(name="vibe_architect", description="Transform natural language intent into a detailed architecture plan with ADR decisions.")
+@audit_tool
 async def vibe_architect_tool(ctx, intent: str, constraints=None,
                                context=None, target_stack: str = "react") -> Dict[str, Any]:
+    ArchitectInput(intent=intent, target_stack=target_stack)
     await ctx.info(f"[architect] {intent[:80]}...")
     await ctx.report_progress(0, 100, "Analyzing intent...")
     architect = VibeArchitect(ctx=ctx)
@@ -26,7 +38,7 @@ async def vibe_architect_tool(ctx, intent: str, constraints=None,
         "status": "success",
         "plan": {
             "intent": plan.intent,
-            "decisions": [d.__dict__ for d in plan.decisions],
+            "decisions": [d.model_dump() for d in plan.decisions],
             "component_tree": plan.component_tree,
             "data_flow": plan.data_flow,
             "file_structure": plan.file_structure,
@@ -39,8 +51,10 @@ async def vibe_architect_tool(ctx, intent: str, constraints=None,
     }
 
 @mcp_server.tool(name="vibe_code", description="Generate production code from an architecture plan.")
+@audit_tool
 async def vibe_code_tool(ctx, intent: str, plan: Dict[str, Any], constraints=None,
                           design_system=None, target_language: str = "typescript") -> Dict[str, Any]:
+    CodeInput(intent=intent, plan=plan, target_language=target_language)
     await ctx.info(f"[code] {intent[:80]}...")
     await ctx.report_progress(0, 100, "Parsing plan...")
     decisions = [ArchitectureDecision(**d) for d in plan.get("decisions", [])]
@@ -54,11 +68,13 @@ async def vibe_code_tool(ctx, intent: str, plan: Dict[str, Any], constraints=Non
     await ctx.report_progress(90, 100, "Quality checks...")
     quality = VibeVerifier.verify_code_quality(files)
     await ctx.report_progress(100, 100, "Complete!")
-    return {"status": "success", "files": [f.__dict__ for f in files], "file_count": len(files),
+    return {"status": "success", "files": [f.model_dump() for f in files], "file_count": len(files),
             "quality": quality, "total_lines": sum(len(f.content.split("\n")) for f in files)}
 
 @mcp_server.tool(name="vibe_review", description="Multi-agent code review from three perspectives.")
+@audit_tool
 async def vibe_review_tool(ctx, files: List[Dict[str, Any]], requirements: List[str]) -> Dict[str, Any]:
+    ReviewInput(files=files, requirements=requirements)
     await ctx.info(f"[review] {len(files)} files...")
     await ctx.report_progress(0, 100, "Initializing reviewers...")
     code_files = [CodeFile(**f) for f in files]
@@ -69,6 +85,7 @@ async def vibe_review_tool(ctx, files: List[Dict[str, Any]], requirements: List[
     return {"status": "success", **result}
 
 @mcp_server.tool(name="vibe_verify", description="Validate code/specs against WCAG, design system, and code quality.")
+@audit_tool
 async def vibe_verify_tool(ctx, specification=None,
                             files=None) -> Dict[str, Any]:
     await ctx.info("[verify] Running checks...")
@@ -81,31 +98,38 @@ async def vibe_verify_tool(ctx, specification=None,
     return {"status": "success", "results": results, "all_passed": all(r.get("valid", r.get("passed", True)) for r in results.values())}
 
 @mcp_server.tool(name="vibe_iterate", description="Continuous improvement loop: critique -> repair -> verify -> repeat.")
+@audit_tool
 async def vibe_iterate_tool(ctx, specification: Dict[str, Any], requirements: List[str],
                              max_iterations: int = 3, quality_threshold: float = 0.80) -> Dict[str, Any]:
+    IterateInput(specification=specification, requirements=requirements,
+                 max_iterations=max_iterations, quality_threshold=quality_threshold)
     await ctx.info(f"[iterate] max {max_iterations} iterations")
     loop = CritiqueLoop(max_iterations=max_iterations, quality_threshold=quality_threshold)
     best_output, history = await loop.improve(specification, requirements, ctx)
     final_score = history[-1].score_after if history else 0
     return {"status": "success", "final_output": best_output,
-            "iterations": [h.__dict__ for h in history], "iterations_used": len(history),
+            "iterations": [h.model_dump() for h in history], "iterations_used": len(history),
             "final_score": final_score, "converged": history[-1].passed if history else False,
             "score_improvement": round(final_score - (history[0].score_before if history else 0), 3)}
 
 @mcp_server.tool(name="vibe_test", description="Generate comprehensive test suites from source code.")
+@audit_tool
 async def vibe_test_tool(ctx, files: List[Dict[str, Any]], requirements=None,
                           test_framework: str = "vitest") -> Dict[str, Any]:
+    TestInput(files=files, test_framework=test_framework)
     await ctx.info("[test] Generating tests...")
     code_files = [CodeFile(**f) for f in files]
     tester = VibeTester(ctx=ctx)
     test_files = await tester.generate_tests(code_files, requirements, test_framework)
     quality = VibeVerifier.verify_code_quality(test_files)
-    return {"status": "success", "test_files": [f.__dict__ for f in test_files],
+    return {"status": "success", "test_files": [f.model_dump() for f in test_files],
             "test_count": len(test_files), "quality": quality, "framework": test_framework}
 
 @mcp_server.tool(name="vibe_deploy", description="Generate deployment configs for Vercel, Docker, static hosting.")
+@audit_tool
 async def vibe_deploy_tool(ctx, project_name: str, files: List[Dict[str, Any]],
                             targets=None) -> Dict[str, Any]:
+    DeployInput(project_name=project_name, files=files)
     targets = targets or ["vercel"]
     code_files = [CodeFile(**f) for f in files]
     deployer = VibeDeployer(ctx=ctx)
@@ -113,8 +137,10 @@ async def vibe_deploy_tool(ctx, project_name: str, files: List[Dict[str, Any]],
     return {"status": "success", "project": project_name, "targets": targets, **result}
 
 @mcp_server.tool(name="vibe_design", description="Generate a landing page using curated DESIGN.md templates.")
+@audit_tool
 async def vibe_design_tool(ctx, intent: str, template=None,
                             constraints=None) -> Dict[str, Any]:
+    DesignInput(intent=intent)
     constraints = constraints or ["WCAG AAA", "Single HTML file", "Zero fabrication"]
     design_tokens = TemplateLibrary.random_template(template)
     selected = template or "random"
@@ -131,7 +157,9 @@ async def vibe_preview_tool(ctx, html_content: str, filename: str = "preview.htm
     return {"status": "success", "html_file": filename, "html_size": len(html_content), "playwright_test": script}
 
 @mcp_server.tool(name="vibe_docs", description="Fetch documentation for a framework via Context7.")
+@audit_tool
 async def vibe_docs_tool(ctx, query: str, library=None) -> Dict[str, Any]:
+    DocsInput(query=query)
     docs = await Context7Provider.fetch_docs(query, library)
     return {"status": "success", "query": query, "docs": docs, "docs_length": len(docs)}
 
@@ -143,6 +171,7 @@ async def vibe_health_tool(ctx) -> Dict[str, Any]:
             "version": "2.0.0"}
 
 @mcp_server.tool(name="vibe_audit", description="Full system audit: backend code quality, security, performance.")
+@audit_tool
 async def vibe_audit_tool(ctx, files: List[Dict[str, Any]], requirements=None) -> Dict[str, Any]:
     requirements = requirements or ["Production-grade server", "No security vulnerabilities"]
     code_files = [CodeFile(**f) for f in files]
@@ -158,7 +187,9 @@ async def vibe_compress_tool(ctx, data: Dict[str, Any]) -> Dict[str, Any]:
     return {"status": "success", "compressed": compressed, "savings": savings}
 
 @mcp_server.tool(name="vibe_benchmark", description="Run a benchmarking loop with ASCII graphs.")
+@audit_tool
 async def vibe_benchmark_tool(ctx, iterations: int = 5) -> Dict[str, Any]:
+    BenchmarkInput(iterations=iterations)
     results, scores = [], []
     for i in range(iterations):
         await ctx.report_progress(int((i / iterations) * 100), 100, f"Loop {i+1}/{iterations}")
@@ -183,8 +214,10 @@ async def vibe_upgrade_design_tool(ctx, template=None) -> Dict[str, Any]:
     return {"status": "success", "template": template or "random", "upgraded_design": upgraded}
 
 @mcp_server.tool(name="vibe_build_pro", description="Full professional build: upgrade design -> architect -> code -> verify.")
+@audit_tool
 async def vibe_build_pro_tool(ctx, intent: str, template=None,
                                constraints=None) -> Dict[str, Any]:
+    BuildProInput(intent=intent)
     constraints = constraints or ["WCAG AAA", "Single HTML", "Zero fabrication", "Responsive mobile-first"]
     upgraded = DesignUpgrader.upgrade_file(template or "supabase")
     full_intent = f"{intent}\nUSE THIS UPGRADED DESIGN SYSTEM:\n{upgraded}\nCRITICAL: Apply ALL production patterns. No fabrication."

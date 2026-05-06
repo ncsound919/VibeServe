@@ -237,7 +237,7 @@ def test_benchmark_grade_boundaries():
 async def test_concurrent_memory_writes():
     """Simulate concurrent writes to the memory store."""
     try:
-        from vibeserve.tools.core_logic import MemoryStore
+        from vibeserve.tools.memory import MemoryStore
         import tempfile
         store = MemoryStore(db_path=Path(tempfile.mktemp(suffix=".db")))
         

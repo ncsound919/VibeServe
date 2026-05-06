@@ -102,6 +102,14 @@ class ArchitectureDecision:
     consequences: List[str] = field(default_factory=list)
     confidence: float = 0.5
 
+    def model_dump(self) -> Dict[str, Any]:
+        return {
+            "id": self.id, "title": self.title, "context": self.context,
+            "decision": self.decision, "alternatives": self.alternatives,
+            "rationale": self.rationale, "consequences": self.consequences,
+            "confidence": self.confidence,
+        }
+
 
 @dataclass
 class VibePlan:
@@ -123,6 +131,13 @@ class CodeFile:
     purpose: str = ""
     accessibility_notes: List[str] = field(default_factory=list)
 
+    def model_dump(self) -> Dict[str, Any]:
+        return {
+            "path": self.path, "content": self.content,
+            "language": self.language, "purpose": self.purpose,
+            "accessibility_notes": self.accessibility_notes,
+        }
+
 
 @dataclass
 class IterationResult:
@@ -133,6 +148,14 @@ class IterationResult:
     critique: Dict[str, Any] = field(default_factory=dict)
     passed: bool = False
     files_changed: List[str] = field(default_factory=list)
+
+    def model_dump(self) -> Dict[str, Any]:
+        return {
+            "iteration": self.iteration, "score_before": self.score_before,
+            "score_after": self.score_after, "changes": self.changes,
+            "critique": self.critique, "passed": self.passed,
+            "files_changed": self.files_changed,
+        }
 
 
 # ====================== RESPONSE DTOs ======================
@@ -197,3 +220,100 @@ class DeployResponse(ToolResponse):
     targets: List[str] = Field(default_factory=list)
     configs: Dict[str, Any] = Field(default_factory=dict)
     environment_variables: Dict[str, Any] = Field(default_factory=dict)
+
+
+# ====================== INPUT VALIDATION MODELS ======================
+
+class ArchitectInput(BaseModel):
+    intent: str = Field(min_length=1, max_length=5000)
+    constraints: Optional[List[str]] = None
+    context: Optional[str] = None
+    target_stack: str = Field(default="react", max_length=50)
+
+    @field_validator("target_stack")
+    @classmethod
+    def validate_stack(cls, v):
+        allowed = {"react", "vue", "svelte", "html", "nextjs", "python", "node", "typescript", "kotlin", "swift"}
+        if v.lower() not in allowed:
+            raise ValueError(f"target_stack must be one of {sorted(allowed)}")
+        return v.lower()
+
+
+class CodeInput(BaseModel):
+    intent: str = Field(min_length=1, max_length=5000)
+    plan: Dict[str, Any]
+    constraints: Optional[List[str]] = None
+    design_system: Optional[str] = None
+    target_language: str = Field(default="typescript", max_length=50)
+
+
+class ReviewInput(BaseModel):
+    files: List[Dict[str, Any]] = Field(min_length=1, max_length=100)
+    requirements: List[str] = Field(min_length=1, max_length=50)
+
+
+class VerifyInput(BaseModel):
+    specification: Optional[Dict[str, Any]] = None
+    files: Optional[List[Dict[str, Any]]] = None
+
+
+class IterateInput(BaseModel):
+    specification: Dict[str, Any]
+    requirements: List[str] = Field(min_length=1, max_length=50)
+    max_iterations: int = Field(default=3, ge=1, le=20)
+    quality_threshold: float = Field(default=0.80, ge=0.0, le=1.0)
+
+
+class TestInput(BaseModel):
+    files: List[Dict[str, Any]] = Field(min_length=1, max_length=100)
+    requirements: Optional[List[str]] = None
+    test_framework: str = Field(default="vitest", max_length=50)
+
+
+class DeployInput(BaseModel):
+    project_name: str = Field(min_length=1, max_length=200)
+    files: List[Dict[str, Any]] = Field(min_length=1, max_length=200)
+    targets: Optional[List[str]] = None
+
+
+class DesignInput(BaseModel):
+    intent: str = Field(min_length=1, max_length=5000)
+    template: Optional[str] = None
+    constraints: Optional[List[str]] = None
+
+
+class BuildProInput(BaseModel):
+    intent: str = Field(min_length=1, max_length=5000)
+    template: Optional[str] = None
+    constraints: Optional[List[str]] = None
+
+
+class DocsInput(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    library: Optional[str] = None
+
+
+class FileReadInput(BaseModel):
+    path: str = Field(min_length=1, max_length=1000)
+
+
+class FileWriteInput(BaseModel):
+    path: str = Field(min_length=1, max_length=1000)
+    content: str = Field(min_length=0, max_length=1_000_000)
+
+
+class SubprocessInput(BaseModel):
+    manager: str = Field(default="npm", max_length=20)
+    path: str = Field(default=".", max_length=1000)
+
+    @field_validator("manager")
+    @classmethod
+    def validate_manager(cls, v):
+        allowed = {"npm", "yarn", "pnpm"}
+        if v.lower() not in allowed:
+            raise ValueError(f"manager must be one of {sorted(allowed)}")
+        return v.lower()
+
+
+class BenchmarkInput(BaseModel):
+    iterations: int = Field(default=5, ge=1, le=1000)

@@ -1,4 +1,4 @@
-"""Memory store for learned UI specifications."""
+"""Memory store for learned UI specifications with atomic eviction and versioned migrations."""
 from __future__ import annotations
 import aiosqlite
 import asyncio
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 from vibeserve.tools.config import CONFIG
+from vibeserve.tools.migrations import apply_pending
 
 log = logging.getLogger("VibeServe")
 
@@ -28,48 +29,37 @@ class MemoryStore:
         async with self._lock:
             if self._initialized:
                 return
-            async with aiosqlite.connect(str(self.db_path)) as conn:
-                await conn.execute("""
-                    CREATE TABLE IF NOT EXISTS specs (
-                        id TEXT PRIMARY KEY,
-                        page_type TEXT NOT NULL,
-                        score REAL NOT NULL DEFAULT 0.0,
-                        timestamp TEXT NOT NULL,
-                        spec_json TEXT NOT NULL
-                    )
-                """)
-                await conn.execute("CREATE INDEX IF NOT EXISTS idx_page_type ON specs(page_type)")
-                await conn.execute("CREATE INDEX IF NOT EXISTS idx_score ON specs(score DESC)")
-                await conn.commit()
+            applied = await apply_pending(self.db_path)
+            if applied:
+                log.info(f"Applied {applied} database migration(s)")
             self._initialized = True
-
-    async def _evict_if_needed(self):
-        async with aiosqlite.connect(str(self.db_path)) as conn:
-            count = (await (await conn.execute("SELECT COUNT(*) FROM specs")).fetchone())[0]
-            if count >= self.MAX_STORED_SPECS:
-                cutoff = count - self.MAX_STORED_SPECS + 1
-                await conn.execute(
-                    "DELETE FROM specs WHERE id IN (SELECT id FROM specs ORDER BY score ASC, timestamp ASC LIMIT ?)",
-                    (cutoff,)
-                )
-                await conn.commit()
-                log.info(f"Evicted {cutoff} lowest-scoring specs to stay under {self.MAX_STORED_SPECS} limit")
 
     async def store(self, page_type: str, spec: Dict[str, Any], score: float):
         if score < CONFIG.min_score_to_store:
             return
         await self._ensure_init()
-        await self._evict_if_needed()
         spec_id = spec.get("metadata", {}).get("id", hashlib.sha256(
             f"{page_type}{time.time()}".encode()
         ).hexdigest()[:20])
         timestamp = datetime.now(timezone.utc).isoformat()
-        async with aiosqlite.connect(str(self.db_path)) as conn:
-            await conn.execute(
-                "INSERT OR REPLACE INTO specs (id, page_type, score, timestamp, spec_json) VALUES (?, ?, ?, ?, ?)",
-                (spec_id, page_type, score, timestamp, json.dumps(spec))
-            )
-            await conn.commit()
+        # Serialize all writes through _lock to prevent SQLite write contention
+        async with self._lock:
+            async with aiosqlite.connect(str(self.db_path)) as conn:
+                await conn.execute("PRAGMA busy_timeout=5000")
+                await conn.execute("BEGIN")
+                count = (await (await conn.execute("SELECT COUNT(*) FROM specs")).fetchone())[0]
+                if count >= self.MAX_STORED_SPECS:
+                    cutoff = count - self.MAX_STORED_SPECS + 1
+                    await conn.execute(
+                        "DELETE FROM specs WHERE id IN (SELECT id FROM specs ORDER BY score ASC, timestamp ASC LIMIT ?)",
+                        (cutoff,)
+                    )
+                    log.info(f"Evicted {cutoff} lowest-scoring specs to stay under {self.MAX_STORED_SPECS} limit")
+                await conn.execute(
+                    "INSERT OR REPLACE INTO specs (id, page_type, score, timestamp, spec_json) VALUES (?, ?, ?, ?, ?)",
+                    (spec_id, page_type, score, timestamp, json.dumps(spec))
+                )
+                await conn.commit()
         log.info(f"Stored spec {spec_id[:8]} for {page_type} (score: {score:.2f})")
 
     async def get(self, page_type: str, limit: int = 3) -> List[Dict[str, Any]]:

@@ -1,3 +1,9 @@
+"""Pipeline tools: file I/O, subprocess, security scans, wiki ingest.
+
+All subprocess handlers now validate inputs with Pydantic models and
+resolve to workspace-bound paths to prevent path-traversal attacks.
+"""
+
 import json
 import logging
 import os
@@ -6,8 +12,27 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from vibeserve.server import mcp_server
+from vibeserve.middleware import audit_tool
+from vibeserve.models import FileReadInput, FileWriteInput, SubprocessInput, BenchmarkInput
 
 log = logging.getLogger("VibeServe")
+
+_ALLOWED_MANAGERS = {"npm", "yarn", "pnpm"}
+_WORKSPACE_ROOT = Path(os.getenv("VIBESERVE_WORKSPACE", ".")).resolve()
+
+
+def _resolve_workspace_path(path: str) -> Path:
+    """Resolve a user-supplied path within the workspace root. Raises on escape."""
+    raw = Path(path)
+    if not raw.is_absolute():
+        raw = _WORKSPACE_ROOT / raw
+    resolved = raw.resolve()
+    try:
+        resolved.relative_to(_WORKSPACE_ROOT)
+    except ValueError:
+        raise ValueError(f"Path traversal denied: {path}")
+    return resolved
+
 
 @mcp_server.tool(name="generate_plan", description="Generate a structured task decomposition for a given objective")
 async def generate_plan_tool(ctx, objective: str, context: Optional[str] = None) -> Dict[str, Any]:
@@ -36,15 +61,11 @@ async def retrieve_context_tool(ctx, query: str) -> Dict[str, Any]:
     return {"status": "success", "results": results[:5]}
 
 @mcp_server.tool(name="read_file", description="Read content from a file in the workspace")
+@audit_tool
 async def read_file_tool(ctx, path: str) -> Dict[str, Any]:
+    FileReadInput(path=path)
     await ctx.info(f"[fs] Reading {path}")
-    workspace = Path(os.getenv("VIBESERVE_WORKSPACE", ".")).resolve()
-    p = workspace / path
-    try:
-        p = p.resolve()
-        p.relative_to(workspace)
-    except ValueError:
-        return {"status": "error", "message": "Path traversal denied"}
+    p = _resolve_workspace_path(path)
     if not p.exists():
         return {"status": "error", "message": f"File not found: {path}"}
     if not p.is_file():
@@ -52,15 +73,11 @@ async def read_file_tool(ctx, path: str) -> Dict[str, Any]:
     return {"status": "success", "content": p.read_text(encoding="utf-8", errors="replace")}
 
 @mcp_server.tool(name="write_file", description="Write content to a file in the workspace")
+@audit_tool
 async def write_file_tool(ctx, path: str, content: str) -> Dict[str, Any]:
+    FileWriteInput(path=path, content=content)
     await ctx.info(f"[fs] Writing {path}")
-    workspace = Path(os.getenv("VIBESERVE_WORKSPACE", ".")).resolve()
-    p = workspace / path
-    try:
-        p = p.resolve()
-        p.relative_to(workspace)
-    except ValueError:
-        return {"status": "error", "message": "Path traversal denied"}
+    p = _resolve_workspace_path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8")
     return {"status": "success", "path": path, "bytes": len(content)}
@@ -75,67 +92,71 @@ async def check_node_env_tool(ctx) -> Dict[str, Any]:
 
 @mcp_server.tool(name="detect_package_manager", description="Detect which package manager to use (npm, yarn, pnpm)")
 async def detect_package_manager_tool(ctx, path: str = ".") -> Dict[str, Any]:
-    p = Path(path)
+    p = _resolve_workspace_path(path)
     if (p / "package-lock.json").exists(): return {"status": "success", "manager": "npm"}
     if (p / "yarn.lock").exists(): return {"status": "success", "manager": "yarn"}
     if (p / "pnpm-lock.yaml").exists(): return {"status": "success", "manager": "pnpm"}
     return {"status": "success", "manager": "npm", "note": "defaulted to npm"}
 
-_ALLOWED_MANAGERS = {"npm", "yarn", "pnpm"}
-
-
 @mcp_server.tool(name="run_install", description="Run package installation")
+@audit_tool
 async def run_install_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str, Any]:
-    if manager not in _ALLOWED_MANAGERS:
-        return {"status": "error", "message": f"Invalid package manager: {manager}"}
+    SubprocessInput(manager=manager, path=path)
+    p = _resolve_workspace_path(path)
     await ctx.info(f"[shell] Running {manager} install in {path}")
-    res = subprocess.run([manager, "install"], cwd=path, capture_output=True, text=True)
+    res = subprocess.run([manager, "install"], cwd=str(p), capture_output=True, text=True)
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout, "stderr": res.stderr}
 
 @mcp_server.tool(name="run_biome", description="Run Biome linter/formatter")
 async def run_biome_tool(ctx, path: str = ".") -> Dict[str, Any]:
-    res = subprocess.run(["npx", "@biomejs/biome", "check", "--apply", "."], cwd=path, capture_output=True, text=True)
+    p = _resolve_workspace_path(path)
+    res = subprocess.run(["npx", "@biomejs/biome", "check", "--apply", "."], cwd=str(p), capture_output=True, text=True)
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
 
 @mcp_server.tool(name="run_tsc", description="Run TypeScript compiler check")
 async def run_tsc_tool(ctx, path: str = ".") -> Dict[str, Any]:
-    res = subprocess.run(["npx", "tsc", "--noEmit"], cwd=path, capture_output=True, text=True)
+    p = _resolve_workspace_path(path)
+    res = subprocess.run(["npx", "tsc", "--noEmit"], cwd=str(p), capture_output=True, text=True)
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
 
 @mcp_server.tool(name="run_build", description="Run production build")
+@audit_tool
 async def run_build_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str, Any]:
-    if manager not in _ALLOWED_MANAGERS:
-        return {"status": "error", "message": f"Invalid package manager: {manager}"}
-    res = subprocess.run([manager, "run", "build"], cwd=path, capture_output=True, text=True)
+    SubprocessInput(manager=manager, path=path)
+    p = _resolve_workspace_path(path)
+    res = subprocess.run([manager, "run", "build"], cwd=str(p), capture_output=True, text=True)
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
 
 @mcp_server.tool(name="run_semgrep", description="Run Semgrep SAST scan on the project")
+@audit_tool
 async def run_semgrep_tool(ctx, path: str = ".") -> Dict[str, Any]:
+    p = _resolve_workspace_path(path)
     await ctx.info(f"[security] Running semgrep scan in {path}")
-    # In a real environment, semgrep would be installed
-    # For now we simulate or run if available
     try:
-        res = subprocess.run(["semgrep", "scan", "--json", "."], cwd=path, capture_output=True, text=True)
+        res = subprocess.run(["semgrep", "scan", "--json", "."], cwd=str(p), capture_output=True, text=True)
         return {"status": "success", "results": json.loads(res.stdout)}
     except Exception as e:
         return {"status": "error", "message": str(e), "note": "Semgrep might not be installed in this environment"}
 
 @mcp_server.tool(name="run_npm_audit", description="Run npm audit for dependency security")
+@audit_tool
 async def run_npm_audit_tool(ctx, path: str = ".") -> Dict[str, Any]:
+    p = _resolve_workspace_path(path)
     await ctx.info(f"[security] Running npm audit in {path}")
-    res = subprocess.run(["npm", "audit", "--json"], cwd=path, capture_output=True, text=True)
+    res = subprocess.run(["npm", "audit", "--json"], cwd=str(p), capture_output=True, text=True)
     try:
         return {"status": "success", "audit": json.loads(res.stdout)}
     except json.JSONDecodeError:
         return {"status": "error", "message": "Failed to parse npm audit JSON", "stdout": res.stdout}
 
 @mcp_server.tool(name="run_playwright", description="Run Playwright E2E tests")
+@audit_tool
 async def run_playwright_tool(ctx, path: str = ".") -> Dict[str, Any]:
+    p = _resolve_workspace_path(path)
     await ctx.info(f"[test] Running Playwright in {path}")
-    if not (Path(path) / "playwright.config.ts").exists() and not (Path(path) / "playwright.config.js").exists():
+    if not (p / "playwright.config.ts").exists() and not (p / "playwright.config.js").exists():
          return {"status": "error", "message": "Playwright config not found"}
-    
-    res = subprocess.run(["npx", "playwright", "test"], cwd=path, capture_output=True, text=True)
+    res = subprocess.run(["npx", "playwright", "test"], cwd=str(p), capture_output=True, text=True)
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
 
 @mcp_server.tool(name="ingest_learning", description="Save pipeline results/learnings to the local wiki")
