@@ -1,5 +1,6 @@
 """VibeServe v4 tools — UI spec generation, validation, design systems, memory."""
 
+import asyncio
 import json
 from typing import Any, Dict, List
 
@@ -58,6 +59,10 @@ async def generate_ui_spec_tool(ctx, page_type: str, requirements: List[str],
             cache_manager.set(ck, output)
         await ctx.report_progress(100, 100, "Complete!")
         return output
+    except KeyboardInterrupt:
+        raise
+    except asyncio.CancelledError:
+        raise
     except Exception as e:
         log.error(f"Error: {e}", exc_info=True)
         return {"status": "error", "error": str(e)}

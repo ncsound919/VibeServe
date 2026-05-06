@@ -9,6 +9,13 @@ interface Goal {
   priority: number;
   timeline?: string;
   tags: string[];
+  goal_type?: string;
+  target_metric?: string;
+  due_date?: string;
+  effort?: string;
+  areas?: string[];
+  allow_bg_work?: boolean;
+  schedule_mode?: string;
   created_at: string;
   updated_at: string;
 }
@@ -50,17 +57,27 @@ export function AgendaPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddGoal, setShowAddGoal] = useState(false);
-  const [newGoal, setNewGoal] = useState({ title: '', description: '', priority: 3, timeline: '' });
+  const [newGoal, setNewGoal] = useState({
+    title: '', description: '', priority: 3, timeline: '',
+    goal_type: '', due_date: '', effort: '', areas: '', schedule_mode: 'hourly',
+  });
   const [showAddConstraint, setShowAddConstraint] = useState(false);
   const [newConstraint, setNewConstraint] = useState('');
   const { autonomyMode, setAutonomyMode } = useIDEStore();
+  const apiBase = import.meta.env?.VITE_API_URL || (window.location.port === '3000' ? 'http://localhost:3002' : '');
+
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem('nexus_token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  };
 
   const fetchAgenda = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const apiBase = window.location.port === '3000' ? 'http://localhost:3002' : '';
-      const res = await fetch(`${apiBase}/api/pipeline/agenda_status`);
+      const res = await fetch(`${apiBase}/api/pipeline/agenda_status`, { headers: getAuthHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setAgenda(await res.json());
     } catch (err: any) {
@@ -75,10 +92,9 @@ export function AgendaPanel() {
   const addGoal = useCallback(async () => {
     if (!newGoal.title.trim()) return;
     try {
-      const apiBase = window.location.port === '3000' ? 'http://localhost:3002' : '';
       const res = await fetch(`${apiBase}/api/pipeline/mcp_call`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           tool: 'agenda_add_goal',
           args: {
@@ -86,12 +102,17 @@ export function AgendaPanel() {
             description: newGoal.description,
             priority: newGoal.priority,
             timeline: newGoal.timeline || '',
+            goal_type: newGoal.goal_type || '',
+            due_date: newGoal.due_date || '',
+            effort: newGoal.effort || '',
+            areas: newGoal.areas || '',
+            schedule_mode: newGoal.schedule_mode,
           },
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setShowAddGoal(false);
-      setNewGoal({ title: '', description: '', priority: 3, timeline: '' });
+      setNewGoal({ title: '', description: '', priority: 3, timeline: '', goal_type: '', due_date: '', effort: '', areas: '', schedule_mode: 'hourly' });
       await fetchAgenda();
     } catch (err: any) {
       setError(err.message);
@@ -100,10 +121,9 @@ export function AgendaPanel() {
 
   const activateGoal = useCallback(async (goalId: string) => {
     try {
-      const apiBase = window.location.port === '3000' ? 'http://localhost:3002' : '';
       await fetch(`${apiBase}/api/pipeline/mcp_call`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ tool: 'agenda_activate_goal', args: { goal_id: goalId } }),
       });
       await fetchAgenda();
@@ -114,10 +134,9 @@ export function AgendaPanel() {
 
   const completeGoal = useCallback(async (goalId: string) => {
     try {
-      const apiBase = window.location.port === '3000' ? 'http://localhost:3002' : '';
       await fetch(`${apiBase}/api/pipeline/mcp_call`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ tool: 'agenda_complete_goal', args: { goal_id: goalId } }),
       });
       await fetchAgenda();
@@ -139,14 +158,23 @@ export function AgendaPanel() {
         </span>
         <div className="flex gap-1">
           <button
-            onClick={() => setAutonomyMode(autonomyMode === 'pipeline' ? 'copilot' : 'pipeline')}
+            onClick={() => {
+              const next = autonomyMode === 'pipeline' ? 'copilot' : 'pipeline';
+              setAutonomyMode(next);
+              const route = next === 'pipeline' ? '/api/pipeline/scheduler/start' : '/api/pipeline/scheduler/stop';
+              fetch(`${apiBase}${route}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ repos: ['.'] }),
+              }).catch(() => {});
+            }}
             className="px-2 py-0.5 rounded text-xs"
             style={{
-              backgroundColor: autonomyMode === 'pipeline' ? 'var(--accent, #89b4fa)' : 'var(--bg-tertiary, #313244)',
+              backgroundColor: autonomyMode === 'pipeline' ? '#a6e3a1' : 'var(--bg-tertiary, #313244)',
               color: autonomyMode === 'pipeline' ? 'var(--bg-primary, #1e1e2e)' : 'var(--text-muted, #6c7086)',
             }}
           >
-            {autonomyMode === 'pipeline' ? 'Background: ON' : 'Background: OFF'}
+            {autonomyMode === 'pipeline' ? '\u25CF Agents: ON' : '\u25CB Agents: OFF'}
           </button>
         </div>
       </div>
@@ -211,6 +239,16 @@ export function AgendaPanel() {
                 {goal.timeline && (
                   <span className="text-xxs px-1 rounded" style={{ color: 'var(--text-muted, #6c7086)', backgroundColor: 'var(--bg-primary, #1e1e2e)' }}>
                     {goal.timeline}
+                  </span>
+                )}
+                {goal.goal_type && (
+                  <span className="text-xxs px-1 rounded" style={{ backgroundColor: 'var(--bg-primary, #1e1e2e)', color: 'var(--text-muted, #6c7086)' }}>
+                    {goal.goal_type}
+                  </span>
+                )}
+                {goal.due_date && (
+                  <span className="text-xxs px-1 rounded" style={{ backgroundColor: 'var(--bg-primary, #1e1e2e)', color: 'var(--text-muted, #6c7086)' }}>
+                    Due: {goal.due_date}
                   </span>
                 )}
               </div>
@@ -310,6 +348,51 @@ export function AgendaPanel() {
                 style={{ backgroundColor: 'var(--bg-primary, #1e1e2e)', color: 'var(--text-primary, #cdd6f4)', borderColor: 'var(--border, #313244)' }}
               />
             </div>
+            {/* Goal Type */}
+            <select
+              value={newGoal.goal_type}
+              onChange={(e) => setNewGoal({ ...newGoal, goal_type: e.target.value })}
+              className="text-xs px-2 py-1 rounded border"
+              style={{ backgroundColor: 'var(--bg-primary, #1e1e2e)', color: 'var(--text-primary, #cdd6f4)', borderColor: 'var(--border, #313244)' }}
+            >
+              <option value="">Type (optional)</option>
+              <option value="feature">Feature</option>
+              <option value="reliability">Reliability</option>
+              <option value="performance">Performance</option>
+              <option value="docs">Docs</option>
+              <option value="security">Security</option>
+            </select>
+
+            {/* Due Date + Effort */}
+            <div className="flex gap-1">
+              <input
+                value={newGoal.due_date}
+                onChange={(e) => setNewGoal({ ...newGoal, due_date: e.target.value })}
+                placeholder="Due date (YYYY-MM-DD)"
+                className="flex-1 text-xs px-2 py-1 rounded border focus:outline-none"
+                style={{ backgroundColor: 'var(--bg-primary, #1e1e2e)', color: 'var(--text-primary, #cdd6f4)', borderColor: 'var(--border, #313244)' }}
+              />
+              <select
+                value={newGoal.effort}
+                onChange={(e) => setNewGoal({ ...newGoal, effort: e.target.value })}
+                className="text-xs px-2 py-1 rounded border"
+                style={{ backgroundColor: 'var(--bg-primary, #1e1e2e)', color: 'var(--text-primary, #cdd6f4)', borderColor: 'var(--border, #313244)' }}
+              >
+                <option value="">Effort</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+
+            {/* Areas */}
+            <input
+              value={newGoal.areas}
+              onChange={(e) => setNewGoal({ ...newGoal, areas: e.target.value })}
+              placeholder="Areas (comma-sep, e.g. ide/src, vibeserve)"
+              className="w-full text-xs px-2 py-1 rounded border focus:outline-none"
+              style={{ backgroundColor: 'var(--bg-primary, #1e1e2e)', color: 'var(--text-primary, #cdd6f4)', borderColor: 'var(--border, #313244)' }}
+            />
             <div className="flex gap-1">
               <button
                 onClick={addGoal}
@@ -319,7 +402,10 @@ export function AgendaPanel() {
                 Add Goal
               </button>
               <button
-                onClick={() => setShowAddGoal(false)}
+                onClick={() => {
+                  setShowAddGoal(false);
+                  setNewGoal({ title: '', description: '', priority: 3, timeline: '', goal_type: '', due_date: '', effort: '', areas: '', schedule_mode: 'hourly' });
+                }}
                 className="text-xs px-2 py-1 rounded"
                 style={{ backgroundColor: 'var(--bg-tertiary, #313244)', color: 'var(--text-muted, #6c7086)' }}
               >

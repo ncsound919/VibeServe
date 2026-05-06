@@ -4,7 +4,6 @@
  */
 
 import { BuildStep, E2EResult, PipelineExecution, BrowserHistoryItem } from "../types";
-import { getRAGContext, indexDocument } from "./ragService";
 import { runDeterministicBrain, runBrowserHarness } from "../server/brainToolService";
 import { consultBrainForPhase, startBrainSession, analyzePipelineResults, endBrainSession } from './brainOrchestratorService';
 import { compileAllRaw, lintWiki, ingestRaw, getWikiStats } from "./llmWikiService";
@@ -17,12 +16,11 @@ import { getGraphSummary, queryGraph, buildGraph } from "./graphifyService";
 import { runSecurityAuditPhase } from './securityService';
 import { runDeadCodeCheckPhase } from './deadCodeService';
 import { runStaticAnalysisPhase } from './staticAnalysisService';
-import { getTemporalClient } from './temporalClient';
 import { encodeToToon } from './toonService';
 import { updateBenchmark, getAllBenchmarks, getBenchmarkSnapshot, suggestNextImprovement } from './benchmarkService';
 import { generateSuggestion, getActiveSuggestions, applySuggestion, recordOutcome } from './suggestionService';
 import { getUnlockedPipelineFeatures } from './gamificationService';
-import CircuitBreaker from 'opossum';
+import { CircuitBreaker } from '../lib/circuitBreaker';
 import { logger } from '../lib/logger';
 import { runTestsCommand, runBuildCommand, runShellCommand } from '../server/realTools';
 import { saveExecutionLog } from '../server/logService';
@@ -912,19 +910,5 @@ export async function runPipelineOrchestrated(
   sourceReposString: string,
   onUpdate: (exec: PipelineExecution) => void
 ): Promise<PipelineExecution> {
-  try {
-    const client = await getTemporalClient();
-    if (client) {
-      const handle = await client.workflow.start('nexusPipeline', {
-        args: [sourceReposString],
-        taskQueue: 'nexus-alpha',
-        workflowId: `pipeline-${Date.now()}`,
-      });
-      const result = await handle.result();
-      return result as PipelineExecution;
-    }
-  } catch {
-    // Temporal unavailable — fall through to simulated
-  }
   return runAutomatedPipeline(sourceReposString, onUpdate);
 }

@@ -1,4 +1,6 @@
-import { retrieve, createRAGPrompt } from '../services/langchain/rag';
+// Langchain removed — RAG stubs
+const retrieve = async (_query: string, _k?: number) => [];
+const createRAGPrompt = (_context: string, _query: string) => '';
 import type { DashboardData, RepoTrend, NewsItem, PredictionData, VideoItem } from '../types';
 import { logger } from '../lib/logger';
 import { DashboardDataSchema } from '../lib/schemas';

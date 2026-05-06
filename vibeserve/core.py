@@ -6,6 +6,8 @@ import sys
 import logging
 import asyncio
 
+from vibeserve.server import mcp_server
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
@@ -13,11 +15,6 @@ logging.basicConfig(
     stream=sys.stderr
 )
 log = logging.getLogger("VibeServe")
-
-# Import the server registry
-from vibeserve.server import mcp_server
-
-# Import all tools to register them
 
 async def main():
     log.info("Starting VibeServe MCP Server...")

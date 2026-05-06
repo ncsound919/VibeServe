@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import { createChart, ColorType, AreaSeries } from 'lightweight-charts';
+// lightweight-charts removed — using native SVG bar chart
 
 interface GrowthChartProps {
   data: { month: string; value: number }[];
@@ -7,63 +6,27 @@ interface GrowthChartProps {
 }
 
 export function GrowthChart({ data, height = 200 }: GrowthChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const maxValue = Math.max(...data.map(d => d.value), 1);
+  const barColors = data.map((_, i) => `hsl(${160 + i * 3}, 60%, ${40 + i * 2}%)`);
 
-  useEffect(() => {
-    if (!containerRef.current || !data.length) return;
-
-    const chart = createChart(containerRef.current, {
-      height,
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#4a4b50',
-        fontSize: 10,
-        fontFamily: 'ui-monospace, monospace',
-      },
-      grid: {
-        vertLines: { color: '#2d2e32', style: 2 },
-        horzLines: { color: '#2d2e32', style: 2 },
-      },
-      crosshair: {
-        vertLine: { color: '#10b981', width: 1, style: 2 },
-        horzLine: { color: '#10b981', width: 1, style: 2 },
-      },
-      timeScale: {
-        borderColor: '#2d2e32',
-        timeVisible: false,
-      },
-      rightPriceScale: {
-        borderColor: '#2d2e32',
-      },
-    });
-
-    const areaSeries = chart.addSeries(AreaSeries, {
-      lineColor: '#10b981',
-      topColor: 'rgba(16, 185, 129, 0.2)',
-      bottomColor: 'rgba(16, 185, 129, 0.01)',
-      lineWidth: 2,
-    });
-
-    const chartData = data.map((d, i) => ({
-      time: i as unknown as import('lightweight-charts').Time,
-      value: d.value,
-    }));
-
-    areaSeries.setData(chartData);
-    chart.timeScale().fitContent();
-
-    return () => {
-      chart.remove();
-    };
-  }, [data, height]);
-
-  if (!data.length) {
-    return (
-      <div className="flex items-center justify-center h-[200px] bg-[#0a0a0c] rounded text-[10px] text-[#4a4b50] font-mono">
-        No growth data available
+  return (
+    <div className="w-full h-full" style={{ minHeight: height }}>
+      <div className="flex items-end gap-1 h-full" style={{ paddingBottom: 20 }}>
+        {data.map((d, i) => (
+          <div key={d.month} className="flex-1 flex flex-col items-center justify-end" style={{ height: '100%' }}>
+            <span className="text-[8px] text-[#4a4b50] font-mono mb-0.5">{d.value}</span>
+            <div
+              className="w-full rounded-t-sm transition-all duration-300"
+              style={{
+                height: `${(d.value / maxValue) * 100}%`,
+                minHeight: 2,
+                backgroundColor: barColors[i],
+              }}
+            />
+            <span className="text-[7px] text-[#4a4b50] font-mono mt-1 truncate w-full text-center">{d.month}</span>
+          </div>
+        ))}
       </div>
-    );
-  }
-
-  return <div ref={containerRef} className="w-full" />;
+    </div>
+  );
 }

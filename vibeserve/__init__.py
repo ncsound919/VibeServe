@@ -1,6 +1,6 @@
 """VibeServe — Agentic UI Coding Orchestrator for the Model Context Protocol."""
 
-import time  # exposed for test patching: patch("vibeserve.time.time")
+import time  # exposed for test patching: patch("vibeserve.time.time")  # noqa: F401
 
 from vibeserve import providers as _providers
 
@@ -47,10 +47,13 @@ from vibeserve.__main__ import (
 sampling = _providers.sampling_instance
 
 __all__ = [
+    "time",
     "ArchitectureDecision", "CodeFile", "ComponentType", "ContrastResult",
     "DesignSystemConstraints", "DesignSystemTokens", "IterationResult",
     "UIComponent", "UISchema", "VibePlan", "WCAGLevel",
-    "LLMProvider", "LLMRouter", "SamplingProvider", "router", "sampling", "mcp_llm_call",
+    "LLMProvider", "LLMRouter", "OpenAIProvider", "DeepSeekProvider",
+    "OpenRouterProvider", "LocalProvider", "OpenCodeProvider",
+    "SamplingProvider", "router", "sampling", "mcp_llm_call",
     "AsyncProfiler", "ProfilerProvider", "StructuredLogger",
     "TOON", "Graphify", "SentryTracker", "Context7Provider",
     "hex_to_rgb", "relative_luminance", "contrast_ratio",

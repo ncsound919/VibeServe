@@ -39,14 +39,27 @@ import { queryGraph, getGraphSummary } from '../services/graphifyService';
 import { vitalsService } from '../services/vitalsService';
 import { runBuildCommand, runAuditCommand, runLintCommand, runTestsCommand } from './realTools';
 import { getJobStatus } from './pipelineQueue';
-import { initVibeServeClient } from './mcpClient';
+import { initVibeServeClient, getVibeServeClient } from './mcpClient';
+import { startScheduler } from './schedulerService';
+
+function logEvent(level: string, message: string, extra: Record<string, unknown> = {}) {
+  const entry = {
+    ts: new Date().toISOString(),
+    level,
+    message,
+    ...extra,
+  };
+  if (level === 'error') console.error(JSON.stringify(entry));
+  else console.log(JSON.stringify(entry));
+}
 
 const app = new Hono<{ Variables: Variables }>();
 
 // ─── Auth Middleware ──────────────────────────────────────────────────────────
 
 const NEXUS_API_KEY = process.env.NEXUS_API_KEY || '';
-const AUTH_BYPASS = process.env.NEXUS_AUTH_BYPASS === 'true' && process.env.NODE_ENV !== 'production';
+// If empty in production, warn but don't crash (admin-only mode)
+const AUTH_BYPASS = process.env.NEXUS_AUTH_BYPASS === 'true' && process.env.NODE_ENV === 'development';
 
 const SUPABASE_JWT_SECRET = (() => {
   if (process.env.SUPABASE_JWT_SECRET && process.env.SUPABASE_JWT_SECRET !== 'super-secret-jwt-token-with-at-least-32-characters-long') {
@@ -133,6 +146,8 @@ export const requireRole = (allowedRoles: string[]) => {
 };
 
 // ─── Rate limiting (Redis-ready via hono-rate-limiter) ───────────────────────
+// NOTE: Rate limiter uses in-memory store by default.
+// For production multi-instance: configure with external store (e.g. Redis via @hono-rate-limiter/redis).
 const defaultLimiter = rateLimiter({
   windowMs: 60 * 1000,
   limit: 100,
@@ -196,17 +211,32 @@ function broadcast(data: unknown): void {
 // ─── API Routes ──────────────────────────────────────────────────────────────
 
 app.get('/health', async (c) => {
-  // Hide operational WS counts unless properly authenticated
-  if (AUTH_BYPASS) return c.json({ status: 'ok', wsClients: clients.size, ts: Date.now() });
+  const checks: Record<string, boolean | string> = {
+    mcp: false,
+    redis: false,
+    timestamp: new Date().toISOString(),
+  };
 
-  const auth = c.req.header('authorization');
-  if (auth?.startsWith('Bearer ')) {
-    try {
-      await verify(auth.slice(7), SUPABASE_JWT_SECRET, 'HS256');
-      return c.json({ status: 'ok', wsClients: clients.size, ts: Date.now() });
-    } catch { /* ignore */ }
-  }
-  return c.json({ status: 'ok', ts: Date.now() });
+  // Check MCP
+  try {
+    const client = getVibeServeClient();
+    if (client) {
+      checks.mcp = true;
+    }
+  } catch { checks.mcp = false; }
+
+  // Check Redis
+  try {
+    const { getPipelineQueue } = await import('./pipelineQueue');
+    const queue = getPipelineQueue();
+    if (queue) {
+      await queue.getJobCounts();
+      checks.redis = true;
+    }
+  } catch { checks.redis = false; }
+
+  const healthy = Object.values(checks).every(v => v === true || typeof v === 'string');
+  return c.json({ status: healthy ? 'ok' : 'degraded', checks }, healthy ? 200 : 503);
 });
 
 app.post('/api/pipeline/run', requireRole(['admin', 'system']), strictLimiter, async (c) => {
@@ -232,15 +262,16 @@ app.post('/api/pipeline/run', requireRole(['admin', 'system']), strictLimiter, a
   return c.json({ started: true, executionId: result.id, mode: 'simulated' });
 });
 
-app.post('/api/pipeline/mcp_call', async (c) => {
+app.post('/api/pipeline/mcp_call', requireRole(['admin', 'user']), async (c) => {
   try {
     const body = await c.req.json();
     const { tool, args } = body;
     if (!tool) return c.json({ error: 'tool name required' }, 400);
 
     let result: any;
-    if (vibeServeClient) {
-      result = await vibeServeClient.callTool(tool, args || {});
+    const client = getVibeServeClient();
+    if (client) {
+      result = await client.callTool({ name: tool, arguments: args || {} });
     } else {
       result = { status: 'error', error: 'MCP client not initialized' };
     }
@@ -248,6 +279,116 @@ app.post('/api/pipeline/mcp_call', async (c) => {
   } catch (error: any) {
     return c.json({ status: 'error', error: error.message });
   }
+});
+
+app.get('/api/pipeline/agenda_status', requireRole(['admin', 'user']), async (c) => {
+  try {
+    const client = getVibeServeClient();
+    if (!client) return c.json({ error: 'MCP client not initialized' }, 503);
+    const result = await client.callTool({ name: 'agenda_get_status', arguments: {} });
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+function suggestionTypeToActionType(type: string): "pr" | "refactor" | "test" | "docs" | "reuse" | "fix" {
+  const map: Record<string, "pr" | "refactor" | "test" | "docs" | "reuse" | "fix"> = {
+    refactor: 'refactor', fix: 'fix', test: 'test', docs: 'docs', reuse: 'reuse', chore: 'refactor', perf: 'refactor',
+  };
+  return map[type] || 'refactor';
+}
+
+app.post('/api/pipeline/suggestions/apply', requireRole(['admin', 'user']), async (c) => {
+  try {
+    const body = await c.req.json();
+    const { suggestionId, filePath, repoName } = body;
+    if (!suggestionId) return c.json({ error: 'suggestionId required' }, 400);
+
+    let verification = null;
+    try {
+      const { getPendingSuggestions, updateVerification, markApplied } = await import('../services/suggestionStoreService');
+      const pendingSuggestions = getPendingSuggestions();
+      const suggestion = pendingSuggestions.find((s: any) => s.id === suggestionId);
+
+      const { verifySuggestion } = await import('../services/verificationService');
+      verification = await verifySuggestion(suggestionId, filePath || '', repoName || '');
+      await updateVerification(verification);
+      const user = c.get('user') as { sub: string; role: string } | undefined;
+      await markApplied(suggestionId, user?.sub || 'unknown');
+
+      if (suggestion?.goalId) {
+        const client = getVibeServeClient();
+        if (client) {
+          client.callTool({
+            name: 'agenda_log_entry',
+            arguments: {
+              goal_id: suggestion.goalId,
+              action_type: suggestionTypeToActionType(suggestion.type || 'refactor'),
+              repo: suggestion.repoName || '',
+              description: suggestion.title || suggestion.description || '',
+            }
+          }).catch(() => {});
+        }
+      }
+    } catch (err: any) {
+      console.error('[suggestions/apply] Verification failed:', err.message);
+    }
+
+    return c.json({ applied: true, suggestionId, verification });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.get('/api/pipeline/suggestions/pending', requireRole(['admin', 'user']), async (c) => {
+  try {
+    const { getPendingSuggestions } = await import('../services/suggestionStoreService');
+    const suggestions = getPendingSuggestions();
+    return c.json({ suggestions });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.get('/api/pipeline/suggestions/history', requireRole(['admin', 'user']), async (c) => {
+  try {
+    const { getSuggestionHistory } = await import('../services/suggestionStoreService');
+    const history = getSuggestionHistory();
+    return c.json({ history });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.get('/api/pipeline/impact', requireRole(['admin', 'user']), async (c) => {
+  try {
+    const { getImpactSummary } = await import('../services/suggestionStoreService');
+    const impact = getImpactSummary();
+    return c.json({ impact });
+  } catch (error) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post('/api/pipeline/scheduler/start', requireRole(['admin', 'system']), async (c) => {
+  const body = await readJson<{ repos?: string[] }>(c);
+  const repos = body?.repos || ['.'];
+  const status = await startScheduler(repos, 'system');
+  return c.json({ status });
+});
+
+app.post('/api/pipeline/scheduler/stop', requireRole(['admin', 'system']), async (c) => {
+  const { stopScheduler } = await import('./schedulerService');
+  await stopScheduler();
+  return c.json({ stopped: true });
+});
+
+app.post('/api/pipeline/scheduler/trigger', requireRole(['admin', 'user']), async (c) => {
+  const body = await readJson<{ type?: 'find-test-gaps' | 'cross-repo-suggest' | 'find-refactors'; repos?: string[] }>(c);
+  const { triggerJobNow } = await import('./schedulerService');
+  const jobId = await triggerJobNow(body?.type || 'find-test-gaps', body?.repos || ['.'], 'manual');
+  return c.json({ jobId });
 });
 
 app.get('/api/pipeline/status/:id', requireRole(['admin', 'user']), strictLimiter, async (c) => {
@@ -568,12 +709,9 @@ app.post('/api/coding/search', requireRole(['admin', 'user']), async (c) => {
 
 app.post('/api/tools/debt', requireRole(['admin', 'user']), async (c) => {
   return c.json({
-    todos: 4,
-    complexity: 'medium',
-    debtScore: 28,
-    untypedExports: 12,
-    recommendation: 'Refactor useNexusApp.ts to isolate browser/node logic.'
-  });
+    status: 'wip',
+    message: 'Technical debt analysis requires repo indexing. Run \'index_repo\' from Background Work panel.',
+  }, 503);
 });
 
 app.post('/api/tools/run', requireRole(['admin', 'system']), async (c) => {
@@ -597,10 +735,13 @@ app.post('/api/tools/run', requireRole(['admin', 'system']), async (c) => {
 
 
 app.get('/api/nexus/progression', requireRole(['admin', 'user']), (c) => {
-  return c.json({ level: 4, experience: 2450, nextLevel: 3000, badges: ['beta_tester', 'fast_coder'] });
+  return c.json({
+    status: 'wip',
+    message: 'Progression tracking is under development.',
+  }, 503);
 });
 
-app.post('/api/trajectory/event', async (c) => {
+app.post('/api/trajectory/event', requireRole(['admin', 'system']), strictLimiter, async (c) => {
   // Received from CodeNexus Orchestrator
   const body = await readJson<{ runId: string, step: string, status: string, metadata?: any, timestamp: number }>(c);
   if (!body) return c.json({ error: 'invalid body' }, 400);
@@ -612,15 +753,15 @@ app.post('/api/trajectory/event', async (c) => {
 });
 
 app.get('/api/nexus/errors', requireRole(['admin', 'user']), (c) => {
-  return c.json({ errors: [], count: 0 });
+  return c.json({ status: 'wip', message: 'Error aggregation is under development.' }, 503);
 });
 
 app.get('/api/vibe/history', requireRole(['admin', 'user']), (c) => {
-  return c.json({ history: [] });
+  return c.json({ status: 'wip', message: 'Vibe history is under development.' }, 503);
 });
 
 app.get('/api/coding-agent/apps', requireRole(['admin', 'user']), (c) => {
-  return c.json({ apps: [] });
+  return c.json({ status: 'wip', message: 'Coding agent apps listing is under development.' }, 503);
 });
 
 
@@ -684,7 +825,8 @@ app.post('/api/proxy/gemini', requireRole(['admin', 'user']), strictLimiter, asy
     // Local-First Routing
     if (settingsService.isLocalMode()) {
       try {
-        const ollamaRes = await fetch('http://localhost:11434/api/generate', {
+        const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+        const ollamaRes = await fetch(`${ollamaUrl}/api/generate`, {
           method: 'POST',
           body: JSON.stringify({ model: 'llama3', prompt: body.prompt, stream: false }),
         });
@@ -854,23 +996,27 @@ setInterval(() => {
 (async () => {
   // Production safety: require a real API key and JWT secret
   if (process.env.NODE_ENV === 'production') {
-  if (!NEXUS_API_KEY || NEXUS_API_KEY === 'nexus-alpha-dev-key') {
-    console.error('[CRITICAL] NEXUS_API_KEY must be set to a secure value in production.');
-    process.exit(1);
-  }
+    if (!NEXUS_API_KEY || NEXUS_API_KEY === 'nexus-alpha-dev-key') {
+      logEvent('error', 'NEXUS_API_KEY not set in production — running in admin-only mode');
+    }
   }
 
   // Initialize audit service directory
   await initAuditService();
 
   const queueReady = await initPipelineQueue();
-  console.log(`[Q] BullMQ pipeline queue ${queueReady ? 'connected' : 'unavailable (simulated mode)'}`);
+  logEvent('info', 'pipeline queue initialized', { connected: queueReady });
+  if (queueReady) {
+    const defaultRepos = process.env.PIPELINE_REPOS?.split(',') || ['.'];
+    const scheduleResult = await startScheduler(defaultRepos, 'system');
+    logEvent('info', 'scheduler started', { nightly: scheduleResult.nightly, hourly: scheduleResult.hourly });
+  }
 
   // Initialize VibeServe MCP Client
   try {
     await initVibeServeClient();
   } catch (err) {
-    console.error('[MCP Client] Failed to connect to VibeServe:', err);
+    logEvent('error', 'mcp client failed to connect', { error: (err as Error).message });
   }
 
   // Proper Hono Node Server streaming adapter
@@ -878,9 +1024,9 @@ setInterval(() => {
     fetch: app.fetch,
     port: PORT_HTTP,
   }, (info) => {
-    console.log(`[Hono] Nexus Alpha server running on port ${info.port}`);
-    console.log(`[WS]   WebSocket at ws://localhost:${info.port}/ws`);
-    if (AUTH_BYPASS) console.warn('[WARN] Auth bypass is ON — do not use NEXUS_AUTH_BYPASS=true in production');
+    logEvent('info', 'server started', { port: info.port });
+    logEvent('info', 'ws ready', { port: info.port });
+    if (AUTH_BYPASS) logEvent('warn', 'auth bypass enabled');
   });
 
   wsServer = new WebSocketServer({ server: httpServer as unknown as import('http').Server, path: '/ws' });
@@ -961,17 +1107,17 @@ setInterval(() => {
 
 process.on('SIGTERM', async () => {
   if (wsServer) {
-    await new Promise<void>((resolve) => wsServer!.close(() => resolve()));
+    await new Promise<void>((resolve) => wsServer.close(() => resolve()));
   }
   await shutdownPipelineQueue();
   process.exit(0);
 });
 process.on('SIGINT', async () => {
   if (wsServer) {
-    await new Promise<void>((resolve) => wsServer!.close(() => resolve()));
+    await new Promise<void>((resolve) => wsServer.close(() => resolve()));
   }
   await shutdownPipelineQueue();
   process.exit(0);
 });
 
-export { app, broadcast };
+export { app, broadcast, logEvent };

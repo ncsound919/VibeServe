@@ -439,6 +439,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
 
+    case "browser_automation": {
+      const { command } = args as { command: string };
       try {
         const result = await runBrowserHarness({ command });
         return {
@@ -451,6 +453,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
 
+    case "deterministic_brain": {
+      const { query, lane, verbose } = args as { query: string; lane?: string; verbose?: boolean };
       try {
         const result = await runDeterministicBrain({ query, lane: lane as "coding" | "business_logic" | "agent_brain" | "tool_calling" | "cross_domain" | undefined, verbose });
         return {
@@ -498,6 +502,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
 
+    case "graphify_build": {
       const { targetPath = ".", mode = "ast" } = args as { targetPath?: string; mode?: "ast" | "deep" };
       
       // Filesystem Sandboxing: Ensure targetPath is within project root

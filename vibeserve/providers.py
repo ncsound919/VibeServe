@@ -231,7 +231,7 @@ class OpenCodeProvider(LLMProvider):
 
     def _parse_output(self, output: str) -> Optional[str]:
         try:
-            lines = [l.strip() for l in output.strip().split('\n') if l.strip()]
+            lines = [line.strip() for line in output.strip().split('\n') if line.strip()]
             last_content: Optional[str] = None
             for line in lines:
                 try:

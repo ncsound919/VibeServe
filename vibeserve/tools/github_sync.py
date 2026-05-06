@@ -11,12 +11,13 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
 from vibeserve.server import mcp_server
 from vibeserve.middleware import audit_tool
+from vibeserve.auth import require_scope
 
 GITHUB_CONFIG_PATH = Path(os.getenv("VIBESERVE_GITHUB_CONFIG", ".vibeserve/github.json"))
 REPOS_DIR = Path(os.getenv("VIBESERVE_REPOS_DIR", os.path.expanduser("~/vibeserve-repos")))
@@ -177,12 +178,6 @@ class GithubLinkManager:
         return results
 
     def link_repo(self, full_name: str, account_id: str, clone: bool = True) -> LinkedRepo:
-        token = ""
-        for a in self.accounts:
-            if a.id == account_id:
-                token = a.token_prefix
-                break
-
         name = full_name.split("/")[-1]
         repo = LinkedRepo(
             id=int(time.time() * 1000) % 1000000,
@@ -221,6 +216,7 @@ _github_manager = GithubLinkManager()
 
 @mcp_server.tool(name="github_link_account", description="Link a GitHub account via personal access token. Required before repo operations.")
 @audit_tool
+@require_scope("mcp:write")
 async def github_link_account(ctx, token: str) -> Dict[str, Any]:
     try:
         account = _github_manager.link_account(token)
@@ -231,6 +227,7 @@ async def github_link_account(ctx, token: str) -> Dict[str, Any]:
 
 @mcp_server.tool(name="github_list_repos", description="List repositories for the linked GitHub account.")
 @audit_tool
+@require_scope("mcp:read")
 async def github_list_repos(ctx, page: int = 1) -> Dict[str, Any]:
     if not _github_manager.accounts:
         return {"status": "error", "error": "No GitHub account linked. Use github_link_account first."}
@@ -244,6 +241,7 @@ async def github_list_repos(ctx, page: int = 1) -> Dict[str, Any]:
 
 @mcp_server.tool(name="github_link_repo", description="Add a GitHub repo to VibeServe scope. Optionally clone it locally.")
 @audit_tool
+@require_scope("mcp:write")
 async def github_link_repo(ctx, full_name: str, clone: bool = True) -> Dict[str, Any]:
     if not _github_manager.accounts:
         return {"status": "error", "error": "No GitHub account linked."}
@@ -257,6 +255,7 @@ async def github_link_repo(ctx, full_name: str, clone: bool = True) -> Dict[str,
 
 @mcp_server.tool(name="github_sync_all", description="Sync metadata for all linked repos — pulls latest data from GitHub API.")
 @audit_tool
+@require_scope("mcp:write")
 async def github_sync_all(ctx) -> Dict[str, Any]:
     repos = _github_manager.get_linked_repos()
     return {"status": "ok", "count": len(repos), "repos": repos}

@@ -4,7 +4,7 @@
  */
 
 import { supabase } from "./supabaseClient";
-import type { Document } from "./ragService";
+interface Document { content: string; metadata?: Record<string, string>; }
 
 // ─── Supabase Vector Store Integration ───────────────────────────────────────────
 

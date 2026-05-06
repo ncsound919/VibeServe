@@ -5,7 +5,8 @@ export type ToastType = 'info' | 'success' | 'warning' | 'error';
 export interface Toast {
   id: string;
   type: ToastType;
-  title: string;
+  title?: string;
+  message?: string;
   description?: string;
   actions?: { label: string; onClick: () => void }[];
   duration?: number;

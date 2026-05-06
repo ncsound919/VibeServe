@@ -258,11 +258,12 @@ def test_rate_limiter_blocks_after_burst():
     limiter = TokenBucket(rate=10.0, burst=2)
     
     # First 2 requests allowed
-    assert limiter.allow('client-a') is True
-    assert limiter.allow('client-a') is True
+    import asyncio as _asyncio
+    assert _asyncio.run(limiter.allow('client-a')) is True
+    assert _asyncio.run(limiter.allow('client-a')) is True
     
     # 3rd request blocked
-    assert limiter.allow('client-a') is False
+    assert _asyncio.run(limiter.allow('client-a')) is False
 
 
 def test_rate_limiter_per_identity():
@@ -271,9 +272,10 @@ def test_rate_limiter_per_identity():
     
     limiter = TokenBucket(rate=10.0, burst=1)
     
-    assert limiter.allow('client-1') is True
-    assert limiter.allow('client-1') is False
-    assert limiter.allow('client-2') is True  # Different client
+    import asyncio as _asyncio
+    assert _asyncio.run(limiter.allow('client-1')) is True
+    assert _asyncio.run(limiter.allow('client-1')) is False
+    assert _asyncio.run(limiter.allow('client-2')) is True  # Different client
 
 
 @pytest.mark.asyncio
@@ -289,7 +291,7 @@ async def test_audit_tool_returns_rate_limit_error():
     # Force rate limit by exhausting tokens
     from vibeserve.middleware import rate_limiter
     for _ in range(20):
-        rate_limiter.allow('rate-test-client')
+        await rate_limiter.allow('rate-test-client')
     
     result = await vibe_health_tool(ctx=mock_ctx)
     

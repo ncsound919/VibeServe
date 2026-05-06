@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional
 from vibeserve.server import mcp_server
 from vibeserve.middleware import audit_tool
 from vibeserve.auth import require_scope
-from vibeserve.models import FileReadInput, FileWriteInput, SubprocessInput, BenchmarkInput
+from vibeserve.models import FileReadInput, FileWriteInput, SubprocessInput
 
 log = logging.getLogger("VibeServe")
 
@@ -36,6 +36,8 @@ def _resolve_workspace_path(path: str) -> Path:
 
 
 @mcp_server.tool(name="generate_plan", description="Generate a structured task decomposition for a given objective")
+@audit_tool
+@require_scope("mcp:write")
 async def generate_plan_tool(ctx, objective: str, context: Optional[str] = None) -> Dict[str, Any]:
     await ctx.info(f"[plan] Generating plan for: {objective[:100]}...")
     import vibeserve
@@ -47,6 +49,8 @@ async def generate_plan_tool(ctx, objective: str, context: Optional[str] = None)
         return {"status": "error", "message": "Failed to parse plan JSON", "raw": response}
 
 @mcp_server.tool(name="retrieve_context", description="Retrieve context from the local wiki/knowledge base")
+@audit_tool
+@require_scope("mcp:read")
 async def retrieve_context_tool(ctx, query: str) -> Dict[str, Any]:
     await ctx.info(f"[wiki] Searching for: {query}")
     wiki_path = Path("wiki")
@@ -86,19 +90,24 @@ async def write_file_tool(ctx, path: str, content: str) -> Dict[str, Any]:
     return {"status": "success", "path": path, "bytes": len(content)}
 
 @mcp_server.tool(name="check_node_env", description="Verify node.js environment")
+@require_scope("mcp:read")
 async def check_node_env_tool(ctx) -> Dict[str, Any]:
     try:
-        res = subprocess.run(["node", "-v"], capture_output=True, text=True)
+        res = subprocess.run(["node", "-v"], capture_output=True, text=True, timeout=300)
         return {"status": "success", "version": res.stdout.strip()}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 @mcp_server.tool(name="detect_package_manager", description="Detect which package manager to use (npm, yarn, pnpm)")
+@require_scope("mcp:read")
 async def detect_package_manager_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
-    if (p / "package-lock.json").exists(): return {"status": "success", "manager": "npm"}
-    if (p / "yarn.lock").exists(): return {"status": "success", "manager": "yarn"}
-    if (p / "pnpm-lock.yaml").exists(): return {"status": "success", "manager": "pnpm"}
+    if (p / "package-lock.json").exists():
+        return {"status": "success", "manager": "npm"}
+    if (p / "yarn.lock").exists():
+        return {"status": "success", "manager": "yarn"}
+    if (p / "pnpm-lock.yaml").exists():
+        return {"status": "success", "manager": "pnpm"}
     return {"status": "success", "manager": "npm", "note": "defaulted to npm"}
 
 @mcp_server.tool(name="run_install", description="Run package installation")
@@ -108,19 +117,24 @@ async def run_install_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[s
     SubprocessInput(manager=manager, path=path)
     p = _resolve_workspace_path(path)
     await ctx.info(f"[shell] Running {manager} install in {path}")
-    res = subprocess.run([manager, "install"], cwd=str(p), capture_output=True, text=True)
-    return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout, "stderr": res.stderr}
+    try:
+        res = subprocess.run([manager, "install"], cwd=str(p), capture_output=True, text=True, timeout=300)
+        return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout, "stderr": res.stderr}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "message": "Command timed out after 300s"}
 
 @mcp_server.tool(name="run_biome", description="Run Biome linter/formatter")
+@require_scope("mcp:write")
 async def run_biome_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
-    res = subprocess.run(["npx", "@biomejs/biome", "check", "--apply", "."], cwd=str(p), capture_output=True, text=True)
+    res = subprocess.run(["npx", "@biomejs/biome", "check", "--apply", "."], cwd=str(p), capture_output=True, text=True, timeout=300)
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
 
 @mcp_server.tool(name="run_tsc", description="Run TypeScript compiler check")
+@require_scope("mcp:read")
 async def run_tsc_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
-    res = subprocess.run(["npx", "tsc", "--noEmit"], cwd=str(p), capture_output=True, text=True)
+    res = subprocess.run(["npx", "tsc", "--noEmit"], cwd=str(p), capture_output=True, text=True, timeout=300)
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
 
 @mcp_server.tool(name="run_build", description="Run production build")
@@ -129,8 +143,11 @@ async def run_tsc_tool(ctx, path: str = ".") -> Dict[str, Any]:
 async def run_build_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str, Any]:
     SubprocessInput(manager=manager, path=path)
     p = _resolve_workspace_path(path)
-    res = subprocess.run([manager, "run", "build"], cwd=str(p), capture_output=True, text=True)
-    return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
+    try:
+        res = subprocess.run([manager, "run", "build"], cwd=str(p), capture_output=True, text=True, timeout=300)
+        return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "message": "Command timed out after 300s"}
 
 @mcp_server.tool(name="run_semgrep", description="Run Semgrep SAST scan on the project")
 @audit_tool
@@ -139,8 +156,10 @@ async def run_semgrep_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
     await ctx.info(f"[security] Running semgrep scan in {path}")
     try:
-        res = subprocess.run(["semgrep", "scan", "--json", "."], cwd=str(p), capture_output=True, text=True)
+        res = subprocess.run(["semgrep", "scan", "--json", "."], cwd=str(p), capture_output=True, text=True, timeout=300)
         return {"status": "success", "results": json.loads(res.stdout)}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "message": "Command timed out after 300s"}
     except Exception as e:
         return {"status": "error", "message": str(e), "note": "Semgrep might not be installed in this environment"}
 
@@ -150,11 +169,14 @@ async def run_semgrep_tool(ctx, path: str = ".") -> Dict[str, Any]:
 async def run_npm_audit_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
     await ctx.info(f"[security] Running npm audit in {path}")
-    res = subprocess.run(["npm", "audit", "--json"], cwd=str(p), capture_output=True, text=True)
     try:
-        return {"status": "success", "audit": json.loads(res.stdout)}
-    except json.JSONDecodeError:
-        return {"status": "error", "message": "Failed to parse npm audit JSON", "stdout": res.stdout}
+        res = subprocess.run(["npm", "audit", "--json"], cwd=str(p), capture_output=True, text=True, timeout=300)
+        try:
+            return {"status": "success", "audit": json.loads(res.stdout)}
+        except json.JSONDecodeError:
+            return {"status": "error", "message": "Failed to parse npm audit JSON", "stdout": res.stdout}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "message": "Command timed out after 300s"}
 
 @mcp_server.tool(name="run_playwright", description="Run Playwright E2E tests")
 @audit_tool
@@ -164,10 +186,15 @@ async def run_playwright_tool(ctx, path: str = ".") -> Dict[str, Any]:
     await ctx.info(f"[test] Running Playwright in {path}")
     if not (p / "playwright.config.ts").exists() and not (p / "playwright.config.js").exists():
          return {"status": "error", "message": "Playwright config not found"}
-    res = subprocess.run(["npx", "playwright", "test"], cwd=str(p), capture_output=True, text=True)
-    return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
+    try:
+        res = subprocess.run(["npx", "playwright", "test"], cwd=str(p), capture_output=True, text=True, timeout=300)
+        return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "message": "Command timed out after 300s"}
 
 @mcp_server.tool(name="ingest_learning", description="Save pipeline results/learnings to the local wiki")
+@audit_tool
+@require_scope("mcp:write")
 async def ingest_learning_tool(ctx, topic: str, content: str) -> Dict[str, Any]:
     wiki_path = Path("wiki")
     wiki_path.mkdir(exist_ok=True)

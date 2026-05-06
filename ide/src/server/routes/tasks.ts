@@ -33,6 +33,12 @@ export function registerTaskRoutes(app: any) {
 
   app.post('/api/tasks/run', async (c: any) => {
     const { command } = await c.req.json();
+
+    const allowedPattern = /^(npm run [a-zA-Z0-9_:.-]+|make [a-zA-Z0-9_.-]+)$/;
+    if (!command || !allowedPattern.test(command)) {
+      return c.json({ error: 'Command not allowed. Use only npm run <script> or make <target>.' }, 403);
+    }
+
     try {
       const { stdout, stderr } = await execAsync(command, { cwd: WORKSPACE_ROOT, timeout: 60000 });
       return c.text(stdout + (stderr ? `\n${stderr}` : ''));

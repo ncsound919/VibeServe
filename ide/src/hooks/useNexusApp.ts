@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardData } from './useDashboardData';
 import { useAppStore } from '../stores/useAppStore';
 import { usePipelineStore } from '../stores/usePipelineStore';
-import { startWorkflow } from '../services/temporalClient';
 import { DashboardData } from '../types';
 import { useNexusAuth } from './useNexusAuth';
 import { useNexusStatus } from './useNexusStatus';
@@ -68,16 +67,9 @@ export function useNexusApp() {
           const d = dataRef.current;
           const agent = d?.customAgents?.find(a => a.status === 'active');
           if (agent) {
-            await startWorkflow('agentSyncWorkflow', [{
-              agentId: agent.id,
-              status: 'syncing',
-              lesson: 'Periodic sync pulse',
-              success: true,
-            }]);
             setNexusSystemStatus('AGENT_SYNC');
           }
         } else {
-          await startWorkflow('fetchDashboardWorkflow', []);
           setNexusSystemStatus('DATA_FETCH');
         }
       } catch {

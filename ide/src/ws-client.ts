@@ -108,3 +108,67 @@ export class WSClient {
 }
 
 export const wsClient = new WSClient();
+
+export interface WSClientOptions {
+  maxRetries?: number;
+  onMessage?: (event: MessageEvent) => void;
+}
+
+export function createWSClient(url: string, options: WSClientOptions = {}) {
+  let destroyed = false;
+  let ws: WebSocket | null = null;
+  let reconnectAttempts = 0;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  const maxReconnectAttempts = options.maxRetries ?? 10;
+  const maxReconnectDelay = 30000;
+
+  function doConnect() {
+    if (destroyed) return;
+    if (ws) {
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.onmessage = null;
+      ws.close();
+    }
+
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      reconnectAttempts = 0;
+    };
+
+    ws.onmessage = (event) => {
+      options.onMessage?.(event);
+    };
+
+    ws.onclose = () => {
+      if (destroyed) return;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (reconnectAttempts >= maxReconnectAttempts) return;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
+      reconnectAttempts++;
+      reconnectTimer = setTimeout(() => doConnect(), delay);
+    };
+
+    ws.onerror = () => { /* reconnect handled by onclose */ };
+  }
+
+  doConnect();
+
+  return {
+    close() {
+      destroyed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.onmessage = null;
+        ws.close();
+        ws = null;
+      }
+    },
+    get readyState() {
+      return ws?.readyState;
+    },
+  };
+}

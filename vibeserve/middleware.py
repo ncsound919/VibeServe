@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -51,19 +52,31 @@ class TokenBucket:
         self.burst = burst
         self._tokens: Dict[str, float] = {}
         self._last_check: Dict[str, float] = {}
+        self._bucket_lock = asyncio.Lock()
 
-    def allow(self, identity: str) -> bool:
-        now = time.monotonic()
-        last = self._last_check.get(identity, now)
-        elapsed = now - last
-        tokens = self._tokens.get(identity, self.burst)
-        tokens = min(self.burst, tokens + elapsed * self.rate)
-        self._last_check[identity] = now
-        if tokens >= 1:
-            self._tokens[identity] = tokens - 1
-            return True
-        self._tokens[identity] = tokens
-        return False
+    async def allow(self, identity: str) -> bool:
+        if len(self._tokens) > 1000:
+            self._evict_stale()
+        async with self._bucket_lock:
+            now = time.monotonic()
+            last = self._last_check.get(identity, now)
+            elapsed = now - last
+            tokens = self._tokens.get(identity, self.burst)
+            tokens = min(self.burst, tokens + elapsed * self.rate)
+            self._last_check[identity] = now
+            if tokens >= 1:
+                self._tokens[identity] = tokens - 1
+                return True
+            self._tokens[identity] = tokens
+            return False
+
+    def _evict_stale(self):
+        """Remove identities not seen in 1 hour."""
+        cutoff = time.monotonic() - 3600
+        stale = [k for k, v in self._last_check.items() if v < cutoff]
+        for k in stale:
+            self._tokens.pop(k, None)
+            self._last_check.pop(k, None)
 
     def status(self, identity: str) -> Dict[str, Any]:
         now = time.monotonic()
@@ -150,7 +163,7 @@ def audit_tool(func: Callable):
             },
         }
 
-        if not rate_limiter.allow(identity):
+        if not await rate_limiter.allow(identity):
             await audit.log_security_event(
                 "rate_limit_exceeded",
                 f"Rate limit exceeded for {identity} on {tool_name}",

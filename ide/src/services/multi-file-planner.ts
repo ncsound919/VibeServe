@@ -1,4 +1,4 @@
-import diff from 'microdiff';
+import diff from '../lib/diff';
 
 type DiffResult = ReturnType<typeof diff>[number];
 

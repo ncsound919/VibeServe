@@ -4,7 +4,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-
+import signal
+import sys
+# ruff: noqa: F405  # Star imports from tools are intentional for CLI demo mode
 from vibeserve.server import mcp_server
 from vibeserve.handlers.resources import *  # noqa: F403
 from vibeserve.handlers.prompts import *  # noqa: F403
@@ -18,6 +20,16 @@ from vibeserve.tools.github_sync import *  # noqa: F403
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 log = logging.getLogger("VibeServe")
+
+def _cleanup():
+    """Clean shutdown handler."""
+    try:
+        logging.getLogger("VibeServe").info("Shutting down gracefully...")
+    except Exception:
+        pass
+
+signal.signal(signal.SIGINT, lambda s, f: (_cleanup(), sys.exit(0)))
+signal.signal(signal.SIGTERM, lambda s, f: (_cleanup(), sys.exit(0)))
 
 # ====================== DEMO FUNCTIONS ======================
 async def demo():

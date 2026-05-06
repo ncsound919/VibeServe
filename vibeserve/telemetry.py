@@ -78,8 +78,11 @@ class SentryTracker:
     def _ensure_init(cls):
         if cls._initialized:
             return
-        import sentry_sdk
-        from sentry_sdk.integrations.logging import LoggingIntegration
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.logging import LoggingIntegration
+        except ImportError:
+            return
         dsn = os.getenv("SENTRY_DSN", "")
         sentry_sdk.init(
             dsn=dsn if dsn else None,
@@ -93,37 +96,41 @@ class SentryTracker:
     @classmethod
     def track(cls, event: str, data: Dict[str, Any] = None):
         cls._ensure_init()
-        import sentry_sdk
-        sentry_sdk.add_breadcrumb(
-            category="vibeserve",
-            message=event,
-            level="info",
-            data=data or {},
-            timestamp=datetime.now(timezone.utc),
-        )
+        if cls._initialized:
+            import sentry_sdk
+            sentry_sdk.add_breadcrumb(
+                category="vibeserve",
+                message=event,
+                level="info",
+                data=data or {},
+                timestamp=datetime.now(timezone.utc),
+            )
         log.info(f"[Sentry] {event}: {json.dumps(data)[:200]}" if data else f"[Sentry] {event}")
 
     @classmethod
     def capture_error(cls, error: Exception, context: Dict[str, Any] = None):
         cls._ensure_init()
-        import sentry_sdk
-        sentry_sdk.capture_exception(error)
-        if context:
-            sentry_sdk.set_context("vibeserve", context)
+        if cls._initialized:
+            import sentry_sdk
+            sentry_sdk.capture_exception(error)
+            if context:
+                sentry_sdk.set_context("vibeserve", context)
         log.error(f"[Sentry] Captured error: {error}")
 
     @classmethod
     def capture_message(cls, message: str, level: str = "info", data: Dict[str, Any] = None):
         cls._ensure_init()
-        import sentry_sdk
-        sentry_sdk.capture_message(message, level=level)
+        if cls._initialized:
+            import sentry_sdk
+            sentry_sdk.capture_message(message, level=level)
         log.info(f"[Sentry] {message}")
 
     @classmethod
     def flush(cls) -> List[Dict[str, Any]]:
         cls._ensure_init()
-        import sentry_sdk
-        sentry_sdk.flush()
+        if cls._initialized:
+            import sentry_sdk
+            sentry_sdk.flush()
         return []
 
     @classmethod

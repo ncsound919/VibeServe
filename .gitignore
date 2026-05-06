@@ -40,6 +40,11 @@ ide/uploads/
 # Test outputs
 test-results/
 
+# VibeServe runtime data
+.vibeserve/
+.gitnexus/
+vibeserve/.gitnexus/
+
 # Generated images (do not commit generated binary assets)
 generated-image*.png
 *.png

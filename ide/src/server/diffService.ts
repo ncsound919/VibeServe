@@ -4,7 +4,7 @@
  * Bridges microdiff output to the DiffViewer frontend structure.
  */
 
-import diff from 'microdiff';
+import diff from '../lib/diff';
 
 export interface DiffLine {
   type: 'context' | 'add' | 'remove';

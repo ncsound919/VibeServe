@@ -1,6 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 
+/**
+ * @deprecated This file is from the pre-agenda era.
+ * The current suggestion system uses suggestionStoreService.ts with
+ * agenda-bound Suggestion types from types/suggestions.ts.
+ * Do not wire new features to this module.
+ */
 const DATA_DIR = path.resolve(process.cwd(), 'uploads', 'nexus');
 const SUGGESTIONS_FILE = path.join(DATA_DIR, 'suggestions.json');
 
