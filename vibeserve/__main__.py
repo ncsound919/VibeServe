@@ -1,24 +1,20 @@
-"""VibeServe v2.0 entry point — registers all tools including v2.0 feature tools."""
+"""VibeServe entry point — registers all tools."""
 
 from __future__ import annotations
 import asyncio
 import json
 import logging
 
+from vibeserve.server import mcp_server
+from vibeserve.handlers.resources import *  # noqa: F403
+from vibeserve.handlers.prompts import *  # noqa: F403
+from vibeserve.tools.v4_tools import *  # noqa: F403
+from vibeserve.tools.v5_tools import *  # noqa: F403
+from vibeserve.tools.integration_tools import *  # noqa: F403
+from vibeserve.tools.pipeline_tools import *  # noqa: F403
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 log = logging.getLogger("VibeServe")
-
-
-from vibeserve.server import mcp_server
-from vibeserve.handlers.resources import *
-from vibeserve.handlers.prompts import *
-from vibeserve.tools.v4_tools import *
-from vibeserve.tools.v5_tools import *
-from vibeserve.tools.integration_tools import *
-# ====================== REGISTER V2.0 FEATURE TOOLS ======================
-from vibeserve.feature_tools import register_feature_tools
-register_feature_tools(mcp_server)
 
 # ====================== DEMO FUNCTIONS ======================
 async def demo():
@@ -59,73 +55,58 @@ def main():
         log.info("Starting VibeServe MCP server...")
         mcp_server.build().run()
 
+
 async def _interactive_loop():
-    print("\n  VibeServe v2.0 — Interactive Mode\n  Type 'help' for commands | 'exit' to quit")
-
+    print("\nVibeServe Interactive Mode")
+    print("Available tools:")
+    for name in ["vibe_architect", "vibe_code", "vibe_review", "vibe_verify",
+                 "vibe_iterate", "vibe_test", "vibe_deploy", "vibe_health",
+                 "vibe_compress", "vibe_docs", "generate_ui_spec", "validate_ui_spec",
+                 "read_file", "write_file", "run_build", "supabase_query"]:
+        print(f"  - {name}")
+    
+    print("\nCommands: 'architect <intent>', 'docs <query>', 'health', 'help', 'quit'\n")
+    
     class MockCtx:
-        async def info(self, msg): print(f"  {msg}")
-        async def report_progress(self, c, t, m): print(f"  [{int(c/max(1,t)*100):3d}%] {m}")
-
+        async def info(self, msg): print(f"  [i] {msg}")
+        async def report_progress(self, current, total, msg): 
+            pct = int(current / total * 100) if total else 0
+            print(f"  [{pct:3d}%] {msg}")
+    
     ctx = MockCtx()
-
+    
     while True:
         try:
-            raw = input("\n\033[1;36mvibeserve>\033[0m ").strip()
+            cmd = input("vibeserve> ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\nGoodbye!")
             break
-        if not raw:
+        
+        if not cmd:
             continue
-        parts = raw.split(maxsplit=1)
-        cmd, rest = parts[0].lower(), parts[1] if len(parts) > 1 else ""
-        try:
-            if cmd in ("exit", "quit", "q"):
-                print("Goodbye!")
-                break
-            elif cmd == "clone":
-                r = await vibe_clone_tool(ctx, url=rest or "https://stripe.com")
-                print(f"\n  Stack: {r.get('detected_stack')} | Colors: {r.get('raw_stats', {}).get('colors_found')}")
-            elif cmd == "palette":
-                r = await vibe_palette_tool(ctx, base_color=rest or "#5e6ad2")
-                print(f"\n  {r.get('color_count')} colors | {r.get('vibe_statement')}")
-            elif cmd == "multiverse":
-                r = await vibe_multiverse_tool(ctx, intent=rest or "A login form")
-                print(f"\n  Winner: {r.get('winner')} | Ran: {r.get('frameworks_run')} frameworks")
-            elif cmd == "doctor":
-                print("  Provide files via API (doctor requires file objects)")
-            elif cmd == "search":
-                r = await vibe_search_tool(ctx, query=rest or "dashboard")
-                print(f"\n  Found {len(r.get('results', []))} results for '{rest}'")
-            elif cmd == "git":
-                print("  Usage: git <commit|branch|pr|changelog>")
-            elif cmd == "i18n":
-                print("  Usage: provide code via API (i18n requires source code)")
-            elif cmd == "timemachine":
-                r = await vibe_timemachine_tool(ctx, action="list")
-                for s in r.get("snapshots", [])[:5]:
-                    print(f"  [{s['short_id']}] {s['page_type']} — score {s['score']:.2f} @ {s['date']}")
-            elif cmd in ("h", "help"):
-                print("""
-  V2.0 FEATURES
-  clone <url>            Reverse-engineer any live site
-  palette <#hex>         One color \u2192 full design system
-  multiverse <intent>    Same UI in React/Vue/Svelte/HTML
-  doctor                 Diagnose + auto-repair code (via API)
-  search <query>         Natural-language search over memory
-  git                    AI commits, PRs, changelogs (via API)
-  i18n                   Auto-translate to 20 languages (via API)
-  timemachine            Browse + restore spec history
+        if cmd == "quit":
+            break
+        if cmd == "help":
+            print("Commands: 'architect <intent>', 'docs <query>', 'health', 'help', 'quit'")
+            continue
+        if cmd == "health":
+            result = await vibe_health_tool(ctx=ctx)
+            print(json.dumps(result, indent=2))
+            continue
+        
+        parts = cmd.split(maxsplit=1)
+        action = parts[0].lower()
+        arg = parts[1] if len(parts) > 1 else ""
+        
+        if action == "architect" and arg:
+            result = await vibe_architect_tool(ctx=ctx, intent=arg, target_stack="react")
+            print(json.dumps({"status": result.get("status"), "plan": result.get("plan", {})}, indent=2))
+        elif action == "docs" and arg:
+            result = await vibe_docs_tool(ctx=ctx, query=arg)
+            print(json.dumps({"status": result.get("status"), "docs_length": result.get("docs_length", 0)}, indent=2))
+        else:
+            print(f"Unknown command: {cmd}")
 
-  V1 PIPELINE
-  architect / code / review / verify / iterate / test / deploy
-  design / preview / benchmark / audit / health / memory
-  exit""")
-            else:
-                print(f"  Unknown: '{cmd}'. Type 'help'.")
-        except NameError as e:
-            print(f"  [note] Tool not in interactive scope — use MCP client: {e}")
-        except Exception as e:
-            print(f"  \033[1;31mError: {e}\033[0m")
 
 if __name__ == "__main__":
     main()

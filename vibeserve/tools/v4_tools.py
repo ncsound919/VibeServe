@@ -1,6 +1,5 @@
 """VibeServe v4 tools — UI spec generation, validation, design systems, memory."""
 
-import hashlib
 import json
 from typing import Any, Dict, List
 
@@ -10,6 +9,8 @@ from vibeserve.tools._tool_deps import (
     contrast_ratio, log,
 )
 from vibeserve.server import mcp_server
+from vibeserve.middleware import audit_tool
+from vibeserve.auth import require_scope
 
 
 def _clip(spec: dict, max_keys: int = 10) -> dict:
@@ -17,6 +18,8 @@ def _clip(spec: dict, max_keys: int = 10) -> dict:
 
 
 @mcp_server.tool(name="generate_ui_spec", description="Generate a production-ready UI specification with multi-agent critique, WCAG AAA validation, and design system enforcement")
+@audit_tool
+@require_scope("mcp:write")
 async def generate_ui_spec_tool(ctx, page_type: str, requirements: List[str],
     design_system=None, target_audience: str = "general users", use_cache: bool = True) -> Dict[str, Any]:
     import hashlib
@@ -60,6 +63,8 @@ async def generate_ui_spec_tool(ctx, page_type: str, requirements: List[str],
         return {"status": "error", "error": str(e)}
 
 @mcp_server.tool(name="validate_ui_spec", description="Validate a UI specification against design system and WCAG standards")
+@audit_tool
+@require_scope("mcp:read")
 async def validate_ui_spec_tool(ctx, specification: Dict[str, Any]) -> Dict[str, Any]:
     await ctx.info("[validate] Checking...")
     valid, errors = SchemaValidator().validate_schema(specification)
@@ -77,6 +82,8 @@ async def validate_ui_spec_tool(ctx, specification: Dict[str, Any]) -> Dict[str,
     return {"valid": valid, "error_count": len(errors), "errors": errors[:10], "warnings": warnings}
 
 @mcp_server.tool(name="list_design_systems", description="List available design systems")
+@audit_tool
+@require_scope("mcp:read")
 async def list_design_systems_tool(ctx) -> Dict[str, Any]:
     return {
         "available_systems": [{
@@ -89,6 +96,8 @@ async def list_design_systems_tool(ctx) -> Dict[str, Any]:
     }
 
 @mcp_server.tool(name="memory_stats", description="Get statistics on learned/stored UI specifications")
+@audit_tool
+@require_scope("mcp:read")
 async def memory_stats_tool(ctx) -> Dict[str, Any]:
     await ctx.info("[memory] Gathering stats...")
     return memory_store.stats()

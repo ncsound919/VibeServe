@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import re
-import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
@@ -31,19 +30,39 @@ class StructuredLogger:
             text = re.sub(pattern, replacement, text)
         return text
 
-    @staticmethod
-    def event(name: str, **kwargs):
-        data = StructuredLogger._redact(json.dumps({"event": name, "timestamp": datetime.now(timezone.utc).isoformat(), **kwargs}))
+    @classmethod
+    def _trace_id(cls) -> str:
+        try:
+            from vibeserve.middleware import get_trace_id
+            tid = get_trace_id()
+            return tid if tid else ""
+        except Exception:
+            return ""
+
+    @classmethod
+    def _base_payload(cls, name: str, **kwargs) -> Dict[str, Any]:
+        payload = {"event": name, "timestamp": datetime.now(timezone.utc).isoformat()}
+        tid = cls._trace_id()
+        if tid:
+            payload["trace_id"] = tid
+        payload.update(kwargs)
+        return payload
+
+    @classmethod
+    def event(cls, name: str, **kwargs):
+        data = cls._redact(json.dumps(cls._base_payload(name, **kwargs)))
         log.info(f"[Structured] {data}")
 
-    @staticmethod
-    def error(name: str, error: str = "", **kwargs):
-        data = StructuredLogger._redact(json.dumps({"event": name, "error": error, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "error", **kwargs}))
+    @classmethod
+    def error(cls, name: str, error: str = "", **kwargs):
+        payload = cls._base_payload(name, error=error, severity="error", **kwargs)
+        data = cls._redact(json.dumps(payload))
         log.error(f"[Structured] {data}")
 
-    @staticmethod
-    def warn(name: str, detail: str = "", **kwargs):
-        data = StructuredLogger._redact(json.dumps({"event": name, "detail": detail, "timestamp": datetime.now(timezone.utc).isoformat(), "severity": "warning", **kwargs}))
+    @classmethod
+    def warn(cls, name: str, detail: str = "", **kwargs):
+        payload = cls._base_payload(name, detail=detail, severity="warning", **kwargs)
+        data = cls._redact(json.dumps(payload))
         log.warning(f"[Structured] {data}")
 
 

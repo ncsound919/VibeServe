@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 
 from vibeserve.server import mcp_server
 from vibeserve.middleware import audit_tool
+from vibeserve.auth import require_scope
 from vibeserve.models import FileReadInput, FileWriteInput, SubprocessInput, BenchmarkInput
 
 log = logging.getLogger("VibeServe")
@@ -62,6 +63,7 @@ async def retrieve_context_tool(ctx, query: str) -> Dict[str, Any]:
 
 @mcp_server.tool(name="read_file", description="Read content from a file in the workspace")
 @audit_tool
+@require_scope("mcp:read")
 async def read_file_tool(ctx, path: str) -> Dict[str, Any]:
     FileReadInput(path=path)
     await ctx.info(f"[fs] Reading {path}")
@@ -74,6 +76,7 @@ async def read_file_tool(ctx, path: str) -> Dict[str, Any]:
 
 @mcp_server.tool(name="write_file", description="Write content to a file in the workspace")
 @audit_tool
+@require_scope("mcp:write")
 async def write_file_tool(ctx, path: str, content: str) -> Dict[str, Any]:
     FileWriteInput(path=path, content=content)
     await ctx.info(f"[fs] Writing {path}")
@@ -100,6 +103,7 @@ async def detect_package_manager_tool(ctx, path: str = ".") -> Dict[str, Any]:
 
 @mcp_server.tool(name="run_install", description="Run package installation")
 @audit_tool
+@require_scope("mcp:write")
 async def run_install_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str, Any]:
     SubprocessInput(manager=manager, path=path)
     p = _resolve_workspace_path(path)
@@ -121,6 +125,7 @@ async def run_tsc_tool(ctx, path: str = ".") -> Dict[str, Any]:
 
 @mcp_server.tool(name="run_build", description="Run production build")
 @audit_tool
+@require_scope("mcp:write")
 async def run_build_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str, Any]:
     SubprocessInput(manager=manager, path=path)
     p = _resolve_workspace_path(path)
@@ -129,6 +134,7 @@ async def run_build_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str
 
 @mcp_server.tool(name="run_semgrep", description="Run Semgrep SAST scan on the project")
 @audit_tool
+@require_scope("mcp:write")
 async def run_semgrep_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
     await ctx.info(f"[security] Running semgrep scan in {path}")
@@ -140,6 +146,7 @@ async def run_semgrep_tool(ctx, path: str = ".") -> Dict[str, Any]:
 
 @mcp_server.tool(name="run_npm_audit", description="Run npm audit for dependency security")
 @audit_tool
+@require_scope("mcp:write")
 async def run_npm_audit_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
     await ctx.info(f"[security] Running npm audit in {path}")
@@ -151,6 +158,7 @@ async def run_npm_audit_tool(ctx, path: str = ".") -> Dict[str, Any]:
 
 @mcp_server.tool(name="run_playwright", description="Run Playwright E2E tests")
 @audit_tool
+@require_scope("mcp:write")
 async def run_playwright_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
     await ctx.info(f"[test] Running Playwright in {path}")

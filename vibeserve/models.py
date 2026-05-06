@@ -1,7 +1,7 @@
 """Data models, schemas, and enums for VibeServe."""
 
 from __future__ import annotations
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 
