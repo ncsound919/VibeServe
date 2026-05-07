@@ -172,6 +172,7 @@ class SpecResponse(ToolResponse):
     alternatives: List[Dict[str, Any]] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
     critique: Dict[str, Any] = Field(default_factory=dict)
+    cache_hit: bool = False
 
 
 class ArchitectResponse(ToolResponse):

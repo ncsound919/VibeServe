@@ -33,7 +33,7 @@ async def generate_ui_spec_tool(ctx, page_type: str, requirements: List[str],
             cr = cache_manager.get(ck)
             if cr:
                 await ctx.info(f"[cache] Hit for {page_type}")
-                return {**cr, "_cache_hit": True}
+                return SpecResponse(**cr, cache_hit=True).model_dump()
         else:
             ck = None
         await ctx.info(f"[generate] {page_type}")
