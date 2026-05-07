@@ -20,20 +20,28 @@ export class CircuitBreaker {
     if (this.state === 'open') {
       if (Date.now() - this.openedAt > this.resetTimeout) {
         this.state = 'half-open';
+        console.info('[CircuitBreaker] Probing — transitioned open → half-open');
       } else {
         throw new Error('Circuit breaker is open');
       }
     }
+    const prevState = this.state;
     try {
       const result = await this.action(...args);
       this.failures = 0;
       this.state = 'closed';
+      if (prevState === 'half-open') {
+        console.info('[CircuitBreaker] Recovered — transitioned half-open → closed');
+      }
       return result;
     } catch (err) {
       this.failures++;
       if (this.failures >= this.threshold) {
         this.state = 'open';
         this.openedAt = Date.now();
+        console.warn(`[CircuitBreaker] Opened — ${this.failures} failures reached threshold ${this.threshold}`);
+      } else if (prevState === 'half-open') {
+        console.warn('[CircuitBreaker] Probe failed — remaining half-open');
       }
       throw err;
     }
