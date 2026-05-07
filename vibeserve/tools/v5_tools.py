@@ -36,7 +36,7 @@ async def vibe_architect_tool(ctx, intent: str, constraints=None,
     try:
         validated = ArchitectInput(intent=intent, target_stack=target_stack)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     await ctx.info(f"[architect] {validated.intent[:80]}...")
     await ctx.report_progress(0, 100, "Analyzing intent...")
     architect = VibeArchitect(ctx=ctx)
@@ -66,7 +66,7 @@ async def vibe_code_tool(ctx, intent: str, plan: Dict[str, Any], constraints=Non
     try:
         validated = CodeInput(intent=intent, plan=plan, target_language=target_language)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     await ctx.info(f"[code] {validated.intent[:80]}...")
     await ctx.report_progress(0, 100, "Parsing plan...")
     decisions = [ArchitectureDecision(**d) for d in plan.get("decisions", [])]
@@ -94,7 +94,7 @@ async def vibe_review_tool(ctx, files: List[Dict[str, Any]], requirements: List[
     try:
         validated = ReviewInput(files=files, requirements=requirements)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     await ctx.info(f"[review] {len(validated.files)} files...")
     await ctx.report_progress(0, 100, "Initializing reviewers...")
     code_files = [CodeFile(**f) for f in validated.files]
@@ -112,7 +112,7 @@ async def vibe_verify_tool(ctx, specification=None,
     try:
         validated = VerifyInput(specification=specification, files=files)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     await ctx.info("[verify] Running checks...")
     results = {}
     if validated.specification:
@@ -134,7 +134,7 @@ async def vibe_iterate_tool(ctx, specification: Dict[str, Any], requirements: Li
         validated = IterateInput(specification=specification, requirements=requirements,
                                  max_iterations=max_iterations, quality_threshold=quality_threshold)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     await ctx.info(f"[iterate] max {validated.max_iterations} iterations")
     loop = CritiqueLoop(max_iterations=validated.max_iterations, quality_threshold=validated.quality_threshold)
     best_output, history = await loop.improve(validated.specification, validated.requirements, ctx)
@@ -156,7 +156,7 @@ async def vibe_test_tool(ctx, files: List[Dict[str, Any]], requirements=None,
     try:
         validated = TestInput(files=files, test_framework=test_framework)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     await ctx.info("[test] Generating tests...")
     code_files = [CodeFile(**f) for f in validated.files]
     tester = VibeTester(ctx=ctx)
@@ -177,7 +177,7 @@ async def vibe_deploy_tool(ctx, project_name: str, files: List[Dict[str, Any]],
     try:
         validated = DeployInput(project_name=project_name, files=files)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     targets = targets or ["vercel"]
     code_files = [CodeFile(**f) for f in validated.files]
     deployer = VibeDeployer(ctx=ctx)
@@ -192,7 +192,7 @@ async def vibe_design_tool(ctx, intent: str, template=None,
     try:
         validated = DesignInput(intent=intent)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     constraints = constraints or ["WCAG AAA", "Single HTML file", "Zero fabrication"]
     design_tokens = TemplateLibrary.random_template(template)
     selected = template or "random"
@@ -217,7 +217,7 @@ async def vibe_docs_tool(ctx, query: str, library=None) -> Dict[str, Any]:
     try:
         validated = DocsInput(query=query)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     docs = await Context7Provider.fetch_docs(validated.query, library)
     return {"status": "success", "query": validated.query, "docs": docs, "docs_length": len(docs)}
 
@@ -237,7 +237,7 @@ async def vibe_audit_tool(ctx, files: List[Dict[str, Any]], requirements=None) -
     try:
         validated = ReviewInput(files=files, requirements=requirements or ["Production-grade server", "No security vulnerabilities"])
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     code_files = [CodeFile(**f) for f in validated.files]
     auditor = SystemAuditor()
     result = await auditor.audit(code_files, validated.requirements)
@@ -259,7 +259,7 @@ async def vibe_benchmark_tool(ctx, iterations: int = 5) -> Dict[str, Any]:
     try:
         validated = BenchmarkInput(iterations=iterations)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     results, scores = [], []
     for i in range(validated.iterations):
         await ctx.report_progress(int((i / validated.iterations) * 100), 100, f"Loop {i+1}/{validated.iterations}")
@@ -293,7 +293,7 @@ async def vibe_build_pro_tool(ctx, intent: str, template=None,
     try:
         validated = BuildProInput(intent=intent)
     except ValidationError as e:
-        return {"status": "error", "error": e.error_count(), "details": e.errors()}
+        return {"status": "error", "error": f"{e.error_count()} validation error(s)", "details": e.errors()}
     constraints = constraints or ["WCAG AAA", "Single HTML", "Zero fabrication", "Responsive mobile-first"]
     upgraded = DesignUpgrader.upgrade_file(template or "supabase")
     full_intent = f"{validated.intent}\nUSE THIS UPGRADED DESIGN SYSTEM:\n{upgraded}\nCRITICAL: Apply ALL production patterns. No fabrication."

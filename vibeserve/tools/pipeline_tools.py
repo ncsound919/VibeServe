@@ -69,9 +69,9 @@ async def retrieve_context_tool(ctx, query: str) -> Dict[str, Any]:
 @audit_tool
 @require_scope("mcp:read")
 async def read_file_tool(ctx, path: str) -> Dict[str, Any]:
-    FileReadInput(path=path)
-    await ctx.info(f"[fs] Reading {path}")
-    p = _resolve_workspace_path(path)
+    args = FileReadInput(path=path)
+    await ctx.info(f"[fs] Reading {args.path}")
+    p = _resolve_workspace_path(args.path)
     if not p.exists():
         return {"status": "error", "message": f"File not found: {path}"}
     if not p.is_file():
@@ -82,9 +82,9 @@ async def read_file_tool(ctx, path: str) -> Dict[str, Any]:
 @audit_tool
 @require_scope("mcp:write")
 async def write_file_tool(ctx, path: str, content: str) -> Dict[str, Any]:
-    FileWriteInput(path=path, content=content)
-    await ctx.info(f"[fs] Writing {path}")
-    p = _resolve_workspace_path(path)
+    args = FileWriteInput(path=path, content=content)
+    await ctx.info(f"[fs] Writing {args.path}")
+    p = _resolve_workspace_path(args.path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8")
     return {"status": "success", "path": path, "bytes": len(content)}
@@ -116,11 +116,11 @@ async def detect_package_manager_tool(ctx, path: str = ".") -> Dict[str, Any]:
 @audit_tool
 @require_scope("mcp:write")
 async def run_install_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str, Any]:
-    SubprocessInput(manager=manager, path=path)
-    p = _resolve_workspace_path(path)
-    await ctx.info(f"[shell] Running {manager} install in {path}")
+    args = SubprocessInput(manager=manager, path=path)
+    p = _resolve_workspace_path(args.path)
+    await ctx.info(f"[shell] Running {args.manager} install in {args.path}")
     try:
-        res = subprocess.run([manager, "install"], cwd=str(p), capture_output=True, text=True, timeout=300)
+        res = subprocess.run([args.manager, "install"], cwd=str(p), capture_output=True, text=True, timeout=300)
         return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout, "stderr": res.stderr}
     except subprocess.TimeoutExpired:
         return {"status": "error", "message": "Command timed out after 300s"}
@@ -145,10 +145,10 @@ async def run_tsc_tool(ctx, path: str = ".") -> Dict[str, Any]:
 @audit_tool
 @require_scope("mcp:write")
 async def run_build_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[str, Any]:
-    SubprocessInput(manager=manager, path=path)
-    p = _resolve_workspace_path(path)
+    args = SubprocessInput(manager=manager, path=path)
+    p = _resolve_workspace_path(args.path)
     try:
-        res = subprocess.run([manager, "run", "build"], cwd=str(p), capture_output=True, text=True, timeout=300)
+        res = subprocess.run([args.manager, "run", "build"], cwd=str(p), capture_output=True, text=True, timeout=300)
         return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
     except subprocess.TimeoutExpired:
         return {"status": "error", "message": "Command timed out after 300s"}
