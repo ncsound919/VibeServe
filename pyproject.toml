@@ -15,8 +15,6 @@ dependencies = [
     "aiosqlite>=0.20.0",
 
 ]
-long_description = {file = "README.md"}
-long_description_content_type = "text/markdown"
 license = {text = "MIT"}
 readme = "README.md"
 keywords = ["mcp", "agentic-coding", "vibe-coding", "ui-design", "accessibility", "wcag", "llm", "multi-agent", "fastmcp", "code-generation"]
