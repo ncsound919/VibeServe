@@ -31,12 +31,20 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  resolve: {
-    alias: {
-      buffer: 'buffer/',
-      process: 'process/',
-    },
-  },
+   resolve: {
+     alias: {
+       // Vite 4.4+ bundles polyfilled Node.js identifiers for browser support
+       // Explicitly polyfill "buffer" and "process" for older Vite versions or specific needs:
+       buffer: require.resolve('buffer/'),
+       process: require.resolve('process/browser'),
+     },
+   },
+   optimizeDeps: {
+     include: ['buffer', 'process'],
+   },
+     // Vite 3+ automatically polyfills Node.js globals like 'process' and 'Buffer' in the browser build.
+     // If specific polyfills are needed, they can be explicitly included in optimizeDeps.
+   },
   server: {
     port: 3000,
     host: "0.0.0.0",

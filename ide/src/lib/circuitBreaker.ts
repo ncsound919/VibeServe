@@ -41,4 +41,10 @@ export class CircuitBreaker {
 
   on(_event: string, _handler: Function): this { return this; }
 }
+
+// Helper function for easy usage
+export function withBreaker(action: (...args: any[]) => Promise<any>, options: { threshold?: number; resetTimeout?: number } = {}) {
+  return new CircuitBreaker(action, options);
+}
+
 export default CircuitBreaker;
