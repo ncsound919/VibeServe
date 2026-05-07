@@ -10,11 +10,10 @@ test.describe('Generated Apps Test', () => {
     });
     
     // Go to the app
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
     
     // Navigate to Activity tab (where Generated Apps is)
     await page.click('text=Activity');
-    await page.waitForTimeout(1000);
     
     // Check if Generated Apps section is visible
     const generatedAppsHeader = page.locator('text=Generated Apps');
@@ -31,9 +30,8 @@ test.describe('Generated Apps Test', () => {
       await route.fulfill({ json: { apps: [] } });
     });
     
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
     await page.click('text=Activity');
-    await page.waitForTimeout(1000);
     
     // Should show empty state
     const noAppsText = page.locator('text=No apps generated yet');
