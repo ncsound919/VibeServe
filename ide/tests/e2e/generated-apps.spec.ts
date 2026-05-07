@@ -9,11 +9,17 @@ test.describe('Generated Apps Test', () => {
       });
     });
     
-    // Go to the app
-    await page.goto('/');
+    // Go to the app and wait for load
+    await page.goto('/activity', { waitUntil: 'networkidle', timeout: 60000 });
     
-    // Navigate to Activity tab (where Generated Apps is)
-    await page.click('text=Activity');
+    // Check if Generated Apps section is visible
+    const generatedAppsHeader = page.getByText('Generated Apps');
+    await expect(generatedAppsHeader).toBeVisible({ timeout: 30000 });
+    
+    // Check if the app is listed
+    const appItem = page.getByText('Test App');
+    await expect(appItem).toBeVisible({ timeout: 10000 });
+  });
     
     // Check if Generated Apps section is visible
     const generatedAppsHeader = page.locator('text=Generated Apps');

@@ -6,11 +6,14 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import os
 import time
 import base64
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
+
+log = logging.getLogger("VibeServe")
 
 # ====================== NATIVE JWT ======================
 
@@ -55,7 +58,6 @@ class JWTError(Exception):
 
 # ====================== AUTH FUNCTIONS ======================
 
-
 def _get_secret() -> Optional[str]:
     return os.getenv("VIBESERVE_API_SECRET")
 
@@ -78,6 +80,7 @@ def create_token(api_key: Optional[str] = None, expires_hours: int = 24) -> str:
 def verify_token(token: str) -> Dict[str, Any]:
     secret = _get_secret()
     if not secret:
+        log.warning("VIBESERVE_API_SECRET not set — authentication DISABLED (allow-all)")
         return {"sub": "anonymous", "scope": "mcp:read mcp:write"}
     try:
         return decode_jwt(token, secret, algorithms=["HS256"])

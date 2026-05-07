@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/ncsound919/VibeServe/blob/main/update.png" alt="VibeServe" width="100%" />
+<img src="https://github.com/ncsound919/VibeServe/blob/main/assets/update-banner.png" alt="VibeServe" width="100%" />
 
 # VibeServe v1.1
 ### *The Ultimate Agentic IDE, Orchestrator, and MCP Backend*
@@ -12,11 +12,6 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![MCP](https://img.shields.io/badge/MCP-compatible-00FF9F.svg)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Benchmark](https://img.shields.io/badge/Trinity_Benchmark-91.9%2F100-00FF9F.svg)](#benchmark)
-
-</div>
-
-
 
 ## What is VibeServe?
 
@@ -50,7 +45,7 @@ The original **VibeServe MCP Server**. This is a production-grade FastMCP server
 | **True Full-Stack AI** | Complete visibility from IDE UI down to the python MCP tool execution. |
 | **Agentic Pipeline** | 7 discrete steps (`architect` to `deploy`), each chainable or runnable standalone. |
 | **Auto-Fallback LLMs** | Built-in router across 6 providers prevents single point of failure. |
-| **Trinity Benchmarked** | System-wide automated auditing and benchmarking scores ensuring A-grade performance and security. |
+| **Testing Infrastructure** | Automated test coverage, security scanning, and benchmarking for consistent quality. |
 | **Human-in-the-Loop** | You choose when to intervene. The IDE allows seamless manual takeover of any automated workflow. |
 
 
@@ -114,20 +109,6 @@ VibeServe MCP Server (Python / FastMCP)
 
 ---
 
-## Trinity Benchmark
-
-The entire VibeServe ecosystem undergoes a rigorous, automated audit (The Trinity Benchmark) across Performance, Code Quality, Security, and Features.
-
-**Current System Score: 91.9/100 (Grade A)**
-
-
-Run the benchmark yourself:
-```bash
-cd mcp
-python benchmark_system.py
-```
-
-
 ## Donate
 
 VibeServe is free and open source. If it saves you time:
@@ -139,4 +120,5 @@ Every dollar helps keep the tools free.
 ---
 
 ## License
+
 MIT License. See [LICENSE](LICENSE) for details.

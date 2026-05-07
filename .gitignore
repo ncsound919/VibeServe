@@ -39,6 +39,8 @@ ide/uploads/
 
 # Test outputs
 test-results/
+.coverage
+.pytest_cache/
 
 # VibeServe runtime data
 .vibeserve/

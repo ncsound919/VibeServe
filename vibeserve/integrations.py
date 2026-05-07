@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from urllib.parse import quote
 
 import httpx
 
@@ -33,8 +34,8 @@ class Context7Provider:
                 if resp.status_code == 200:
                     data = resp.json()
                     return data.get("result", {}).get("content", [{}])[0].get("text", "")[:3000]
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("Context7Provider.fetch_docs failed: %s", e)
         return ""
 
 
@@ -52,7 +53,7 @@ class SupabaseConnector:
         url = f"{os.getenv('SUPABASE_URL', '')}/rest/v1/{table}?select={select}&limit={limit}"
         if filters:
             for k, v in filters.items():
-                url += f"&{k}=eq.{v}"
+                url += f"&{k}=eq.{quote(str(v), safe='')}"
         async with httpx.AsyncClient(timeout=15) as c:
             resp = await c.get(url, headers=SupabaseConnector._headers())
             return {"status": resp.status_code, "data": resp.json() if resp.status_code == 200 else None}
@@ -206,7 +207,7 @@ class EditorBridge:
             "python.defaultInterpreterPath": "python",
             "python.linting.ruffEnabled": True,
             "python.testing.pytestEnabled": True,
-            "python.testing.pytestArgs": ["test_aether_nexus.py", "test_integration_v5.py"],
+            "python.testing.pytestArgs": ["tests/"],
             "[python]": {"editor.formatOnSave": True, "editor.defaultFormatter": "charliermarsh.ruff"}
         }
 

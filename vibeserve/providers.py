@@ -13,6 +13,22 @@ import httpx
 
 log = logging.getLogger("VibeServe")
 
+_shared_client: Optional[httpx.AsyncClient] = None
+
+
+def _get_client() -> httpx.AsyncClient:
+    global _shared_client
+    if _shared_client is None:
+        _shared_client = httpx.AsyncClient(timeout=httpx.Timeout(60.0, read=180.0))
+    return _shared_client
+
+
+async def _close_client():
+    global _shared_client
+    if _shared_client is not None:
+        await _shared_client.aclose()
+        _shared_client = None
+
 
 class LLMProvider(ABC):
     @abstractmethod
@@ -44,25 +60,25 @@ class LLMProvider(ABC):
         if response_format == "json":
             payload["response_format"] = {"type": "json_object"}
 
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, read=180.0)) as client:
-            for attempt in range(max_retries):
-                try:
-                    resp = await client.post(
-                        f"{base_url}/chat/completions",
-                        json=payload, headers=headers
-                    )
-                    if resp.status_code == 429:
-                        wait = (2 ** attempt) * 1.2
-                        log.warning(f"[{self.name}] Rate limited. Waiting {wait}s...")
-                        await asyncio.sleep(wait)
-                        continue
-                    resp.raise_for_status()
-                    data = resp.json()
-                    return data["choices"][0]["message"]["content"]
-                except Exception as e:
-                    log.warning(f"[{self.name}] LLM call failed (attempt {attempt + 1}): {e}")
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(2 ** attempt)
+        client = _get_client()
+        for attempt in range(max_retries):
+            try:
+                resp = await client.post(
+                    f"{base_url}/chat/completions",
+                    json=payload, headers=headers
+                )
+                if resp.status_code == 429:
+                    wait = (2 ** attempt) * 1.2
+                    log.warning(f"[{self.name}] Rate limited. Waiting {wait}s...")
+                    await asyncio.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                data = resp.json()
+                return data["choices"][0]["message"]["content"]
+            except Exception as e:
+                log.warning(f"[{self.name}] LLM call failed (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2 ** attempt)
         return None
 
 
@@ -71,7 +87,7 @@ class OpenAIProvider(LLMProvider):
                  model: Optional[str] = None):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.base_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview")
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     @property
     def name(self) -> str:
@@ -130,6 +146,7 @@ class LocalProvider(LLMProvider):
         self.base_url = base_url or os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1")
         self.model = model or os.getenv("LOCAL_LLM_MODEL", "llama3.2")
         self.api_key = "not-needed"
+        self._client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, read=300.0))
 
     @property
     def name(self) -> str:
@@ -137,31 +154,10 @@ class LocalProvider(LLMProvider):
 
     async def call(self, prompt: str, temperature: float = 0.7,
                    response_format: str = "json") -> Optional[str]:
-        headers = {"Content-Type": "application/json"}
-        payload: Dict[str, Any] = {
-            "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": temperature,
-            "stream": False
-        }
-        if response_format == "json":
-            payload["response_format"] = {"type": "json_object"}
-
-        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, read=300.0)) as client:
-            for attempt in range(4):
-                try:
-                    resp = await client.post(
-                        f"{self.base_url}/chat/completions",
-                        json=payload, headers=headers
-                    )
-                    resp.raise_for_status()
-                    data = resp.json()
-                    return data["choices"][0]["message"]["content"]
-                except Exception as e:
-                    log.warning(f"[{self.name}] LLM call failed (attempt {attempt + 1}): {e}")
-                    if attempt < 3:
-                        await asyncio.sleep(2 ** attempt)
-        return None
+        return await self._api_call(
+            self.base_url, self.api_key, self.model,
+            prompt, temperature, response_format
+        )
 
 
 class OpenCodeProvider(LLMProvider):
@@ -326,7 +322,9 @@ class LLMRouter:
         if default in self.providers:
             return self.providers[default]
         if self.providers:
-            return list(self.providers.values())[0]
+            fallback = list(self.providers.values())[0]
+            log.warning(f"[LLMRouter] Requested provider '{name or default}' not available, falling back to {fallback.name}")
+            return fallback
         raise RuntimeError("No LLM providers configured. Set an API key or install a local model.")
 
     async def call(self, prompt: str, temperature: float = 0.7,
