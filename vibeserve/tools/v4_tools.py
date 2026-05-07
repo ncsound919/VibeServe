@@ -12,6 +12,7 @@ from vibeserve.tools._tool_deps import (
 from vibeserve.server import mcp_server
 from vibeserve.middleware import audit_tool
 from vibeserve.auth import require_scope
+from vibeserve.models import SpecResponse
 
 
 def _clip(spec: dict, max_keys: int = 10) -> dict:
@@ -45,26 +46,24 @@ async def generate_ui_spec_tool(ctx, page_type: str, requirements: List[str],
             return {"error": "Failed", "status": "error"}
         await ctx.report_progress(85, 100, "Storing...")
         sel = result.get("selected", {})
-        score = sel.get("_score",0)
+        score = sel.get("_score", 0)
         if score > CONFIG.min_score_to_store:
             store_successful_spec(page_type, sel, score)
-        output = {
-            "status": "success", "page_type": page_type,
-            "selected_specification": _clip(sel),
-            "alternatives": [_clip(alt) for alt in result.get("alternatives", [])],
-            "metadata": {**result.get("generation_metadata", {}), "design_system_id": ds_id, "target_audience": target_audience},
-            "critique": sel.get("_critique", {})
-        }
+        response = SpecResponse(
+            page_type=page_type,
+            selected_specification=_clip(sel),
+            alternatives=[_clip(alt) for alt in result.get("alternatives", [])],
+            metadata={**result.get("generation_metadata", {}), "design_system_id": ds_id, "target_audience": target_audience},
+            critique=sel.get("_critique", {}),
+        )
         if use_cache and ck:
-            cache_manager.set(ck, output)
+            cache_manager.set(ck, response.model_dump())
         await ctx.report_progress(100, 100, "Complete!")
-        return output
-    except KeyboardInterrupt:
-        raise
-    except asyncio.CancelledError:
+        return response.model_dump()
+    except (KeyboardInterrupt, asyncio.CancelledError, MemoryError, SystemExit):
         raise
     except Exception as e:
-        log.error(f"Error: {e}", exc_info=True)
+        log.error(f"[generate_ui_spec] {e}", exc_info=True)
         return {"status": "error", "error": str(e)}
 
 @mcp_server.tool(name="validate_ui_spec", description="Validate a UI specification against design system and WCAG standards")
