@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class WCAGLevel(str, Enum):
@@ -161,10 +161,12 @@ class IterationResult:
 # ====================== RESPONSE DTOs ======================
 
 class ToolResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     status: str = "success"
 
 
 class SpecResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     page_type: str = ""
     selected_specification: Dict[str, Any] = Field(default_factory=dict)
     alternatives: List[Dict[str, Any]] = Field(default_factory=list)
@@ -173,12 +175,14 @@ class SpecResponse(ToolResponse):
 
 
 class ArchitectResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     plan: Dict[str, Any] = Field(default_factory=dict)
     decision_count: int = 0
     risk_count: int = 0
 
 
 class CodeResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     files: List[Dict[str, Any]] = Field(default_factory=list)
     file_count: int = 0
     quality: Dict[str, Any] = Field(default_factory=dict)
@@ -186,6 +190,7 @@ class CodeResponse(ToolResponse):
 
 
 class ReviewResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     consensus_score: float = 0.0
     recommendation: str = ""
     agent_reviews: Dict[str, Any] = Field(default_factory=dict)
@@ -195,11 +200,13 @@ class ReviewResponse(ToolResponse):
 
 
 class VerifyResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     results: Dict[str, Any] = Field(default_factory=dict)
     all_passed: bool = True
 
 
 class IterateResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     final_output: Dict[str, Any] = Field(default_factory=dict)
     iterations: List[Dict[str, Any]] = Field(default_factory=list)
     iterations_used: int = 0
@@ -209,6 +216,7 @@ class IterateResponse(ToolResponse):
 
 
 class TestResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     test_files: List[Dict[str, Any]] = Field(default_factory=list)
     test_count: int = 0
     quality: Dict[str, Any] = Field(default_factory=dict)
@@ -216,6 +224,7 @@ class TestResponse(ToolResponse):
 
 
 class DeployResponse(ToolResponse):
+    model_config = ConfigDict(from_attributes=True)
     project: str = ""
     targets: List[str] = Field(default_factory=list)
     configs: Dict[str, Any] = Field(default_factory=dict)

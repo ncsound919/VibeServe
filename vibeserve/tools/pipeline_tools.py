@@ -90,6 +90,7 @@ async def write_file_tool(ctx, path: str, content: str) -> Dict[str, Any]:
     return {"status": "success", "path": path, "bytes": len(content)}
 
 @mcp_server.tool(name="check_node_env", description="Verify node.js environment")
+@audit_tool
 @require_scope("mcp:read")
 async def check_node_env_tool(ctx) -> Dict[str, Any]:
     try:
@@ -99,6 +100,7 @@ async def check_node_env_tool(ctx) -> Dict[str, Any]:
         return {"status": "error", "message": str(e)}
 
 @mcp_server.tool(name="detect_package_manager", description="Detect which package manager to use (npm, yarn, pnpm)")
+@audit_tool
 @require_scope("mcp:read")
 async def detect_package_manager_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
@@ -124,6 +126,7 @@ async def run_install_tool(ctx, manager: str = "npm", path: str = ".") -> Dict[s
         return {"status": "error", "message": "Command timed out after 300s"}
 
 @mcp_server.tool(name="run_biome", description="Run Biome linter/formatter")
+@audit_tool
 @require_scope("mcp:write")
 async def run_biome_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
@@ -131,6 +134,7 @@ async def run_biome_tool(ctx, path: str = ".") -> Dict[str, Any]:
     return {"status": "success" if res.returncode == 0 else "error", "stdout": res.stdout}
 
 @mcp_server.tool(name="run_tsc", description="Run TypeScript compiler check")
+@audit_tool
 @require_scope("mcp:read")
 async def run_tsc_tool(ctx, path: str = ".") -> Dict[str, Any]:
     p = _resolve_workspace_path(path)
