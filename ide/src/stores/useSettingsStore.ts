@@ -9,9 +9,19 @@ interface SettingsStore extends SettingsState {
   theme: 'dark' | 'light' | 'system';
   fontSize: number;
   fontFamily: string;
+  tabSize: number;
+  minimap: boolean;
+  wordWrap: boolean;
+  lineNumbers: boolean;
+  bracketPairs: boolean;
   reducedMotion: boolean;
   hideAdvancedFeatures: boolean;
   favorites: string[];
+  // LLM
+  llmProvider: string;
+  llmModel: string;
+  temperature: number;
+  maxTokens: number;
   fetchBrainConfig: () => Promise<void>;
   fetchBrainStatus: () => Promise<void>;
   fetchIntegrations: () => Promise<void>;
@@ -25,9 +35,19 @@ interface SettingsStore extends SettingsState {
   setTheme: (theme: 'dark' | 'light' | 'system') => void;
   setFontSize: (size: number) => void;
   setFontFamily: (family: string) => void;
+  setTabSize: (size: number) => void;
+  toggleMinimap: () => void;
+  toggleWordWrap: () => void;
+  toggleLineNumbers: () => void;
+  toggleBracketPairs: () => void;
   toggleReducedMotion: () => void;
   toggleAdvancedFeatures: () => void;
   toggleFavorite: (featureId: string) => void;
+  // LLM actions
+  setLLMProvider: (provider: string) => void;
+  setLLMModel: (model: string) => void;
+  setTemperature: (temp: number) => void;
+  setMaxTokens: (tokens: number) => void;
   refreshAll: () => Promise<void>;
 }
 
@@ -45,9 +65,19 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   theme: 'dark' as const,
   fontSize: 14,
   fontFamily: 'Inter, system-ui, sans-serif',
+  tabSize: 2,
+  minimap: true,
+  wordWrap: false,
+  lineNumbers: true,
+  bracketPairs: true,
   reducedMotion: false,
   hideAdvancedFeatures: false,
   favorites: [],
+  // LLM defaults
+  llmProvider: 'openai',
+  llmModel: 'gpt-4o',
+  temperature: 0.7,
+  maxTokens: 4096,
   loading: false,
   error: null,
 
@@ -171,6 +201,17 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       document.documentElement.style.fontFamily = family;
     }
   },
+
+  setTabSize: (size: number) => set({ tabSize: size }),
+  toggleMinimap: () => set((s) => ({ minimap: !s.minimap })),
+  toggleWordWrap: () => set((s) => ({ wordWrap: !s.wordWrap })),
+  toggleLineNumbers: () => set((s) => ({ lineNumbers: !s.lineNumbers })),
+  toggleBracketPairs: () => set((s) => ({ bracketPairs: !s.bracketPairs })),
+
+  setLLMProvider: (provider: string) => set({ llmProvider: provider }),
+  setLLMModel: (model: string) => set({ llmModel: model }),
+  setTemperature: (temp: number) => set({ temperature: temp }),
+  setMaxTokens: (tokens: number) => set({ maxTokens: tokens }),
 
   toggleReducedMotion: () => {
     set((state) => ({ reducedMotion: !state.reducedMotion }));
