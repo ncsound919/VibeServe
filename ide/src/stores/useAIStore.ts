@@ -30,6 +30,8 @@ interface AIState {
   inlineChatPosition: { line: number } | null;
   showDiffReview: boolean;
   diffReviewFiles: { oldPath: string; newPath: string; oldContent: string; newContent: string }[];
+  streamingContent: string;
+  pendingDiff: { path: string; content: string } | null;
 
   addMessage: (msg: Omit<AIComposerMessage, 'id' | 'timestamp'>) => void;
   clearMessages: () => void;
@@ -44,6 +46,10 @@ interface AIState {
   setShowDiffReview: (show: boolean) => void;
   setDiffReviewFiles: (files: { oldPath: string; newPath: string; oldContent: string; newContent: string }[]) => void;
   acceptDiffFile: (index: number) => void;
+  appendStreamingContent: (chunk: string) => void;
+  clearStreamingContent: () => void;
+  setPendingDiff: (diff: { path: string; content: string } | null) => void;
+  applyPendingDiff: () => Promise<boolean>;
 }
 
 export const useAIStore = create<AIState>((set) => ({
@@ -57,6 +63,8 @@ export const useAIStore = create<AIState>((set) => ({
   inlineChatPosition: null,
   showDiffReview: false,
   diffReviewFiles: [],
+  streamingContent: '',
+  pendingDiff: null,
 
   addMessage: (msg) =>
     set((s) => ({
@@ -82,4 +90,25 @@ export const useAIStore = create<AIState>((set) => ({
       files.splice(index, 1);
       return { diffReviewFiles: files, showDiffReview: files.length > 0 };
     }),
+  appendStreamingContent: (chunk) => set((s) => ({ streamingContent: s.streamingContent + chunk })),
+  clearStreamingContent: () => set({ streamingContent: '' }),
+  setPendingDiff: (diff) => set({ pendingDiff: diff }),
+  applyPendingDiff: async () => {
+    const state = useAIStore.getState();
+    if (!state.pendingDiff) return false;
+    try {
+      const res = await fetch('/api/files/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: state.pendingDiff.path, content: state.pendingDiff.content }),
+      });
+      if (res.ok) {
+        set({ pendingDiff: null });
+        return true;
+      }
+    } catch (e) {
+      console.error('Failed to apply diff:', e);
+    }
+    return false;
+  },
 }));

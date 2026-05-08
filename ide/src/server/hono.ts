@@ -208,6 +208,35 @@ function broadcast(data: unknown): void {
   }
 }
 
+// AI streaming prompt handler for WebSocket
+async function handleAIPrompt(ws: WebSocket, prompt: string, mode: string, context: Mention[]) {
+  try {
+    // For now, echo back the prompt as streaming chunks (demo)
+    // In production, this would call the LLM router
+    const words = prompt.split(' ');
+    for (const word of words) {
+      ws.send(JSON.stringify({ type: 'chunk', content: word + ' ' }));
+      await new Promise(r => setTimeout(r, 50)); // Simulate token streaming
+    }
+    // Also demo a diff occasionally
+    if (mode === 'pipeline') {
+      ws.send(JSON.stringify({
+        type: 'diff',
+        path: 'demo.ts',
+        content: '// Proposed code\\nconsole.log("hello");',
+      }));
+    }
+    ws.send(JSON.stringify({ type: 'done' }));
+  } catch (e) {
+    ws.send(JSON.stringify({ type: 'error', message: String(e) }));
+  }
+}
+
+interface Mention {
+  type: 'file' | 'symbol' | 'docs';
+  value: string;
+}
+
 // ─── API Routes ──────────────────────────────────────────────────────────────
 
 app.get('/health', async (c) => {
@@ -1263,7 +1292,12 @@ setInterval(() => {
     ws.on('message', (raw) => {
       try {
         const msg = JSON.parse(raw.toString());
-        if (msg.type === 'ping') ws.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
+        if (msg.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong', ts: Date.now() }));
+        } else if (msg.type === 'prompt') {
+          // Handle AI streaming prompts via WebSocket
+          handleAIPrompt(ws, msg.content, msg.mode, msg.context);
+        }
       } catch {
         // Rate limit bad messages: close connection after repeated parse failures
         const key = `badmsg_${sub}`;
