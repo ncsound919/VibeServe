@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useIDEStore } from '../stores/useIDEStore';
 import { useAIStore } from '../stores/useAIStore';
+import { usePipelineStore } from '../stores/usePipelineStore';
+import { Cpu, Loader } from 'lucide-react';
 
 export function StatusBar() {
   const { autonomyMode, setAutonomyMode, bottomPanelActive, setBottomPanelActive } = useIDEStore();
-  const { selectedModel, setModel } = useAIStore();
+  const { selectedModel, setModel, isPipelineRunning } = useAIStore();
+  const { activeExecution, wsConnected } = usePipelineStore();
   const [cursorPosition, setCursorPosition] = useState({ line: 1, col: 1 });
 
   useEffect(() => {
@@ -69,6 +72,25 @@ export function StatusBar() {
             }}
           />
           {autonomyMode === 'pipeline' ? 'Pipeline' : autonomyMode === 'copilot' ? 'Copilot' : 'IDE'}
+        </button>
+
+        {/* Agent Queue Indicator */}
+        <button
+          onClick={() => setBottomPanelActive('pipeline-log')}
+          className="flex items-center gap-1 hover:text-white transition-colors"
+          title={activeExecution ? `Running: ${activeExecution.status}` : wsConnected ? 'Agent idle' : 'Agent disconnected'}
+        >
+          {isPipelineRunning || activeExecution ? (
+            <>
+              <Loader className="w-3 h-3 animate-spin" style={{ color: 'var(--accent)' }} />
+              <span style={{ color: 'var(--accent)' }}>Agent ({activeExecution?.steps?.length || 0})</span>
+            </>
+          ) : (
+            <>
+              <Cpu className="w-3 h-3" style={{ color: wsConnected ? 'var(--success)' : 'var(--text-muted)' }} />
+              <span>{wsConnected ? 'Agent ready' : 'Agent offline'}</span>
+            </>
+          )}
         </button>
 
         <button
