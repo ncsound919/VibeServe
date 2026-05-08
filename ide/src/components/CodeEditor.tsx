@@ -18,7 +18,7 @@ import {
 } from '../services/collaborationService';
 
 interface CodeEditorProps {
-  initialValue?: string;
+  path?: string;
   language?: string;
   readOnly?: boolean;
   onSave?: (value: string) => void;
@@ -37,15 +37,15 @@ const LANGUAGE_OPTIONS = [
 let vimLoaded = false;
 
 export function CodeEditor({
-  initialValue = '// Start coding here...',
+  path,
   language = 'typescript',
   readOnly = false,
   onSave,
 }: CodeEditorProps) {
-  const [value, setValue] = useState(initialValue);
+  const [value, setValue] = useState('// Start coding here...');
   const [currentLanguage, setCurrentLanguage] = useState(language);
   const [showLangMenu, setShowLangMenu] = useState(false);
-  const [fileName, setFileName] = useState('editor.ts');
+  const [fileName, setFileName] = useState(path?.split('/').pop() || 'editor.ts');
   const [vimEnabled, setVimEnabled] = useState(false);
   const [vimMode, setVimMode] = useState<string>('NORMAL');
   const [collabEnabled, setCollabEnabled] = useState(false);
