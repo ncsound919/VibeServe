@@ -51,6 +51,20 @@ The original **VibeServe MCP Server**. This is a production-grade FastMCP server
 
 ## Quickstart
 
+### One-Command Startup
+
+```bash
+# Clone and start everything
+git clone https://github.com/ncsound919/VibeServe
+cd VibeServe/ide
+npm start
+```
+
+This starts:
+- The Vite dev server (port 3000)
+- The Hono API server (port 3002)
+- WebSocket connections for real-time agent streaming
+
 ### Prerequisites
 * **Node.js** 20+
 * **Python** 3.10+

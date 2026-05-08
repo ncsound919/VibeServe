@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "dev:all": "concurrently -k -n \"vite,api\" -c \"cyan,green\" \"npm run dev\" \"npm run server\"",
+    "start": "npm run dev:all",
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:3000 && electron .\"",
@@ -78,17 +79,30 @@
     "vite-plugin-node-polyfills": "^0.26.0"
   },
   "build": {
-    "appId": "com.nexus.alpha",
-    "productName": "Nexus Alpha",
+    "appId": "com.vibeserve.ide",
+    "productName": "VibeServe",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*"
     ],
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/icon.png"
+    },
     "win": {
       "target": "nsis",
       "icon": "public/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
     }
   }
 }
