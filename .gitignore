@@ -55,3 +55,10 @@ generated-image*.png
 !docs/flyer.png
 !assets/logo.png
 !assets/flyer.png
+
+# Orchestrator - exclude generated files
+orchestrator/**/node_modules/
+orchestrator/**/dist/
+orchestrator/**/build/
+orchestrator/**/.env
+orchestrator/**/*.log
