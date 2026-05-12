@@ -1,0 +1,228 @@
+# VibeServe — Deep System Audit Report
+
+## 0. Repository Overview
+
+VibeServe is a monorepo of 120 commits containing three pillars: [github](https://github.com/ncsound919/VibeServe)
+- **`vibeserve/`** — Python FastMCP server with 28 tools, LLM routing, WCAG validation, memory/cache
+- **`ide/`** — React 19 + Vite 6 + Hono frontend IDE with Monaco editor, WebSocket streaming, and Electron packaging
+- **`orchestrator/`** — Listed in the README but **does not exist as a real directory**; the path returns a 404 [github](https://github.com/ncsound919/VibeServe/tree/main/orchestrator)
+
+***
+
+## 1. Architecture Deep Dive
+
+### Python Backend (`vibeserve/`)
+
+The package layout is: [github](https://github.com/ncsound919/VibeServe/tree/main/vibeserve)
+```
+vibeserve/
+├── __main__.py          ← Entry point, star imports
+├── auth.py              ← Native JWT (no PyJWT)
+├── middleware.py        ← Rate limiter, audit logger, trace IDs
+├── integrations.py      ← 7 external connector classes
+├── providers.py         ← LLMRouter + 6 provider backends
+├── models.py            ← Pydantic v2 DTOs + enums
+├── server.py            ← FastMCP server instance
+├── handlers/            ← MCP resource + prompt handlers
+├── mcp-registry/        ← Registry metadata
+└── tools/               ← 28 registered tools across 9 modules
+```
+
+**Tools sub-package** (28 files): [github](https://github.com/ncsound919/VibeServe/tree/main/vibeserve/tools)
+- `v4_tools.py` — UI spec generation, WCAG validation, design systems, memory
+- `v5_tools.py` — Full agentic pipeline: architect → code → review → verify → iterate → test → deploy
+- `pipeline_tools.py` — File I/O, subprocess runners, semgrep, npm audit, Playwright
+- `integration_tools.py` — External service tools
+- `agenda.py`, `repo_indexer.py`, `github_sync.py`, `code_graph.py` — Background analytics tools
+
+### TypeScript IDE (`ide/`)
+
+**package.json** reveals: [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/package.json)
+- React 19 + React Router DOM 7 + Zustand 5 + TanStack Query 5
+- Monaco Editor + xterm.js for code editing + embedded terminal
+- Yjs + y-websocket for real-time CRDT collaboration
+- **Electron 41** for desktop builds (dmg/AppImage/nsis targets)
+- **TypeScript ~6.0.3** (pre-release)
+
+**Hono backend** (`ide/src/server/hono.ts`) — this is a substantial API server with: [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts)
+- Dual-mode auth: Supabase JWT (HS256) + API key header (`x-api-key`)
+- RBAC `requireRole()` middleware with admin/user/system roles
+- Two rate limiters: default (100 req/min) and strict (15 req/min)
+- Proxy routes for: Gemini, OpenRouter, DeepSeek, Ollama
+- Pipeline queue, scheduler, audit log, secrets manager, editor API
+- Browser harness with command allowlist (injection defense)
+- SSE streaming endpoint for LLM responses
+- **Private mode** — when `settingsService.isLocalMode()` is true, requests are routed exclusively to Ollama and cloud fallback is blocked for privacy
+
+**Core agents** (`ide/src/core/agents/`): [github](https://github.com/ncsound919/VibeServe/tree/main/ide/src/core/agents)
+- `graph.ts` — Intent triage → specialist agent routing (research/coding/analysis/general)
+- `realPipeline.ts` — Multi-phase build pipeline: env setup → code gen → build → fix loop
+- `plannerAgent.ts`, `buildRunner.ts`, `deployer.ts`, `fileWriter.ts`, `errorDiagnoser.ts`
+- Memory, monitoring, providers, and templates sub-directories
+
+***
+
+## 2. Security Audit
+
+### 🚨 CRITICAL — Hardcoded API Key in Test File
+
+`tests/honest_audit.py` line 3: [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/tests/honest_audit.py)
+```python
+os.environ["DEEPSEEK_API_KEY"] = "sk-d11b338d040441deaefdb552b80275ab"
+```
+A **real DeepSeek API key** is committed in plaintext in the public repo. The CI pipeline even runs TruffleHog to catch exactly this, but it uses `base: HEAD~1` (only scans the last commit diff), so it missed this key in an older commit. **This key should be rotated immediately.** [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/.github/workflows/ci.yml)
+
+### 🔴 HIGH — Python Auth Fail-Open
+
+`verify_token()` in `auth.py` — when `VIBESERVE_API_SECRET` is not set: [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/auth.py)
+```python
+log.warning("VIBESERVE_API_SECRET not set — authentication DISABLED (allow-all)")
+return {"sub": "anonymous", "scope": "mcp:read mcp:write"}
+```
+This is fail-open. A missing secret silently grants all tool access to any caller. The `create_token()` function correctly raises `RuntimeError` if no secret is set — `verify_token` should do the same.
+
+### 🔴 HIGH — Hardcoded Fallback JWT Secret (IDE)
+
+`hono.ts` — in non-production environments, falls back to: [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts)
+```
+'super-secret-jwt-token-with-at-least-32-characters-long'
+```
+While it throws in production if not set, the default is a known public string. Any token signed with this secret would validate in dev/staging. Should use `crypto.randomBytes` to generate a per-process secret if none is provided.
+
+### 🟡 MEDIUM — `AUTH_BYPASS` Flag [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts)
+
+```typescript
+const AUTH_BYPASS = process.env.NEXUS_AUTH_BYPASS === 'true' && process.env.NODE_ENV === 'development';
+```
+The CI pipeline sets `NEXUS_AUTH_BYPASS: true` for E2E tests. If `NODE_ENV` is ever accidentally left as `development` on a deployed instance, the entire auth layer is bypassed. [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/.github/workflows/ci.yml)
+
+### 🟡 MEDIUM — In-Process Rate Limiter (Both Layers)
+
+**Python** `TokenBucket` (middleware.py) — explicitly documented as `in-process, no Redis`. Each worker process maintains its own token bucket state. A user can triple their effective rate limit by hitting 3 Uvicorn workers. [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/middleware.py)
+
+**Node.js** `rateLimiter` (hono.ts) — has a comment: `"For production multi-instance: configure with external store (e.g. Redis via @hono-rate-limiter/redis)."` Not implemented. [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts)
+
+### 🟡 MEDIUM — `_evict_stale()` Threshold Bug
+
+In `TokenBucket.allow()`: [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/middleware.py)
+```python
+if len(self._tokens) > 1000:
+    self._evict_stale()
+```
+Eviction is only triggered after **1,000 unique identities** accumulate. Under slow drip traffic from hundreds of IP addresses, the dict grows unbounded until 1,001 is hit. Should instead call eviction on a time-based interval (e.g., every 5 minutes via a background task).
+
+### 🟢 Strengths
+- `hmac.compare_digest()` used for constant-time signature comparison — correct [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/auth.py)
+- JWT expiry (`exp` claim) correctly enforced
+- Supabase JWT verifies `aud: 'authenticated'` claim — audience is checked [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts)
+- Browser command allowlist blocks arbitrary CLI injection [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts)
+- `_resolve_workspace_path()` in pipeline_tools correctly enforces workspace chroot [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/tools/pipeline_tools.py)
+- `sanitize_for_display()` strips HTML/ANSI/null bytes before audit log output
+- Audit logs record all auth failures, RBAC denials, rate limit violations, and codegen events
+
+***
+
+## 3. Code Quality Audit
+
+### Python Backend
+
+| Finding | File | Severity |
+|---|---|---|
+| 9 star imports with `# noqa: F403` suppression | `__main__.py` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/__main__.py) | Medium |
+| `input()` (blocking) called inside `async def _interactive_loop()` | `__main__.py` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/__main__.py) | Medium |
+| `_tool_deps.py` calls `logging.basicConfig()` at import time — clobbers host app's log config | `_tool_deps.py` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/tools/_tool_deps.py) | Low |
+| `models.py` mixes `@dataclass` and `BaseModel` patterns — `ArchitectureDecision`, `CodeFile`, `VibePlan` are dataclasses with manual `model_dump()` instead of Pydantic models | `models.py` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/models.py) | Low |
+| `providers.py` `_shared_client` is a module-level global — not safe across multiple event loops, and `LocalProvider` creates its own private `httpx.AsyncClient` that is never closed | `providers.py` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/vibeserve/providers.py) | Medium |
+
+### TypeScript IDE
+
+| Finding | File | Severity |
+|---|---|---|
+| TypeScript **~6.0.3** is a pre-release version — potential instability | `package.json` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/package.json) | Medium |
+| `handleAIPrompt()` in `hono.ts` is a stub — it splits the prompt by spaces and echoes words with 50ms delays instead of calling any real LLM | `hono.ts` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts) | High (feature gap) |
+| Multiple `/api/nexus/*`, `/api/vibe/history`, `/api/coding-agent/apps` endpoints return `{status: 'wip'}` 503s | `hono.ts` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/server/hono.ts) | Medium (feature gap) |
+| `graph.ts` is a flat switch statement rather than a proper graph executor — the `nodes/` directory doesn't exist at the path imported | `graph.ts` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/core/agents/graph.ts) | High |
+| `realPipeline.ts` imports `execSync` from `child_process` — synchronous subprocess in async code blocks the event loop | `realPipeline.ts` [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/src/core/agents/realPipeline.ts) | Medium |
+
+***
+
+## 4. Testing Audit
+
+### What Exists [github](https://github.com/ncsound919/VibeServe/tree/main/tests)
+
+| File | Type | Coverage |
+|---|---|---|
+| `test_auth.py` | Unit | JWT create/verify/tamper/scope — good coverage [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/tests/test_auth.py) |
+| `test_system_hardening.py` | Unit | Path traversal, input sanitization |
+| `test_integration_v5.py` | Integration | v5 pipeline tools with mock ctx |
+| `test_integration_real_api.py` | Integration | Live API calls (requires keys) |
+| `e2e_agenda.py`, `e2e_code_graph.py`, `e2e_repo_indexer.py` | E2E | Background analytics tools |
+| `honest_audit.py` | Manual audit script | Full capability smoke test |
+| `architect_tap919.py`, `full_cycle_tap919.py`, `pipeline_chain_tap919.py` | Tap-style | Pipeline end-to-end |
+| `vibeserve-docs.spec.js` | Playwright | Docs site (not the IDE itself) |
+| IDE `tests/unit/guardrailsService.test.ts`, `codingAgentService.test.ts` | Unit | Node.js agent services |
+
+### CI Pipeline (`ci.yml`) [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/.github/workflows/ci.yml)
+
+```yaml
+test: matrix: [3.10, 3.11, 3.12]
+  - ruff check vibeserve/ tests/
+  - mypy vibeserve/ --ignore-missing-imports
+  - pytest tests/ --cov-fail-under=60
+security:
+  - trufflehog (base: HEAD~1 only — MISSED hardcoded key above)
+e2e:
+  - playwright test --project=chromium
+```
+
+**Coverage threshold is 60%** — acceptable for early-stage but should be raised to 80%+ [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/.github/workflows/ci.yml)
+
+### Missing Tests
+- No tests for `providers.py` LLM routing logic or fallback behavior
+- No tests for `middleware.py` rate limiter behavior under concurrency
+- No tests for any `integration_tools.py` connectors (Supabase, GitHub, Vercel, Cloudflare)
+- No unit tests for the Hono server routes
+- `vibe_benchmark_tool` imports `time` with alias `_t` inside a loop — minor but untested
+
+***
+
+## 5. Orchestrator Layer
+
+The `orchestrator/` directory listed in the repo root sidebar and in the README returns a **GitHub 404** — it does not exist as a committed directory. The orchestration role is split across: [github](https://github.com/ncsound919/VibeServe/tree/main/orchestrator)
+- `ide/src/server/pipelineQueue.ts` — BullMQ-based job queue
+- `ide/src/server/schedulerService.ts` — cron scheduler
+- `ide/src/services/pipelineService.ts` — pipeline runner
+- `vibeserve/tools/agenda.py` — Python-side goal tracking
+
+The README's 3-pillar description (ide / orchestrator / mcp) is **architecturally inaccurate** for the current state of the repo.
+
+***
+
+## 6. Dependency Health
+
+| Layer | Notable Versions | Concern |
+|---|---|---|
+| Python | `fastmcp>=0.9.0`, `pydantic>=2.0.0`, `httpx>=0.27.0`, `aiosqlite>=0.20.0` | All stable, no known CVEs |
+| Node | React 19, React Router 7, Hono 4.12, `@modelcontextprotocol/sdk ^1.0.0` | Cutting-edge — React 19 + RR7 are very new |
+| Node | `typescript ~6.0.3` | **Pre-release TypeScript** — risky for production [raw.githubusercontent](https://raw.githubusercontent.com/ncsound919/VibeServe/main/ide/package.json) |
+| Node | `electron ^41.4.0` | Current major version, fine |
+| Node | `@google/genai ^1.51.0` | Latest Gemini SDK |
+| CI | `dependabot.yml` present [github](https://github.com/ncsound919/VibeServe/tree/main/.github/workflows) | Automated dependency updates configured |
+
+***
+
+## 7. Prioritized Remediation List
+
+| Priority | Action |
+|---|---|
+| 🚨 **IMMEDIATE** | Rotate the DeepSeek API key committed in `tests/honest_audit.py`. Replace with `os.environ.get("DEEPSEEK_API_KEY", "")` and store via GitHub Secrets |
+| 🚨 **IMMEDIATE** | Fix TruffleHog CI step to scan full history: `base: ""` or use `--since-commit` with a safe start ref, not `HEAD~1` |
+| 🔴 **High** | Make `verify_token()` fail-closed: raise `RuntimeError` when `VIBESERVE_API_SECRET` is not set instead of returning anonymous allow-all |
+| 🔴 **High** | Fix `handleAIPrompt()` WebSocket handler — it is a word-echo stub, not a real LLM call |
+| 🔴 **High** | Fix `graph.ts` — node imports reference `./nodes/triage`, `./nodes/coding`, etc. which don't exist at that path |
+| 🟡 **Medium** | Remove TypeScript `~6.0.3` pre-release from `package.json`, pin to `^5.x` stable |
+| 🟡 **Medium** | Replace blocking `input()` in `_interactive_loop()` with `asyncio.get_event_loop().run_in_executor(None, input, prompt)` |
+| 🟡 **Medium** | Replace star imports in `__main__.py` with explicit named imports |
+| 🟡 **Medium** | Add Redis store to both rate limiters for multi-process/multi-replica deployments |
+| 🟡 **Medium** | Remove `AUTH_BYPASS` env var from the E2E CI step and use properly-seeded test tokens instead |
+| 🟢 **Low** | Unify `models.py` — convert `ArchitectureDecision`, `CodeFile`, `VibePlan` dataclasses to proper Pyd
