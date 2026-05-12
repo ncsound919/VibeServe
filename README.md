@@ -38,15 +38,6 @@ The **VibeServe Orchestrator** (formerly CodeNexus) is a high-performance Node.j
 The original **VibeServe MCP Server**. This is a production-grade FastMCP server containing 28 specialized tools, SQLite-backed memory, multi-LLM routing with auto-fallback (OpenAI, DeepSeek, OpenRouter, Local Ollama), and direct integration endpoints. 
 
 
-## Why VibeServe?
-
-| Feature | Description |
-|---|---|
-| **True Full-Stack AI** | Complete visibility from IDE UI down to the python MCP tool execution. |
-| **Agentic Pipeline** | 7 discrete steps (`architect` to `deploy`), each chainable or runnable standalone. |
-| **Auto-Fallback LLMs** | Built-in router across 6 providers prevents single point of failure. |
-| **Testing Infrastructure** | Automated test coverage, security scanning, and benchmarking for consistent quality. |
-| **Human-in-the-Loop** | You choose when to intervene. The IDE allows seamless manual takeover of any automated workflow. |
 
 
 ## Quickstart
@@ -119,17 +110,7 @@ VibeServe MCP Server (Python / FastMCP)
   ├── LLMRouter (Auto-fallback chain)
   ├── MemoryStore (aiosqlite)
   └── SchemaValidator (WCAG AAA enforcement)
-```
 
----
-
-## Donate
-
-VibeServe is free and open source. If it saves you time:
-
-**💚 CashApp: `$helptools`**
-
-Every dollar helps keep the tools free.
 
 ---
 
