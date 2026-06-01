@@ -1,5 +1,5 @@
 import type { GoalSummary } from '../types/suggestions';
-import { getPipelineQueue, scheduleNightlyJobs, scheduleHourlyJobs, removeAllSchedules, enqueueBackgroundJob } from './pipelineQueue';
+import { getPipelineQueue, scheduleNightlyJobs, scheduleHourlyJobs, removeAllSchedules, enqueueBackgroundJob } from './orchestrator/orchestrator';
 
 export interface ScheduleStatus {
   nightly: boolean;

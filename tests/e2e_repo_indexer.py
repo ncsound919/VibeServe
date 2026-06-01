@@ -35,7 +35,7 @@ def main():
     for ref in refactors[:3]:
         assert "suggestion_type" in ref
         assert "repo" in ref
-    print(f"[PASS] Output shapes valid for TypeScript consumption")
+    print("[PASS] Output shapes valid for TypeScript consumption")
     
     print("\n=== ALL 6 E2E TESTS PASSED ===")
 

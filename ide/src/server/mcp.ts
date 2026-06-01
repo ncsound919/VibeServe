@@ -19,7 +19,7 @@ import { buildGraph, queryGraph, getGraphSummary, graphAvailable } from "../serv
 import { encodeToToon, getToonStats } from "../services/toonService.js";
 import { useGuardrailsStore } from "../services/guardrailsService.js";
 import { logAuditEvent } from "./auditLogService.js";
-import { enqueuePipeline } from "./pipelineQueue.js";
+import { enqueuePipeline } from "./orchestrator/orchestrator.js";
 import path from "path";
 
 const server = new Server(

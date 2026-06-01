@@ -16,7 +16,8 @@ from vibeserve import (
 class Ctx:
     async def info(self, msg): print(f"  [i] {msg}")
     async def report_progress(self, c, t, m):
-        if c == 0 or c == 100: print(f"  [{c}%] {m}")
+        if c == 0 or c == 100:
+            print(f"  [{c}%] {m}")
 
 async def full_pipeline():
     ctx = Ctx()

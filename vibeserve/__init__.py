@@ -31,15 +31,19 @@ from vibeserve.tools.core_logic import (
     SystemAuditor, CritiqueLoop, VibeTester, VibeDeployer,
     TemplateLibrary, DesignUpgrader, Config,
 )
-from vibeserve.__main__ import (
-    demo, vibe_demo, main,
-    vibe_architect_tool, vibe_code_tool, vibe_review_tool, vibe_verify_tool,
-    vibe_iterate_tool, vibe_test_tool, vibe_deploy_tool,
+from vibeserve.__main__ import demo, vibe_demo, main
+from vibeserve.tools.v4_tools import (
     generate_ui_spec_tool,
     validate_ui_spec_tool, list_design_systems_tool, memory_stats_tool,
+)
+from vibeserve.tools.v5_tools import (
+    vibe_architect_tool, vibe_code_tool, vibe_review_tool, vibe_verify_tool,
+    vibe_iterate_tool, vibe_test_tool, vibe_deploy_tool,
     vibe_design_tool, vibe_preview_tool, vibe_docs_tool,
     vibe_health_tool, vibe_audit_tool, vibe_compress_tool,
     vibe_benchmark_tool, vibe_upgrade_design_tool, vibe_build_pro_tool,
+)
+from vibeserve.handlers.resources import (
     resource_default_design_system, resource_design_tokens, resource_version,
     resource_memory_stats, resource_spec_example,
 )

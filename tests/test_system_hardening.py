@@ -198,7 +198,7 @@ def test_uischema_spec_is_valid_json():
 
 def test_benchmark_system_runs_without_error():
     """The benchmark system itself should not crash."""
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
     from benchmark_system import bench_vibeserve, grade
     from unittest.mock import patch
     
@@ -218,6 +218,7 @@ def test_benchmark_system_runs_without_error():
 
 
 def test_benchmark_grade_boundaries():
+    sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
     from benchmark_system import grade
     assert grade(95) == "S*"
     assert grade(90) == "S*"

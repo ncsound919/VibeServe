@@ -1,6 +1,16 @@
 """Honest competitive audit — test every VibeServe capability end-to-end."""
-import os, sys, json, asyncio, time
-os.environ["DEEPSEEK_API_KEY"] = "sk-d11b338d040441deaefdb552b80275ab"
+import asyncio
+import os
+import time
+import pytest
+from vibeserve.tools.repo_indexer import _cross_repo
+from vibeserve.tools.code_graph import CodeGraph
+from vibeserve.tools.agenda import Agenda
+from vibeserve.tools.v5_tools import vibe_architect_tool, vibe_code_tool
+from vibeserve.middleware import new_trace_id, TokenBucket
+os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY", "")
+if not os.environ["DEEPSEEK_API_KEY"]:
+    pytest.skip("DEEPSEEK_API_KEY not set, skipping DeepSeek tests")
 os.environ["PYTHONPATH"] = "."
 os.environ["DEFAULT_LLM_PROVIDER"] = "deepseek"
 
@@ -21,18 +31,15 @@ def check(name, ok, detail=""):
 print("\n=== 1. CORE INFRASTRUCTURE ===")
 
 t0 = time.monotonic()
-from vibeserve.tools.repo_indexer import _cross_repo
 ri = _cross_repo.index_repo(repo_path=REPO, repo_key="audit", repo_name="Audit Test")
 t1 = time.monotonic()
 check("Repo indexer", ri.file_count > 0, f"{ri.file_count} files, {ri.symbol_count} symbols")
 
-from vibeserve.tools.code_graph import CodeGraph
 graph = CodeGraph()
 graph.build_from_repo_index(ri)
 stats = graph.stats()
 check("Code graph", stats["nodes"] > 0, f"{stats['nodes']} nodes, {stats['edges']} edges")
 
-from vibeserve.tools.agenda import Agenda
 ag = Agenda()
 check("Agenda import", True, "module loads")
 
@@ -73,8 +80,6 @@ check("Graph impact", imp.target_uid != "", f"{imp.total_affected} affected" if 
 # ───── 4. LLM Pipeline ─────
 print("\n=== 4. LLM PIPELINE (DeepSeek) ===")
 
-from vibeserve.tools.v5_tools import vibe_architect_tool, vibe_code_tool
-
 async def llm_pipeline():
     arch = await vibe_architect_tool(ctx=Ctx(), intent="Build an API gateway", target_stack="python", constraints=["Testable"])
     check("vibe_architect", arch.get("status") == "success", f"{arch.get('decision_count',0)} ADRs" if arch.get("status")=="success" else arch.get("error","?"))
@@ -93,12 +98,10 @@ arch_r, code_r = asyncio.run(llm_pipeline())
 # ───── 5. Audit & Observability ─────
 print("\n=== 5. AUDIT & OBSERVABILITY ===")
 
-from vibeserve.middleware import get_trace_id, new_trace_id
 tid = new_trace_id()
 check("Trace ID generation", len(tid) > 0, f"trace_id: {tid}")
 check("Structured logging", True, "JSON events emitted (see console)")
 
-from vibeserve.middleware import TokenBucket
 tb = TokenBucket(rate=100, burst=10)
 ok = asyncio.run(tb.allow("test-user"))
 check("Rate limiter", ok, "request allowed")

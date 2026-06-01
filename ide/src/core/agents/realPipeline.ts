@@ -1,4 +1,7 @@
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 import { existsSync, readdirSync, statSync, readFileSync } from 'fs';
 import path from 'path';
 import { logger } from '../../lib/logger';
@@ -89,7 +92,7 @@ export class RealPipeline {
     let success = true;
 
     try {
-      const nodeVersion = execSync('node --version', { encoding: 'utf-8', timeout: 5000 }).trim();
+      const { stdout: nodeVersion } = await execAsync('node --version', { encoding: 'utf-8', timeout: 5000 });
       logs.push(`[ENV] Node.js: ${nodeVersion}`);
     } catch {
       logs.push('[ENV] Node.js version check failed');
@@ -97,7 +100,7 @@ export class RealPipeline {
     }
 
     try {
-      const npmVersion = execSync('npm --version', { encoding: 'utf-8', timeout: 5000 }).trim();
+      const { stdout: npmVersion } = await execAsync('npm --version', { encoding: 'utf-8', timeout: 5000 });
       logs.push(`[ENV] npm: ${npmVersion}`);
     } catch {
       logs.push('[ENV] npm version check failed');
@@ -152,8 +155,8 @@ export class RealPipeline {
 
       logs.push('[DEPS] node_modules missing — installing...');
       try {
-        const output = execSync(`${pm} install`, {
-          cwd: appDir, timeout: 120000, encoding: 'utf-8', stdio: 'pipe',
+        const { stdout: output } = await execAsync(`${pm} install`, {
+          cwd: appDir, timeout: 120000, encoding: 'utf-8',
           maxBuffer: 5 * 1024 * 1024,
         });
         const lines = output.split('\n').filter(l => l.length > 0);
@@ -207,8 +210,8 @@ export class RealPipeline {
     const logs: string[] = [];
 
     try {
-      const output = execSync('npx biome check --no-errors-on-unmatch 2>&1 || true', {
-        cwd: appDir, timeout: 30000, encoding: 'utf-8', stdio: 'pipe',
+      const { stdout: output } = await execAsync('npx biome check --no-errors-on-unmatch 2>&1 || true', {
+        cwd: appDir, timeout: 30000, encoding: 'utf-8',
         maxBuffer: 2 * 1024 * 1024,
       });
       const lines = output.split('\n').filter(l => l.trim());
@@ -222,8 +225,8 @@ export class RealPipeline {
     } catch {
       logs.push('[LINT] Biome not configured — trying TypeScript check...');
       try {
-        const tsOutput = execSync('npx tsc --noEmit 2>&1 || true', {
-          cwd: appDir, timeout: 30000, encoding: 'utf-8', stdio: 'pipe',
+        const { stdout: tsOutput } = await execAsync('npx tsc --noEmit 2>&1 || true', {
+          cwd: appDir, timeout: 30000, encoding: 'utf-8',
           maxBuffer: 2 * 1024 * 1024,
         });
         const lines = tsOutput.split('\n').filter(l => l.trim());
@@ -329,8 +332,8 @@ export class RealPipeline {
     const logs: string[] = [];
 
     try {
-      const output = execSync('npm audit --json 2>&1 || true', {
-        cwd: appDir, timeout: 30000, encoding: 'utf-8', stdio: 'pipe',
+      const { stdout: output } = await execAsync('npm audit --json 2>&1 || true', {
+        cwd: appDir, timeout: 30000, encoding: 'utf-8',
         maxBuffer: 2 * 1024 * 1024,
       });
 
@@ -361,8 +364,8 @@ export class RealPipeline {
 
     if (hasPlaywright) {
       try {
-        const output = execSync('npx playwright test --reporter=list 2>&1 || true', {
-          cwd: appDir, timeout: 60000, encoding: 'utf-8', stdio: 'pipe',
+        const { stdout: output } = await execAsync('npx playwright test --reporter=list 2>&1 || true', {
+          cwd: appDir, timeout: 60000, encoding: 'utf-8',
           maxBuffer: 2 * 1024 * 1024,
         });
         const lines = output.split('\n').filter(l => l.trim());

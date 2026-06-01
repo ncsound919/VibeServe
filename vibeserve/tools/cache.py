@@ -71,4 +71,16 @@ class CacheManager:
             return False
 
 
+    def invalidate(self, cache_key: str) -> bool:
+        f = self.cache_dir / f"{cache_key}.json"
+        if not f.exists():
+            return False
+        f.unlink()
+        return True
+
+    def clear(self):
+        for f in self.cache_dir.glob("*.json"):
+            f.unlink(missing_ok=True)
+
+
 cache_manager = CacheManager()

@@ -1,14 +1,13 @@
 """E2E: Run vibe_architect with DeepSeek on Tap919 project."""
+import asyncio
 import os
+from vibeserve.tools.v5_tools import vibe_architect_tool
 os.environ["DEEPSEEK_API_KEY"] = "sk-d11b338d040441deaefdb552b80275ab"
 os.environ["PYTHONPATH"] = "."
 os.environ["DEFAULT_LLM_PROVIDER"] = "deepseek"
 
 print("=== VIBE_ARCHITECT — Tap919 Middleman ===")
 print("Provider: DeepSeek")
-
-import asyncio
-from vibeserve.tools.v5_tools import vibe_architect_tool
 
 class MockCtx:
     async def info(self, msg): print(f"  [info] {msg}")

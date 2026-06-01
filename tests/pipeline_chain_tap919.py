@@ -1,6 +1,11 @@
 """Full pipeline chain: architect → code → review → test on Tap919."""
-import os, sys, json, asyncio
-os.environ["DEEPSEEK_API_KEY"] = "sk-d11b338d040441deaefdb552b80275ab"
+import os
+import json
+import asyncio
+import pytest
+os.environ["DEEPSEEK_API_KEY"] = os.getenv("DEEPSEEK_API_KEY", "")
+if not os.environ["DEEPSEEK_API_KEY"]:
+    pytest.skip("DEEPSEEK_API_KEY not set, skipping DeepSeek tests")
 os.environ["PYTHONPATH"] = "."
 os.environ["DEFAULT_LLM_PROVIDER"] = "deepseek"
 
@@ -66,6 +71,6 @@ async def main():
             fh.write(f["content"])
     
     print(f"\n  Code saved to: {out_dir}")
-    print(f"\n=== PIPELINE COMPLETE ===")
+    print("\n=== PIPELINE COMPLETE ===")
 
 asyncio.run(main())

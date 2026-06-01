@@ -21,6 +21,7 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+nul
 
 # IDE
 .vscode/
@@ -46,6 +47,7 @@ test-results/
 .vibeserve/
 .gitnexus/
 vibeserve/.gitnexus/
+.mypy_cache/
 
 # Generated images (do not commit generated binary assets)
 generated-image*.png

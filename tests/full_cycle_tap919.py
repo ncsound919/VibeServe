@@ -1,11 +1,12 @@
 """Full-cycle E2E test: index → graph → agenda → architect → background tools."""
+import asyncio
 import os
-os.environ["DEEPSEEK_API_KEY"] = "sk-d11b338d040441deaefdb552b80275ab"
-os.environ["PYTHONPATH"] = "."
-
 from vibeserve.tools.repo_indexer import _cross_repo
 from vibeserve.tools.code_graph import CodeGraph
 from vibeserve.tools.agenda import Agenda
+from vibeserve.tools.v5_tools import vibe_architect_tool
+os.environ["DEEPSEEK_API_KEY"] = "sk-d11b338d040441deaefdb552b80275ab"
+os.environ["PYTHONPATH"] = "."
 
 REPO = r"C:\Users\User\Desktop\tap919-middleman-main"
 
@@ -30,7 +31,6 @@ print(f"Graph: {stats['nodes']} nodes, {stats['edges']} edges, {stats['clusters'
 
 # Step 3: Set agenda goals
 print("\n=== STEP 3: SET AGENDA GOALS ===")
-import asyncio
 async def setup_agenda():
     a = Agenda()
     goals = await asyncio.gather(
@@ -115,9 +115,6 @@ print("=" * 60)
 # Step 6: Run vibe_architect with DeepSeek
 print("\n=== STEP 6: VIBE_ARCHITECT (DeepSeek) ===")
 print("  Generating architecture plan...")
-
-import asyncio
-from vibeserve.tools.v5_tools import vibe_architect_tool
 
 class MockCtx:
     async def info(self, msg): pass

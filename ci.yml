@@ -34,20 +34,34 @@ jobs:
       - name: Run tests with coverage
         run: pytest tests/ -v --tb=short --cov=vibeserve --cov-report=term-missing --cov-fail-under=80
         env:
-          VIBESERVE_API_SECRET: ${{ secrets.VIBESERVE_API_SECRET }}
+          # FIX: do not use real-looking keys (even mock ones) in CI env vars.
+          # Tests must mock at the provider level, not via real-format keys.
+          OPENAI_API_KEY: "test-not-a-real-key"
           DEEPSEEK_API_KEY: ""
           OPENROUTER_API_KEY: ""
           DEFAULT_LLM_PROVIDER: "local"
+          # FIX: startup validation requires a secret; use a generated test value.
+          VIBESERVE_API_SECRET: "ci-test-secret-not-used-in-production-32chars"
 
   security:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check for hardcoded secrets
+        with:
+          # FIX: fetch full history so TruffleHog can scan all commits,
+          # not just the diff since HEAD~1. The previous config missed secrets
+          # committed more than one commit ago.
+          fetch-depth: 0
+
+      - name: Scan full git history for secrets
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
+          # FIX: was "base: HEAD~1" — only scanned the last commit diff.
+          # Empty base = scan entire repository history.
           base: ""
+          head: HEAD
+          extra_args: --only-verified
 
   e2e:
     runs-on: ubuntu-latest
@@ -64,7 +78,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Set up Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
@@ -80,4 +94,9 @@ jobs:
         working-directory: ide
         run: npx playwright test --project=chromium
         env:
+          # FIX: replaced NEXUS_AUTH_BYPASS with properly seeded test tokens.
+          # Auth bypass is a security risk if NODE_ENV is accidentally set to
+          # development on a deployed instance. Use real test tokens instead.
+          VIBESERVE_API_SECRET: "e2e-test-secret-not-used-in-production-32ch"
+          NODE_ENV: test
           VIBESERVE_WORKSPACE: .

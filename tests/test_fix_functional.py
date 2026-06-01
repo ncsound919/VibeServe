@@ -6,14 +6,11 @@ These tests actually verify runtime behavior, not source code strings.
 They call handlers, mock dependencies, and verify return values.
 """
 
-import asyncio
 import json
-import logging
 import pytest
 import sys
 import os
-from io import StringIO
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -26,7 +23,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 async def test_vibe_architect_returns_response_dto_not_dict():
     """vibe_architect must return ArchitectResponse DTO, not raw dict."""
     from vibeserve.tools.v5_tools import vibe_architect_tool
-    from vibeserve.models import ArchitectResponse
     
     # Mock context
     mock_ctx = MagicMock()
@@ -68,7 +64,6 @@ async def test_vibe_architect_returns_response_dto_not_dict():
 async def test_vibe_code_returns_response_dto():
     """vibe_code must return CodeResponse DTO."""
     from vibeserve.tools.v5_tools import vibe_code_tool
-    from vibeserve.models import VibePlan, CodeFile
     
     mock_ctx = MagicMock()
     mock_ctx.info = AsyncMock()
@@ -306,8 +301,6 @@ async def test_audit_tool_returns_rate_limit_error():
 
 def test_mcp_server_builds_with_all_tools():
     """MCP server must build and register all tools."""
-    from vibeserve import server as server_module
-    from vibeserve import tools
     
     # Build will import tools
     from vibeserve.server import mcp_server

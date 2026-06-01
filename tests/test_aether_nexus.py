@@ -287,7 +287,7 @@ def test_component_accessibility():
     
     # Check required fields
     assert "aria_role" in accessibility, "Must have aria_role"
-    assert accessibility.get("focus_visible") != False, "Must be keyboard navigable"
+    assert accessibility.get("focus_visible"), "Must be keyboard navigable"
     print("  ✅ All accessibility requirements present")
     
     # Verify aria_role matches component type
@@ -335,13 +335,13 @@ def test_contrast_result_post_init():
     """Verify ContrastResult correctly classifies by ratio, including thresholds"""
     r_aaa = ContrastResult(fg="#000", bg="#FFF", ratio=8.0, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
     assert r_aaa.wcag_level == WCAGLevel.AAA
-    assert r_aaa.passes_aaa == True
-    assert r_aaa.passes_aa == True
+    assert r_aaa.passes_aaa
+    assert r_aaa.passes_aa
 
     r_aa = ContrastResult(fg="#000", bg="#888", ratio=5.0, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
     assert r_aa.wcag_level == WCAGLevel.AA
-    assert r_aa.passes_aa == True
-    assert r_aa.passes_aaa == False
+    assert r_aa.passes_aa
+    assert not r_aa.passes_aaa
 
     r_fail = ContrastResult(fg="#CCC", bg="#DDD", ratio=1.5, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
     assert r_fail.wcag_level == WCAGLevel.FAIL
@@ -353,7 +353,7 @@ def test_contrast_result_post_init():
     # Boundary: exactly at AA threshold (4.5)
     r_edge = ContrastResult(fg="#000", bg="#888", ratio=4.5, wcag_level=WCAGLevel.FAIL, passes_aa=False, passes_aaa=False)
     assert r_edge.wcag_level == WCAGLevel.AA
-    assert r_edge.passes_aa == True
+    assert r_edge.passes_aa
 
 def test_cache_manager_ttl(tmp_path=None):
     """Verify cache respects TTL and rejects stale entries"""
@@ -741,14 +741,14 @@ def test_sampling_provider_initialization():
     from vibeserve import SamplingProvider
     sp = SamplingProvider()
     assert sp.name == "MCP-Sampling"
-    assert sp._active == False  # No context bound yet
+    assert not sp._active  # No context bound yet
 
     class MockCtx:
         async def sample(self, messages, temperature=None, max_tokens=None):
             return type('Result', (), {'text': 'sampled response'})()
     ctx = MockCtx()
     sp.bind(ctx)
-    assert sp._active == True
+    assert sp._active
     print("  ✅ SamplingProvider initializes and binds to context")
 
 @pytest.mark.asyncio
