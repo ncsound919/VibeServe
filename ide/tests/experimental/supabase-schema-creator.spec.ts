@@ -3,11 +3,12 @@
  * Creates all required tables and functions via RPC
  */
 
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = "https://aganpaepissvuamstmol.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnYW5wYWVwaXNzdnVhbXN0bW9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM4MzQ3MywiZXhwIjoyMDkyOTU5NDczfQ.zqF39DurClHwBisqPYysEi2I_LNHen7xD0YhJZg5gUk";
+const supabaseKey =
+	"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFnYW5wYWVwaXNzdnVhbXN0bW9sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzM4MzQ3MywiZXhwIjoyMDkyOTU5NDczfQ.zqF39DurClHwBisqPYysEi2I_LNHen7xD0YhJZg5gUk";
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -158,106 +159,128 @@ $$;
 `;
 
 test.describe("Supabase Schema Creator", () => {
-  
-  test("Create all tables and functions via SQL execution", async () => {
-    console.log("⏳ Creating schema (this may take a moment)...");
-    
-    // Try to execute the schema via a raw SQL function
-    // Note: This is a workaround since we can't run DDL directly
-    // We split the SQL into individual statements
-    
-    const statements = schemaSQL.split(';').filter(s => s.trim().length > 10);
-    
-    let created = 0;
-    let failed = 0;
-    
-    for (const stmt of statements) {
-      try {
-        // We'll try calling each table/function creation as a separate operation
-        // This is a simplified approach
-        created++;
-      } catch (e) {
-        failed++;
-      }
-    }
-    
-    console.log(`Prepared ${statements.length} SQL statements`);
-    console.log("Note: Full schema requires manual execution in Supabase dashboard");
-    
-    // For now, let's verify we can at least insert into existing tables
-    // and create placeholder entries that will work once schema exists
-    
-    // Try to insert into each table to trigger creation if auto-migration is enabled
-    const tables = ['secrets', 'logs', 'agent_memory', 'healing_log', 'agent_state', 'documents'];
-    
-    for (const table of tables) {
-      try {
-        // Attempt insert - will fail if table doesn't exist
-        await supabase.from(table).insert({ 
-          id: "00000000-0000-0000-0000-000000000001",
-          _test: true 
-        }).then(({ error }) => {
-          if (error && !error.message.includes("does not exist")) {
-            console.log(`⚠️ ${table}: ${error.message}`);
-          }
-        });
-      } catch (e) {
-        // Ignore - table likely doesn't exist
-      }
-    }
-    
-    // Verify connection is still working
-    const { error } = await supabase.from("logs").select("id").limit(1);
-    expect(error?.code || "ok").not.toBe("PGRST301");
-    
-    console.log("✅ Supabase connection verified");
-    console.log("\n📋 To complete setup, run schema.sql in Supabase SQL Editor:");
-    console.log("   1. Go to https://supabase.com/dashboard");
-    console.log("   2. Select your project");
-    console.log("   3. Open SQL Editor");
-    console.log("   4. Paste and run integration/supabase/schema.sql");
-  });
+	test("Create all tables and functions via SQL execution", async () => {
+		console.log("⏳ Creating schema (this may take a moment)...");
 
-  test("Verify all required tables exist after schema creation", async () => {
-    const tables = [
-      { name: 'secrets', shouldHave: ['key', 'value'] },
-      { name: 'logs', shouldHave: ['type', 'details'] },
-      { name: 'agent_memory', shouldHave: ['user_id', 'content'] },
-      { name: 'healing_log', shouldHave: ['issue_type', 'success'] },
-      { name: 'agent_state', shouldHave: ['agent_id', 'status'] },
-      { name: 'documents', shouldHave: ['content', 'embedding'] }
-    ];
+		// Try to execute the schema via a raw SQL function
+		// Note: This is a workaround since we can't run DDL directly
+		// We split the SQL into individual statements
 
-    let allExist = true;
-    
-    for (const table of tables) {
-      const { error } = await supabase.from(table.name).select("*").limit(1);
-      if (error?.message.includes("does not exist")) {
-        console.log(`❌ Table '${table.name}' does not exist`);
-        allExist = false;
-      } else {
-        console.log(`✅ Table '${table.name}' exists`);
-      }
-    }
+		const statements = schemaSQL.split(";").filter((s) => s.trim().length > 10);
 
-    // Test RPC functions
-    const functions = ['match_documents', 'handle_integration_failure', 'record_agent_learning'];
-    for (const fn of functions) {
-      try {
-        await supabase.rpc(fn, { dummy: "test" });
-      } catch (e: any) {
-        if (e.message.includes("function") && e.message.includes("does not exist")) {
-          console.log(`❌ Function '${fn}' does not exist`);
-          allExist = false;
-        }
-      }
-    }
+		let created = 0;
+		let failed = 0;
 
-    if (!allExist) {
-      console.log("\n⚠️ Schema incomplete - some tables/functions missing");
-      console.log("Please run integration/supabase/schema.sql in Supabase SQL Editor");
-    } else {
-      console.log("\n🎉 All schema elements verified!");
-    }
-  });
+		for (const stmt of statements) {
+			try {
+				// We'll try calling each table/function creation as a separate operation
+				// This is a simplified approach
+				created++;
+			} catch (e) {
+				failed++;
+			}
+		}
+
+		console.log(`Prepared ${statements.length} SQL statements`);
+		console.log(
+			"Note: Full schema requires manual execution in Supabase dashboard",
+		);
+
+		// For now, let's verify we can at least insert into existing tables
+		// and create placeholder entries that will work once schema exists
+
+		// Try to insert into each table to trigger creation if auto-migration is enabled
+		const tables = [
+			"secrets",
+			"logs",
+			"agent_memory",
+			"healing_log",
+			"agent_state",
+			"documents",
+		];
+
+		for (const table of tables) {
+			try {
+				// Attempt insert - will fail if table doesn't exist
+				await supabase
+					.from(table)
+					.insert({
+						id: "00000000-0000-0000-0000-000000000001",
+						_test: true,
+					})
+					.then(({ error }) => {
+						if (error && !error.message.includes("does not exist")) {
+							console.log(`⚠️ ${table}: ${error.message}`);
+						}
+					});
+			} catch (e) {
+				// Ignore - table likely doesn't exist
+			}
+		}
+
+		// Verify connection is still working
+		const { error } = await supabase.from("logs").select("id").limit(1);
+		expect(error?.code || "ok").not.toBe("PGRST301");
+
+		console.log("✅ Supabase connection verified");
+		console.log(
+			"\n📋 To complete setup, run schema.sql in Supabase SQL Editor:",
+		);
+		console.log("   1. Go to https://supabase.com/dashboard");
+		console.log("   2. Select your project");
+		console.log("   3. Open SQL Editor");
+		console.log("   4. Paste and run integration/supabase/schema.sql");
+	});
+
+	test("Verify all required tables exist after schema creation", async () => {
+		const tables = [
+			{ name: "secrets", shouldHave: ["key", "value"] },
+			{ name: "logs", shouldHave: ["type", "details"] },
+			{ name: "agent_memory", shouldHave: ["user_id", "content"] },
+			{ name: "healing_log", shouldHave: ["issue_type", "success"] },
+			{ name: "agent_state", shouldHave: ["agent_id", "status"] },
+			{ name: "documents", shouldHave: ["content", "embedding"] },
+		];
+
+		let allExist = true;
+
+		for (const table of tables) {
+			const { error } = await supabase.from(table.name).select("*").limit(1);
+			if (error?.message.includes("does not exist")) {
+				console.log(`❌ Table '${table.name}' does not exist`);
+				allExist = false;
+			} else {
+				console.log(`✅ Table '${table.name}' exists`);
+			}
+		}
+
+		// Test RPC functions
+		const functions = [
+			"match_documents",
+			"handle_integration_failure",
+			"record_agent_learning",
+		];
+		for (const fn of functions) {
+			try {
+				await supabase.rpc(fn, { dummy: "test" });
+			} catch (e: any) {
+				if (
+					e.message.includes("function") &&
+					e.message.includes("does not exist")
+				) {
+					console.log(`❌ Function '${fn}' does not exist`);
+					allExist = false;
+				}
+			}
+		}
+
+		if (!allExist) {
+			console.log("\n⚠️ Schema incomplete - some tables/functions missing");
+			console.log(
+				"Please run integration/supabase/schema.sql in Supabase SQL Editor",
+			);
+		} else {
+			console.log("\n🎉 All schema elements verified!");
+		}
+	});
 });

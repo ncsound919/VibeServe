@@ -1,52 +1,50 @@
 ﻿{
-    "execution":  {
-                      "id":  "mcp-1777969993391-7uenqc",
-                      "sourceRepos":  [
-                                          "Create React TypeScript components for Nexus Alpha IDE: 1) PipelineSidebar with 8 progressive steps (Architect, Plan, Build, Review, Audit, Fix\u0026Retest, Verify, Deploy) and Settings link. 2) DashboardView with live metrics gauges, activity feed, mission control agent cards, stat cards. 3) ToastContainer with 4-tier notifications (info/success/warning/error). 4) HeaderStatusBar with pipeline progress. 5) toastStore and pipelineProgressStore Zustand stores. Use Tailwind CSS v4, framer-motion, lucide-react, dark theme #0A0A0B."
-                                      ],
-                      "currentStep":  "Completed",
-                      "progress":  100,
-                      "status":  "success",
-                      "steps":  [
-                                    "@{id=1; phase=Architecture Planning; status=completed; details=Analyzing intent and generating plan}",
-                                    "@{id=2; phase=Code Generation; status=completed; details=Implementing from architecture plan}",
-                                    "@{id=3; phase=Multi-Agent Review; status=completed; details=UX, quality, accessibility review}",
-                                    "@{id=4; phase=Verification; status=completed; details=WCAG + quality validation}",
-                                    "@{id=5; phase=Critique Loop; status=completed; details=Iterate up to 2x to reach quality threshold}",
-                                    "@{id=6; phase=Test Generation; status=completed; details=Unit, a11y, integration tests}",
-                                    "@{id=7; phase=Deployment Config; status=completed; details=Vercel, Docker, static configs}"
-                                ],
-                      "e2eResults":  [
-
-                                     ],
-                      "logs":  [
-                                   "[MCP] Initializing VibeServe 7-step pipeline...",
-                                   "[MCP] Intent: \"Create React TypeScript components for Nexus Alpha IDE: 1) PipelineSidebar with 8 progressive steps ...\"",
-                                   "[STEP 1] Calling vibe_architect...",
-                                   "[STEP 1] Architecture plan generated",
-                                   "[STEP 2] Calling vibe_code...",
-                                   "[STEP 2] Code generated",
-                                   "[STEP 3] Calling vibe_review...",
-                                   "[STEP 3] Review complete â consensus: {\"content\":[{\"type\":\"text\",\"text\":\"3 validation errors for call[vibe_review_tool]\\nctx\\n  Missing required argument [type=missing_argument, input_value={\u0027files\u0027: \u0027{\\\"content\\\":[{\\\"...t, dark theme #0A",
-                                   "[STEP 4] Calling vibe_verify...",
-                                   "[STEP 4] Verification complete",
-                                   "[STEP 5] Starting critique loop (max 2 iterations)...",
-                                   "[STEP 5] Iteration 1/2",
-                                   "[STEP 5] Iteration 1 complete",
-                                   "[STEP 5] Iteration 2/2",
-                                   "[STEP 5] Iteration 2 complete",
-                                   "[STEP 6] Calling vibe_test...",
-                                   "[STEP 6] Tests generated",
-                                   "[STEP 7] Calling vibe_deploy...",
-                                   "[STEP 7] Deployment configs generated",
-                                   "[SUCCESS] VibeServe MCP 7-step pipeline completed successfully."
-                               ]
-                  },
-    "success":  true,
-    "codeResult":  {
-                       "content":  [
-                                       "@{type=text; text=2 validation errors for call[vibe_code_tool]\nplan\n  Input should be a valid dictionary [type=dict_type, input_value=\u0027{\"content\":[{\"type\":\"tex...type\"}],\"isError\":true}\u0027, input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/dict_type\ndesign_system\n  Input should be a valid dictionary [type=dict_type, input_value=\u0027dark-minimal\u0027, input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/dict_type}"
-                                   ],
-                       "isError":  true
-                   }
+	"execution": {
+		"id": "mcp-1777969993391-7uenqc",
+		"sourceRepos": [
+			"Create React TypeScript components for Nexus Alpha IDE: 1) PipelineSidebar with 8 progressive steps (Architect, Plan, Build, Review, Audit, Fix\u0026Retest, Verify, Deploy) and Settings link. 2) DashboardView with live metrics gauges, activity feed, mission control agent cards, stat cards. 3) ToastContainer with 4-tier notifications (info/success/warning/error). 4) HeaderStatusBar with pipeline progress. 5) toastStore and pipelineProgressStore Zustand stores. Use Tailwind CSS v4, framer-motion, lucide-react, dark theme #0A0A0B."
+		],
+		"currentStep": "Completed",
+		"progress": 100,
+		"status": "success",
+		"steps": [
+			"@{id=1; phase=Architecture Planning; status=completed; details=Analyzing intent and generating plan}",
+			"@{id=2; phase=Code Generation; status=completed; details=Implementing from architecture plan}",
+			"@{id=3; phase=Multi-Agent Review; status=completed; details=UX, quality, accessibility review}",
+			"@{id=4; phase=Verification; status=completed; details=WCAG + quality validation}",
+			"@{id=5; phase=Critique Loop; status=completed; details=Iterate up to 2x to reach quality threshold}",
+			"@{id=6; phase=Test Generation; status=completed; details=Unit, a11y, integration tests}",
+			"@{id=7; phase=Deployment Config; status=completed; details=Vercel, Docker, static configs}"
+		],
+		"e2eResults": [],
+		"logs": [
+			"[MCP] Initializing VibeServe 7-step pipeline...",
+			"[MCP] Intent: \"Create React TypeScript components for Nexus Alpha IDE: 1) PipelineSidebar with 8 progressive steps ...\"",
+			"[STEP 1] Calling vibe_architect...",
+			"[STEP 1] Architecture plan generated",
+			"[STEP 2] Calling vibe_code...",
+			"[STEP 2] Code generated",
+			"[STEP 3] Calling vibe_review...",
+			"[STEP 3] Review complete â consensus: {\"content\":[{\"type\":\"text\",\"text\":\"3 validation errors for call[vibe_review_tool]\\nctx\\n  Missing required argument [type=missing_argument, input_value={\u0027files\u0027: \u0027{\\\"content\\\":[{\\\"...t, dark theme #0A",
+			"[STEP 4] Calling vibe_verify...",
+			"[STEP 4] Verification complete",
+			"[STEP 5] Starting critique loop (max 2 iterations)...",
+			"[STEP 5] Iteration 1/2",
+			"[STEP 5] Iteration 1 complete",
+			"[STEP 5] Iteration 2/2",
+			"[STEP 5] Iteration 2 complete",
+			"[STEP 6] Calling vibe_test...",
+			"[STEP 6] Tests generated",
+			"[STEP 7] Calling vibe_deploy...",
+			"[STEP 7] Deployment configs generated",
+			"[SUCCESS] VibeServe MCP 7-step pipeline completed successfully."
+		]
+	},
+	"success": true,
+	"codeResult": {
+		"content": [
+			"@{type=text; text=2 validation errors for call[vibe_code_tool]\nplan\n  Input should be a valid dictionary [type=dict_type, input_value=\u0027{\"content\":[{\"type\":\"tex...type\"}],\"isError\":true}\u0027, input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/dict_type\ndesign_system\n  Input should be a valid dictionary [type=dict_type, input_value=\u0027dark-minimal\u0027, input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/dict_type}"
+		],
+		"isError": true
+	}
 }

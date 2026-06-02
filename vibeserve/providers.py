@@ -13,21 +13,8 @@ import httpx
 
 log = logging.getLogger("VibeServe")
 
-_shared_client: Optional[httpx.AsyncClient] = None
-
-
 def _get_client() -> httpx.AsyncClient:
-    global _shared_client
-    if _shared_client is None:
-        _shared_client = httpx.AsyncClient(timeout=httpx.Timeout(60.0, read=180.0))
-    return _shared_client
-
-
-async def _close_client():
-    global _shared_client
-    if _shared_client is not None:
-        await _shared_client.aclose()
-        _shared_client = None
+    return httpx.AsyncClient(timeout=httpx.Timeout(60.0, read=300.0))
 
 
 class LLMProvider(ABC):
@@ -138,6 +125,24 @@ class OpenRouterProvider(LLMProvider):
                 "HTTP-Referer": "https://vibeserve.dev",
                 "X-Title": "VibeServe"
             }
+        )
+
+
+class GeminiProvider(LLMProvider):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        self.base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+        self.model = model or os.getenv("GOOGLE_MODEL", "gemini-2.0-flash")
+
+    @property
+    def name(self) -> str:
+        return "Gemini"
+
+    async def call(self, prompt: str, temperature: float = 0.7,
+                   response_format: str = "json") -> Optional[str]:
+        return await self._api_call(
+            self.base_url, self.api_key, self.model,
+            prompt, temperature, response_format
         )
 
 
@@ -302,6 +307,9 @@ class LLMRouter:
         if os.getenv("OPENROUTER_API_KEY"):
             self.providers["openrouter"] = OpenRouterProvider()
             log.info("LLMRouter: OpenRouter provider registered")
+        if os.getenv("GOOGLE_API_KEY"):
+            self.providers["gemini"] = GeminiProvider()
+            log.info("LLMRouter: Gemini provider registered")
         self.providers["local"] = LocalProvider()
         log.info(f"LLMRouter: Local provider registered ({self.providers['local'].model})")
         if shutil.which("opencode"):

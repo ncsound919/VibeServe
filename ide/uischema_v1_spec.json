@@ -1,452 +1,488 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "UISchema v1.0 - Universal UI Design Specification",
-  "description": "A standard, implementation-agnostic UI design specification that bridges design systems, code generation, and validation.",
-  "type": "object",
-  "required": ["version", "metadata", "design_system", "layouts", "components"],
-  "properties": {
-    "version": {
-      "type": "string",
-      "const": "1.0",
-      "description": "UISchema specification version"
-    },
-    "metadata": {
-      "type": "object",
-      "required": ["id", "name", "created_at"],
-      "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^[a-z0-9-]{20,}$",
-          "description": "Unique design ID (SHA256 hash prefix)"
-        },
-        "name": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "created_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "modified_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "version_number": {
-          "type": "string"
-        },
-        "author": {
-          "type": "string"
-        }
-      }
-    },
-    "design_system": {
-      "type": "object",
-      "required": ["tokens", "constraints"],
-      "properties": {
-        "tokens": {
-          "type": "object",
-          "properties": {
-            "colors": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "object",
-                "required": ["hex", "wcag_level"],
-                "properties": {
-                  "hex": {
-                    "type": "string",
-                    "pattern": "^#[0-9A-F]{6}$"
-                  },
-                  "wcag_level": {
-                    "type": "string",
-                    "enum": ["AAA", "AA", "FAIL"]
-                  },
-                  "contrast_pairs": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            },
-            "typography": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "object",
-                "properties": {
-                  "font_family": {
-                    "type": "string"
-                  },
-                  "font_size": {
-                    "type": "string"
-                  },
-                  "line_height": {
-                    "type": "number"
-                  },
-                  "font_weight": {
-                    "type": "string"
-                  },
-                  "letter_spacing": {
-                    "type": "string"
-                  },
-                  "min_size_mobile": {
-                    "type": "string"
-                  },
-                  "min_size_desktop": {
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            "spacing": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            },
-            "shadows": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            },
-            "border_radius": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "constraints": {
-          "type": "object",
-          "properties": {
-            "min_wcag_level": {
-              "type": "string",
-              "enum": ["AAA", "AA"],
-              "default": "AA"
-            },
-            "allowed_components": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "color_whitelist": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "max_component_depth": {
-              "type": "integer",
-              "default": 5
-            },
-            "required_aria_roles": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      }
-    },
-    "layouts": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "required": ["id", "name", "grid", "breakpoints"],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "purpose": {
-            "type": "string"
-          },
-          "grid": {
-            "type": "object",
-            "properties": {
-              "columns": {
-                "type": "integer"
-              },
-              "gap": {
-                "type": "string"
-              },
-              "max_width": {
-                "type": "string"
-              }
-            }
-          },
-          "breakpoints": {
-            "type": "object",
-            "properties": {
-              "mobile": {
-                "type": "object",
-                "properties": {
-                  "min_width": {
-                    "type": "string"
-                  },
-                  "columns": {
-                    "type": "integer"
-                  }
-                }
-              },
-              "tablet": {
-                "type": "object",
-                "properties": {
-                  "min_width": {
-                    "type": "string"
-                  },
-                  "columns": {
-                    "type": "integer"
-                  }
-                }
-              },
-              "desktop": {
-                "type": "object",
-                "properties": {
-                  "min_width": {
-                    "type": "string"
-                  },
-                  "columns": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          },
-          "regions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["id", "role"],
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "role": {
-                  "type": "string",
-                  "enum": ["header", "nav", "main", "sidebar", "footer", "region"]
-                },
-                "span": {
-                  "type": "object",
-                  "properties": {
-                    "columns": {
-                      "type": "integer"
-                    },
-                    "rows": {
-                      "type": "integer"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "components": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "type", "label"],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "button", "input", "card", "modal", "dropdown", "tabs", "badge",
-              "avatar", "breadcrumb", "tooltip", "popover", "checkbox", "radio",
-              "toggle", "slider", "progress", "spinner", "alert", "snackbar",
-              "hero", "form", "grid", "list", "table", "pagination", "custom"
-            ]
-          },
-          "label": {
-            "type": "string"
-          },
-          "region": {
-            "type": "string",
-            "description": "ID of layout region this component belongs to"
-          },
-          "regions": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "IDs of layout regions this component belongs to (multi-region support)"
-            }
-          },
-          "purpose": {
-            "type": "string"
-          },
-          "visual": {
-            "type": "object",
-            "properties": {
-              "color_role": {
-                "type": "string"
-              },
-              "size": {
-                "type": "string",
-                "enum": ["xs", "sm", "md", "lg", "xl"]
-              },
-              "variant": {
-                "type": "string"
-              },
-              "icon": {
-                "type": "string"
-              },
-              "level": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 6,
-                "description": "Semantic heading level (1-6). Only applies when type is 'heading'."
-              }
-            }
-          },
-          "interaction": {
-            "type": "object",
-            "properties": {
-              "hover_state": {
-                "type": "string"
-              },
-              "focus_state": {
-                "type": "string"
-              },
-              "active_state": {
-                "type": "string"
-              },
-              "disabled_state": {
-                "type": "string"
-              }
-            }
-          },
-          "accessibility": {
-            "type": "object",
-            "required": ["aria_role"],
-            "properties": {
-              "aria_role": {
-                "type": "string"
-              },
-              "aria_label": {
-                "type": "string"
-              },
-              "aria_describedby": {
-                "type": "string"
-              },
-              "aria_hidden": {
-                "type": "boolean"
-              },
-              "keyboard_shortcut": {
-                "type": "string"
-              },
-              "focus_visible": {
-                "type": "boolean",
-                "default": true
-              }
-            }
-          },
-          "animation": {
-            "type": "object",
-            "properties": {
-              "entry": {
-                "type": "string"
-              },
-              "duration": {
-                "type": "string"
-              },
-              "easing": {
-                "type": "string"
-              }
-            }
-          },
-          "responsive": {
-            "type": "object",
-            "properties": {
-              "mobile": {
-                "type": "object"
-              },
-              "tablet": {
-                "type": "object"
-              },
-              "desktop": {
-                "type": "object"
-              }
-            }
-          },
-          "nesting_allowed": {
-            "type": "boolean",
-            "default": true
-          },
-          "children": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "description": "IDs of child components"
-            }
-          }
-        }
-      }
-    },
-    "interactions": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "trigger", "action"],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "trigger": {
-            "type": "string",
-            "enum": ["click", "hover", "focus", "blur", "change", "submit"]
-          },
-          "target": {
-            "type": "string",
-            "description": "Component ID"
-          },
-          "action": {
-            "type": "string",
-            "enum": ["navigate", "toggle", "open", "close", "submit", "validate"]
-          },
-          "target_url": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "validations": {
-      "type": "object",
-      "properties": {
-        "wcag_checks": {
-          "type": "object",
-          "properties": {
-            "contrast_ratio": {
-              "type": "number"
-            },
-            "min_touch_target": {
-              "type": "string"
-            },
-            "keyboard_navigable": {
-              "type": "boolean"
-            }
-          }
-        },
-        "design_system_adherence": {
-          "type": "boolean"
-        },
-        "implementation_feasibility": {
-          "type": "string",
-          "enum": ["high", "medium", "low"]
-        }
-      }
-    }
-  }
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "UISchema v1.0 - Universal UI Design Specification",
+	"description": "A standard, implementation-agnostic UI design specification that bridges design systems, code generation, and validation.",
+	"type": "object",
+	"required": ["version", "metadata", "design_system", "layouts", "components"],
+	"properties": {
+		"version": {
+			"type": "string",
+			"const": "1.0",
+			"description": "UISchema specification version"
+		},
+		"metadata": {
+			"type": "object",
+			"required": ["id", "name", "created_at"],
+			"properties": {
+				"id": {
+					"type": "string",
+					"pattern": "^[a-z0-9-]{20,}$",
+					"description": "Unique design ID (SHA256 hash prefix)"
+				},
+				"name": {
+					"type": "string"
+				},
+				"description": {
+					"type": "string"
+				},
+				"created_at": {
+					"type": "string",
+					"format": "date-time"
+				},
+				"modified_at": {
+					"type": "string",
+					"format": "date-time"
+				},
+				"version_number": {
+					"type": "string"
+				},
+				"author": {
+					"type": "string"
+				}
+			}
+		},
+		"design_system": {
+			"type": "object",
+			"required": ["tokens", "constraints"],
+			"properties": {
+				"tokens": {
+					"type": "object",
+					"properties": {
+						"colors": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "object",
+								"required": ["hex", "wcag_level"],
+								"properties": {
+									"hex": {
+										"type": "string",
+										"pattern": "^#[0-9A-F]{6}$"
+									},
+									"wcag_level": {
+										"type": "string",
+										"enum": ["AAA", "AA", "FAIL"]
+									},
+									"contrast_pairs": {
+										"type": "array",
+										"items": {
+											"type": "string"
+										}
+									}
+								}
+							}
+						},
+						"typography": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "object",
+								"properties": {
+									"font_family": {
+										"type": "string"
+									},
+									"font_size": {
+										"type": "string"
+									},
+									"line_height": {
+										"type": "number"
+									},
+									"font_weight": {
+										"type": "string"
+									},
+									"letter_spacing": {
+										"type": "string"
+									},
+									"min_size_mobile": {
+										"type": "string"
+									},
+									"min_size_desktop": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"spacing": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "string"
+							}
+						},
+						"shadows": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "string"
+							}
+						},
+						"border_radius": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "string"
+							}
+						}
+					}
+				},
+				"constraints": {
+					"type": "object",
+					"properties": {
+						"min_wcag_level": {
+							"type": "string",
+							"enum": ["AAA", "AA"],
+							"default": "AA"
+						},
+						"allowed_components": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"color_whitelist": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						},
+						"max_component_depth": {
+							"type": "integer",
+							"default": 5
+						},
+						"required_aria_roles": {
+							"type": "array",
+							"items": {
+								"type": "string"
+							}
+						}
+					}
+				}
+			}
+		},
+		"layouts": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "object",
+				"required": ["id", "name", "grid", "breakpoints"],
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"purpose": {
+						"type": "string"
+					},
+					"grid": {
+						"type": "object",
+						"properties": {
+							"columns": {
+								"type": "integer"
+							},
+							"gap": {
+								"type": "string"
+							},
+							"max_width": {
+								"type": "string"
+							}
+						}
+					},
+					"breakpoints": {
+						"type": "object",
+						"properties": {
+							"mobile": {
+								"type": "object",
+								"properties": {
+									"min_width": {
+										"type": "string"
+									},
+									"columns": {
+										"type": "integer"
+									}
+								}
+							},
+							"tablet": {
+								"type": "object",
+								"properties": {
+									"min_width": {
+										"type": "string"
+									},
+									"columns": {
+										"type": "integer"
+									}
+								}
+							},
+							"desktop": {
+								"type": "object",
+								"properties": {
+									"min_width": {
+										"type": "string"
+									},
+									"columns": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					},
+					"regions": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"required": ["id", "role"],
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"role": {
+									"type": "string",
+									"enum": [
+										"header",
+										"nav",
+										"main",
+										"sidebar",
+										"footer",
+										"region"
+									]
+								},
+								"span": {
+									"type": "object",
+									"properties": {
+										"columns": {
+											"type": "integer"
+										},
+										"rows": {
+											"type": "integer"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"components": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "type", "label"],
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"enum": [
+							"button",
+							"input",
+							"card",
+							"modal",
+							"dropdown",
+							"tabs",
+							"badge",
+							"avatar",
+							"breadcrumb",
+							"tooltip",
+							"popover",
+							"checkbox",
+							"radio",
+							"toggle",
+							"slider",
+							"progress",
+							"spinner",
+							"alert",
+							"snackbar",
+							"hero",
+							"form",
+							"grid",
+							"list",
+							"table",
+							"pagination",
+							"custom"
+						]
+					},
+					"label": {
+						"type": "string"
+					},
+					"region": {
+						"type": "string",
+						"description": "ID of layout region this component belongs to"
+					},
+					"regions": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "IDs of layout regions this component belongs to (multi-region support)"
+						}
+					},
+					"purpose": {
+						"type": "string"
+					},
+					"visual": {
+						"type": "object",
+						"properties": {
+							"color_role": {
+								"type": "string"
+							},
+							"size": {
+								"type": "string",
+								"enum": ["xs", "sm", "md", "lg", "xl"]
+							},
+							"variant": {
+								"type": "string"
+							},
+							"icon": {
+								"type": "string"
+							},
+							"level": {
+								"type": "integer",
+								"minimum": 1,
+								"maximum": 6,
+								"description": "Semantic heading level (1-6). Only applies when type is 'heading'."
+							}
+						}
+					},
+					"interaction": {
+						"type": "object",
+						"properties": {
+							"hover_state": {
+								"type": "string"
+							},
+							"focus_state": {
+								"type": "string"
+							},
+							"active_state": {
+								"type": "string"
+							},
+							"disabled_state": {
+								"type": "string"
+							}
+						}
+					},
+					"accessibility": {
+						"type": "object",
+						"required": ["aria_role"],
+						"properties": {
+							"aria_role": {
+								"type": "string"
+							},
+							"aria_label": {
+								"type": "string"
+							},
+							"aria_describedby": {
+								"type": "string"
+							},
+							"aria_hidden": {
+								"type": "boolean"
+							},
+							"keyboard_shortcut": {
+								"type": "string"
+							},
+							"focus_visible": {
+								"type": "boolean",
+								"default": true
+							}
+						}
+					},
+					"animation": {
+						"type": "object",
+						"properties": {
+							"entry": {
+								"type": "string"
+							},
+							"duration": {
+								"type": "string"
+							},
+							"easing": {
+								"type": "string"
+							}
+						}
+					},
+					"responsive": {
+						"type": "object",
+						"properties": {
+							"mobile": {
+								"type": "object"
+							},
+							"tablet": {
+								"type": "object"
+							},
+							"desktop": {
+								"type": "object"
+							}
+						}
+					},
+					"nesting_allowed": {
+						"type": "boolean",
+						"default": true
+					},
+					"children": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "IDs of child components"
+						}
+					}
+				}
+			}
+		},
+		"interactions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id", "trigger", "action"],
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"trigger": {
+						"type": "string",
+						"enum": ["click", "hover", "focus", "blur", "change", "submit"]
+					},
+					"target": {
+						"type": "string",
+						"description": "Component ID"
+					},
+					"action": {
+						"type": "string",
+						"enum": [
+							"navigate",
+							"toggle",
+							"open",
+							"close",
+							"submit",
+							"validate"
+						]
+					},
+					"target_url": {
+						"type": "string"
+					}
+				}
+			}
+		},
+		"validations": {
+			"type": "object",
+			"properties": {
+				"wcag_checks": {
+					"type": "object",
+					"properties": {
+						"contrast_ratio": {
+							"type": "number"
+						},
+						"min_touch_target": {
+							"type": "string"
+						},
+						"keyboard_navigable": {
+							"type": "boolean"
+						}
+					}
+				},
+				"design_system_adherence": {
+					"type": "boolean"
+				},
+				"implementation_feasibility": {
+					"type": "string",
+					"enum": ["high", "medium", "low"]
+				}
+			}
+		}
+	}
 }

@@ -4,27 +4,27 @@
  * Bridges microdiff output to the DiffViewer frontend structure.
  */
 
-import diff from '../lib/diff';
+import diff from "../lib/diff";
 
 export interface DiffLine {
-  type: 'context' | 'add' | 'remove';
-  content: string;
-  oldLineNumber?: number;
-  newLineNumber?: number;
+	type: "context" | "add" | "remove";
+	content: string;
+	oldLineNumber?: number;
+	newLineNumber?: number;
 }
 
 export interface DiffHunk {
-  oldStart: number;
-  oldLines: number;
-  newStart: number;
-  newLines: number;
-  lines: DiffLine[];
+	oldStart: number;
+	oldLines: number;
+	newStart: number;
+	newLines: number;
+	lines: DiffLine[];
 }
 
 export interface DiffFile {
-  filename: string;
-  status: 'added' | 'modified' | 'deleted';
-  hunks: DiffHunk[];
+	filename: string;
+	status: "added" | "modified" | "deleted";
+	hunks: DiffHunk[];
 }
 
 export const diffService = {

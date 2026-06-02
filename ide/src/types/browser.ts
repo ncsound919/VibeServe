@@ -4,23 +4,23 @@
  */
 
 export interface RAGContextData {
-  indexedDocs: number;
-  relevantSnippets: string[];
-  lastSync: string;
+	indexedDocs: number;
+	relevantSnippets: string[];
+	lastSync: string;
 }
 
 export interface BrowserObservationData {
-  url: string;
-  viewport: { w: number; h: number };
-  snapshotDescription: string;
-  elementsFound: string[];
+	url: string;
+	viewport: { w: number; h: number };
+	snapshotDescription: string;
+	elementsFound: string[];
 }
 
 export interface BrowserHistoryItemData {
-  id: string;
-  timestamp: string;
-  url: string;
-  action: string;
-  summary: string;
-  type: 'navigation' | 'click' | 'input' | 'audit' | 'observation';
+	id: string;
+	timestamp: string;
+	url: string;
+	action: string;
+	summary: string;
+	type: "navigation" | "click" | "input" | "audit" | "observation";
 }

@@ -1,54 +1,66 @@
-import type { GeneratedFile } from '../types';
+import type { GeneratedFile } from "../types";
 
 export function getMcpToolkitTemplate(projectName: string): GeneratedFile[] {
-  const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'my-mcp';
+	const slug =
+		projectName
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-|-$/g, "") || "my-mcp";
 
-  return [
-    {
-      path: 'package.json',
-      content: JSON.stringify({
-        name: slug,
-        version: '0.0.1',
-        type: 'module',
-        main: 'dist/index.js',
-        bin: {
-          [slug]: './dist/index.js',
-        },
-        scripts: {
-          build: 'tsc',
-          start: 'node dist/index.js',
-          dev: 'tsx src/index.ts',
-        },
-        mcp: {
-          command: 'node',
-          args: ['dist/index.js'],
-        },
-      }, null, 2),
-    },
-    {
-      path: 'tsconfig.json',
-      content: JSON.stringify({
-        compilerOptions: {
-          target: 'ES2022',
-          module: 'ESNext',
-          moduleResolution: 'bundler',
-          outDir: './dist',
-          rootDir: './src',
-          strict: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          forceConsistentCasingInFileNames: true,
-          resolveJsonModule: true,
-          declaration: true,
-          sourceMap: true,
-        },
-        include: ['src'],
-        exclude: ['node_modules', 'dist'],
-      }, null, 2),
-    },
-    {
-      path: 'src/index.ts',
-      content: `import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+	return [
+		{
+			path: "package.json",
+			content: JSON.stringify(
+				{
+					name: slug,
+					version: "0.0.1",
+					type: "module",
+					main: "dist/index.js",
+					bin: {
+						[slug]: "./dist/index.js",
+					},
+					scripts: {
+						build: "tsc",
+						start: "node dist/index.js",
+						dev: "tsx src/index.ts",
+					},
+					mcp: {
+						command: "node",
+						args: ["dist/index.js"],
+					},
+				},
+				null,
+				2,
+			),
+		},
+		{
+			path: "tsconfig.json",
+			content: JSON.stringify(
+				{
+					compilerOptions: {
+						target: "ES2022",
+						module: "ESNext",
+						moduleResolution: "bundler",
+						outDir: "./dist",
+						rootDir: "./src",
+						strict: true,
+						esModuleInterop: true,
+						skipLibCheck: true,
+						forceConsistentCasingInFileNames: true,
+						resolveJsonModule: true,
+						declaration: true,
+						sourceMap: true,
+					},
+					include: ["src"],
+					exclude: ["node_modules", "dist"],
+				},
+				null,
+				2,
+			),
+		},
+		{
+			path: "src/index.ts",
+			content: `import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 import { readdir } from 'fs/promises'
@@ -120,10 +132,10 @@ main().catch((err) => {
   process.exit(1)
 })
 `,
-    },
-    {
-      path: 'README.md',
-      content: `# ${projectName}
+		},
+		{
+			path: "README.md",
+			content: `# ${projectName}
 
 A Model Context Protocol (MCP) server built with TypeScript and the official \`@modelcontextprotocol/sdk\`.
 
@@ -153,7 +165,7 @@ Add to your \`claude_desktop_config.json\`:
   "mcpServers": {
     "${slug}": {
       "command": "node",
-      "args": ["${process.cwd() === '/' ? '' : '/'}path/to/${slug}/dist/index.js"]
+      "args": ["${process.cwd() === "/" ? "" : "/"}path/to/${slug}/dist/index.js"]
     }
   }
 }
@@ -188,6 +200,6 @@ npm run dev
 3. Implement the handler function
 4. Run \`npm run build\` and restart the MCP connection
 `,
-    },
-  ];
+		},
+	];
 }

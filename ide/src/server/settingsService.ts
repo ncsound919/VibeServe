@@ -3,26 +3,26 @@
  * Manages server-side application settings like privacy mode (local/cloud).
  */
 
-export type PrivacyMode = 'local' | 'cloud';
+export type PrivacyMode = "local" | "cloud";
 
 interface Settings {
-  privacyMode: PrivacyMode;
+	privacyMode: PrivacyMode;
 }
 
-let currentSettings: Settings = {
-  privacyMode: 'cloud',
+const currentSettings: Settings = {
+	privacyMode: "cloud",
 };
 
 export const settingsService = {
-  getSettings(): Settings {
-    return { ...currentSettings };
-  },
+	getSettings(): Settings {
+		return { ...currentSettings };
+	},
 
-  setPrivacyMode(mode: PrivacyMode): void {
-    currentSettings.privacyMode = mode;
-  },
+	setPrivacyMode(mode: PrivacyMode): void {
+		currentSettings.privacyMode = mode;
+	},
 
-  isLocalMode(): boolean {
-    return currentSettings.privacyMode === 'local';
-  }
+	isLocalMode(): boolean {
+		return currentSettings.privacyMode === "local";
+	},
 };

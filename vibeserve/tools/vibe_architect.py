@@ -1,6 +1,7 @@
 """VibeArchitect — architecture planning from intent."""
 from __future__ import annotations
 import json
+import re
 from typing import Any, Dict, List
 from vibeserve.models import ArchitectureDecision, VibePlan
 from vibeserve.tools._llm_mixin import LLMCallMixin
@@ -43,27 +44,58 @@ class VibeArchitect(LLMCallMixin):
                    context: Dict[str, Any] = None, target_stack: str = "react") -> VibePlan:
         constraints = constraints or []
         context = context or {}
-        prompt = f"""You are a senior software architect. Produce a detailed architecture plan.
+        constraints_str = "; ".join(constraints) if constraints else "none"
+        prompt = f"""Architecture plan for: {intent}
+Constraints: {constraints_str}
+Stack: {target_stack}
 
-{CONTENT_GUIDELINES}
-
-USER INTENT: {intent}
-CONSTRAINTS: {chr(10).join(f'- {c}' for c in constraints) if constraints else 'None'}
-TARGET STACK: {target_stack}
-
-Return JSON: {{"decisions": [{{"id":"ADR-001","title":"...","context":"...","decision":"...","alternatives":["A","B"],"rationale":"...","consequences":["..."],"confidence":0.9}}], "component_tree": [...], "data_flow": {{}}, "file_structure": [...], "estimated_complexity": "low|medium|high", "risks": [...], "recommended_stack": {{}}}}"""
+Return only valid JSON with these exact keys:
+- decisions: array of objects with id (str), title (str), context (str), decision (str), alternatives (str array), rationale (str), consequences (str array), confidence (0-1)
+- component_tree: array
+- data_flow: object
+- file_structure: string array
+- estimated_complexity: "low", "medium", or "high"
+- risks: string array
+- recommended_stack: object"""
         response = await self._mcp_llm_call(prompt, temperature=0.3, ctx=self.ctx)
         if not response:
             return VibePlan(intent=intent, risks=["Failed to generate plan"])
-        try:
-            data = json.loads(response)
-            return VibePlan(intent=intent,
-                decisions=[ArchitectureDecision(**d) for d in data.get("decisions", [])],
-                component_tree=data.get("component_tree", []),
-                data_flow=data.get("data_flow", {}),
-                file_structure=data.get("file_structure", []),
-                estimated_complexity=data.get("estimated_complexity", "medium"),
-                risks=data.get("risks", []),
-                recommended_stack=data.get("recommended_stack", {}))
-        except Exception as e:
-            return VibePlan(intent=intent, risks=[f"Parse error: {str(e)}"])
+
+        data = self._parse_json(response)
+        if data is None:
+            return VibePlan(intent=intent, risks=["Failed to parse LLM response as JSON"])
+        return VibePlan(intent=intent,
+            decisions=[ArchitectureDecision(**d) for d in data.get("decisions", [])],
+            component_tree=data.get("component_tree", []),
+            data_flow=data.get("data_flow", {}),
+            file_structure=data.get("file_structure", []),
+            estimated_complexity=data.get("estimated_complexity", "medium"),
+            risks=data.get("risks", []),
+            recommended_stack=data.get("recommended_stack", {}))
+
+    @staticmethod
+    def _parse_json(text: str) -> dict | None:
+        return parse_json_robust(text)
+
+
+def parse_json_robust(text: str) -> dict | list | None:
+    """Extract and parse the first complete JSON object or array from text."""
+    text = re.sub(r"<\|[^|]+\|>", "", text)
+    for start_char, end_char in [("{", "}"), ("[", "]")]:
+        depth = 0
+        start = -1
+        for i, ch in enumerate(text):
+            if ch == start_char:
+                if start == -1:
+                    start = i
+                depth += 1
+            elif ch == end_char:
+                depth -= 1
+                if depth == 0 and start != -1:
+                    candidate = text[start:i+1]
+                    cleaned = re.sub(r",\s*([\]}])", r"\1", candidate)
+                    try:
+                        return json.loads(cleaned)
+                    except json.JSONDecodeError:
+                        pass
+    return None

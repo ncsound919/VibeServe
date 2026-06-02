@@ -1,9 +1,14 @@
 /**
  * Direct VibeServe code generation — calls vibe_code tool directly.
  */
-import { initVibeServeClient, callMcpTool, disconnectMcp } from '../src/server/mcpClient';
-import fs from 'fs';
-import path from 'path';
+
+import fs from "fs";
+import path from "path";
+import {
+	callMcpTool,
+	disconnectMcp,
+	initVibeServeClient,
+} from "../src/server/mcpClient";
 
 const SPEC = `Create React TypeScript components for Nexus Alpha IDE with Tailwind CSS v4 dark theme:
 
@@ -44,56 +49,72 @@ COMPONENT 7: CSS additions for src/index.css
 Use: React 18, TypeScript, Tailwind CSS v4, framer-motion (motion components), lucide-react icons, Zustand`;
 
 async function main() {
-  console.log('Connecting to VibeServe MCP...');
-  await initVibeServeClient();
+	console.log("Connecting to VibeServe MCP...");
+	await initVibeServeClient();
 
-  // Try vibe_code directly with the spec as intent
-  console.log('\n─── Calling vibe_code ───');
-  try {
-    const codeResult = await callMcpTool('vibe_code', {
-      intent: SPEC,
-      plan: JSON.stringify({ target: 'react-typescript', components: ['PipelineSidebar', 'DashboardView', 'ToastContainer', 'HeaderStatusBar', 'toastStore', 'pipelineProgressStore'] }),
-    });
+	// Try vibe_code directly with the spec as intent
+	console.log("\n─── Calling vibe_code ───");
+	try {
+		const codeResult = await callMcpTool("vibe_code", {
+			intent: SPEC,
+			plan: JSON.stringify({
+				target: "react-typescript",
+				components: [
+					"PipelineSidebar",
+					"DashboardView",
+					"ToastContainer",
+					"HeaderStatusBar",
+					"toastStore",
+					"pipelineProgressStore",
+				],
+			}),
+		});
 
-    const text = JSON.stringify(codeResult);
-    console.log(`Response length: ${text.length} chars`);
+		const text = JSON.stringify(codeResult);
+		console.log(`Response length: ${text.length} chars`);
 
-    // Check for content array (MCP format)
-    if (codeResult?.content && Array.isArray(codeResult.content)) {
-      for (const item of codeResult.content) {
-        if (item.type === 'text' && item.text) {
-          console.log('\nContent text length:', item.text.length);
-          console.log('First 2000 chars:');
-          console.log(item.text.substring(0, 2000));
-          
-          // Extract code blocks
-          const regex = /```(?:tsx|typescript|css)(?::\s*([^\n\r]+))?\s*\n([\s\S]*?)```/g;
-          let match;
-          let count = 0;
-          while ((match = regex.exec(item.text)) !== null) {
-            const filePath = match[1]?.trim() || `generated-${++count}.tsx`;
-            const code = match[2];
-            const fullPath = path.resolve(process.cwd(), filePath);
-            fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-            fs.writeFileSync(fullPath, code);
-            console.log(`  ✓ Wrote ${filePath} (${code.length} chars)`);
-          }
-          
-          if (count === 0) {
-            // Save full text
-            const outPath = path.resolve(process.cwd(), '.planning/vibeserve-code-raw.txt');
-            fs.writeFileSync(outPath, item.text);
-            console.log(`Saved raw output to .planning/vibeserve-code-raw.txt (${item.text.length} chars)`);
-          }
-        }
-      }
-    }
-  } catch (err: any) {
-    console.error('vibe_code failed:', err.message);
-  }
+		// Check for content array (MCP format)
+		if (codeResult?.content && Array.isArray(codeResult.content)) {
+			for (const item of codeResult.content) {
+				if (item.type === "text" && item.text) {
+					console.log("\nContent text length:", item.text.length);
+					console.log("First 2000 chars:");
+					console.log(item.text.substring(0, 2000));
 
-  await disconnectMcp();
-  console.log('\nDone.');
+					// Extract code blocks
+					const regex =
+						/```(?:tsx|typescript|css)(?::\s*([^\n\r]+))?\s*\n([\s\S]*?)```/g;
+					let match;
+					let count = 0;
+					while ((match = regex.exec(item.text)) !== null) {
+						const filePath = match[1]?.trim() || `generated-${++count}.tsx`;
+						const code = match[2];
+						const fullPath = path.resolve(process.cwd(), filePath);
+						fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+						fs.writeFileSync(fullPath, code);
+						console.log(`  ✓ Wrote ${filePath} (${code.length} chars)`);
+					}
+
+					if (count === 0) {
+						// Save full text
+						const outPath = path.resolve(
+							process.cwd(),
+							".planning/vibeserve-code-raw.txt",
+						);
+						fs.writeFileSync(outPath, item.text);
+						console.log(
+							`Saved raw output to .planning/vibeserve-code-raw.txt (${item.text.length} chars)`,
+						);
+					}
+				}
+			}
+		}
+	} catch (err: any) {
+		console.error("vibe_code failed:", err.message);
+	}
+
+	await disconnectMcp();
+	console.log("\nDone.");
 }
 
 main().catch(console.error);

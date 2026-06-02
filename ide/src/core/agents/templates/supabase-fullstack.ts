@@ -1,27 +1,38 @@
-import type { GeneratedFile } from '../types';
+import type { GeneratedFile } from "../types";
 
-export function getSupabaseFullstackTemplate(projectName: string): GeneratedFile[] {
-  const slug = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'my-app';
+export function getSupabaseFullstackTemplate(
+	projectName: string,
+): GeneratedFile[] {
+	const slug =
+		projectName
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-|-$/g, "") || "my-app";
 
-  return [
-    {
-      path: 'package.json',
-      content: JSON.stringify({
-        name: slug,
-        private: true,
-        version: '0.0.1',
-        scripts: {
-          dev: 'concurrently "npm run dev:server" "npm run dev:client"',
-          'dev:server': 'npm --workspace=server run dev',
-          'dev:client': 'npm --workspace=client run dev',
-          build: 'npm --workspace=client run build && npm --workspace=server run build',
-        },
-        workspaces: ['client', 'server', 'shared'],
-      }, null, 2),
-    },
-    {
-      path: '.env.example',
-      content: `# Server
+	return [
+		{
+			path: "package.json",
+			content: JSON.stringify(
+				{
+					name: slug,
+					private: true,
+					version: "0.0.1",
+					scripts: {
+						dev: 'concurrently "npm run dev:server" "npm run dev:client"',
+						"dev:server": "npm --workspace=server run dev",
+						"dev:client": "npm --workspace=client run dev",
+						build:
+							"npm --workspace=client run build && npm --workspace=server run build",
+					},
+					workspaces: ["client", "server", "shared"],
+				},
+				null,
+				2,
+			),
+		},
+		{
+			path: ".env.example",
+			content: `# Server
 PORT=3001
 
 # Supabase
@@ -29,55 +40,63 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 `,
-    },
-    {
-      path: 'client/package.json',
-      content: JSON.stringify({
-        name: 'client',
-        private: true,
-        version: '0.0.1',
-        type: 'module',
-        scripts: {
-          dev: 'vite',
-          build: 'tsc -b && vite build',
-          preview: 'vite preview',
-        },
-      }, null, 2),
-    },
-    {
-      path: 'client/.env.example',
-      content: `VITE_SUPABASE_URL=https://your-project.supabase.co
+		},
+		{
+			path: "client/package.json",
+			content: JSON.stringify(
+				{
+					name: "client",
+					private: true,
+					version: "0.0.1",
+					type: "module",
+					scripts: {
+						dev: "vite",
+						build: "tsc -b && vite build",
+						preview: "vite preview",
+					},
+				},
+				null,
+				2,
+			),
+		},
+		{
+			path: "client/.env.example",
+			content: `VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
 `,
-    },
-    {
-      path: 'client/tsconfig.json',
-      content: JSON.stringify({
-        compilerOptions: {
-          tsBuildInfoFile: './node_modules/.tmp/tsconfig.app.tsbuildinfo',
-          target: 'ES2020',
-          useDefineForClassFields: true,
-          lib: ['ES2020', 'DOM', 'DOM.Iterable'],
-          module: 'ESNext',
-          skipLibCheck: true,
-          moduleResolution: 'bundler',
-          allowImportingTsExtensions: true,
-          isolatedModules: true,
-          moduleDetection: 'force',
-          noEmit: true,
-          jsx: 'react-jsx',
-          strict: true,
-          noUnusedLocals: true,
-          noUnusedParameters: true,
-          noFallthroughCasesInSwitch: true,
-          noUncheckedSideEffectImports: true,
-        },
-        include: ['src'],
-      }, null, 2),
-    },
-    {
-      path: 'client/vite.config.ts',
-      content: `import { defineConfig } from 'vite'
+		},
+		{
+			path: "client/tsconfig.json",
+			content: JSON.stringify(
+				{
+					compilerOptions: {
+						tsBuildInfoFile: "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+						target: "ES2020",
+						useDefineForClassFields: true,
+						lib: ["ES2020", "DOM", "DOM.Iterable"],
+						module: "ESNext",
+						skipLibCheck: true,
+						moduleResolution: "bundler",
+						allowImportingTsExtensions: true,
+						isolatedModules: true,
+						moduleDetection: "force",
+						noEmit: true,
+						jsx: "react-jsx",
+						strict: true,
+						noUnusedLocals: true,
+						noUnusedParameters: true,
+						noFallthroughCasesInSwitch: true,
+						noUncheckedSideEffectImports: true,
+					},
+					include: ["src"],
+				},
+				null,
+				2,
+			),
+		},
+		{
+			path: "client/vite.config.ts",
+			content: `import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -90,10 +109,10 @@ export default defineConfig({
   },
 })
 `,
-    },
-    {
-      path: 'client/index.html',
-      content: `<!doctype html>
+		},
+		{
+			path: "client/index.html",
+			content: `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -106,15 +125,15 @@ export default defineConfig({
   </body>
 </html>
 `,
-    },
-    {
-      path: 'client/src/index.css',
-      content: `@import "tailwindcss";
+		},
+		{
+			path: "client/src/index.css",
+			content: `@import "tailwindcss";
 `,
-    },
-    {
-      path: 'client/src/supabase.ts',
-      content: `import { createClient } from '@supabase/supabase-js'
+		},
+		{
+			path: "client/src/supabase.ts",
+			content: `import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -126,10 +145,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 `,
-    },
-    {
-      path: 'client/src/database.types.ts',
-      content: `export type Json =
+		},
+		{
+			path: "client/src/database.types.ts",
+			content: `export type Json =
   | string
   | number
   | boolean
@@ -167,10 +186,10 @@ export interface Database {
   }
 }
 `,
-    },
-    {
-      path: 'client/src/auth.tsx',
-      content: `import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+		},
+		{
+			path: "client/src/auth.tsx",
+			content: `import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from './supabase'
 import type { Session, User } from '@supabase/supabase-js'
 
@@ -233,10 +252,10 @@ export function useAuth(): AuthContextType {
   return ctx
 }
 `,
-    },
-    {
-      path: 'client/src/components/Layout.tsx',
-      content: `import { type ReactNode } from 'react'
+		},
+		{
+			path: "client/src/components/Layout.tsx",
+			content: `import { type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 
@@ -296,10 +315,10 @@ function Layout({ children }: LayoutProps) {
 
 export default Layout
 `,
-    },
-    {
-      path: 'client/src/pages/Home.tsx',
-      content: `import { useAuth } from '../auth'
+		},
+		{
+			path: "client/src/pages/Home.tsx",
+			content: `import { useAuth } from '../auth'
 
 function Home() {
   const { user } = useAuth()
@@ -322,10 +341,10 @@ function Home() {
 
 export default Home
 `,
-    },
-    {
-      path: 'client/src/pages/Login.tsx',
-      content: `import { useState, type FormEvent } from 'react'
+		},
+		{
+			path: "client/src/pages/Login.tsx",
+			content: `import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 
@@ -409,10 +428,10 @@ function Login() {
 
 export default Login
 `,
-    },
-    {
-      path: 'client/src/pages/Signup.tsx',
-      content: `import { useState, type FormEvent } from 'react'
+		},
+		{
+			path: "client/src/pages/Signup.tsx",
+			content: `import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 
@@ -514,10 +533,10 @@ function Signup() {
 
 export default Signup
 `,
-    },
-    {
-      path: 'client/src/pages/Dashboard.tsx',
-      content: `import { useEffect, useState } from 'react'
+		},
+		{
+			path: "client/src/pages/Dashboard.tsx",
+			content: `import { useEffect, useState } from 'react'
 import { useAuth } from '../auth'
 
 function Dashboard() {
@@ -559,10 +578,10 @@ function Dashboard() {
 
 export default Dashboard
 `,
-    },
-    {
-      path: 'client/src/App.tsx',
-      content: `import { Routes, Route, Navigate } from 'react-router-dom'
+		},
+		{
+			path: "client/src/App.tsx",
+			content: `import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './auth'
 import Layout from './components/Layout'
 import Home from './pages/Home'
@@ -608,10 +627,10 @@ function App() {
 
 export default App
 `,
-    },
-    {
-      path: 'client/src/main.tsx',
-      content: `import React from 'react'
+		},
+		{
+			path: "client/src/main.tsx",
+			content: `import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './auth'
@@ -628,45 +647,53 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>,
 )
 `,
-    },
-    {
-      path: 'server/package.json',
-      content: JSON.stringify({
-        name: 'server',
-        private: true,
-        version: '0.0.1',
-        type: 'module',
-        scripts: {
-          dev: 'tsx watch src/index.ts',
-          build: 'tsc',
-          start: 'node dist/index.js',
-        },
-      }, null, 2),
-    },
-    {
-      path: 'server/tsconfig.json',
-      content: JSON.stringify({
-        compilerOptions: {
-          target: 'ES2022',
-          module: 'ESNext',
-          moduleResolution: 'bundler',
-          outDir: './dist',
-          rootDir: './src',
-          strict: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          forceConsistentCasingInFileNames: true,
-          resolveJsonModule: true,
-          declaration: true,
-          sourceMap: true,
-        },
-        include: ['src'],
-        exclude: ['node_modules', 'dist'],
-      }, null, 2),
-    },
-    {
-      path: 'server/src/index.ts',
-      content: `import express from 'express'
+		},
+		{
+			path: "server/package.json",
+			content: JSON.stringify(
+				{
+					name: "server",
+					private: true,
+					version: "0.0.1",
+					type: "module",
+					scripts: {
+						dev: "tsx watch src/index.ts",
+						build: "tsc",
+						start: "node dist/index.js",
+					},
+				},
+				null,
+				2,
+			),
+		},
+		{
+			path: "server/tsconfig.json",
+			content: JSON.stringify(
+				{
+					compilerOptions: {
+						target: "ES2022",
+						module: "ESNext",
+						moduleResolution: "bundler",
+						outDir: "./dist",
+						rootDir: "./src",
+						strict: true,
+						esModuleInterop: true,
+						skipLibCheck: true,
+						forceConsistentCasingInFileNames: true,
+						resolveJsonModule: true,
+						declaration: true,
+						sourceMap: true,
+					},
+					include: ["src"],
+					exclude: ["node_modules", "dist"],
+				},
+				null,
+				2,
+			),
+		},
+		{
+			path: "server/src/index.ts",
+			content: `import express from 'express'
 import cors from 'cors'
 import { authMiddleware } from './middleware/auth'
 import meRouter from './routes/me'
@@ -687,10 +714,10 @@ app.listen(port, () => {
   console.log(\`Server listening on http://localhost:\${port}\`)
 })
 `,
-    },
-    {
-      path: 'server/src/middleware/auth.ts',
-      content: `import type { Request, Response, NextFunction } from 'express'
+		},
+		{
+			path: "server/src/middleware/auth.ts",
+			content: `import type { Request, Response, NextFunction } from 'express'
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization
@@ -727,10 +754,10 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   })
 }
 `,
-    },
-    {
-      path: 'server/src/routes/me.ts',
-      content: `import { Router } from 'express'
+		},
+		{
+			path: "server/src/routes/me.ts",
+			content: `import { Router } from 'express'
 
 const router = Router()
 
@@ -743,22 +770,26 @@ router.get('/', (req, res) => {
 
 export default router
 `,
-    },
-    {
-      path: 'shared/tsconfig.json',
-      content: JSON.stringify({
-        compilerOptions: {
-          target: 'ES2022',
-          module: 'ESNext',
-          moduleResolution: 'bundler',
-          strict: true,
-          esModuleInterop: true,
-          skipLibCheck: true,
-          declaration: true,
-          outDir: './dist',
-        },
-        include: ['src'],
-      }, null, 2),
-    },
-  ];
+		},
+		{
+			path: "shared/tsconfig.json",
+			content: JSON.stringify(
+				{
+					compilerOptions: {
+						target: "ES2022",
+						module: "ESNext",
+						moduleResolution: "bundler",
+						strict: true,
+						esModuleInterop: true,
+						skipLibCheck: true,
+						declaration: true,
+						outDir: "./dist",
+					},
+					include: ["src"],
+				},
+				null,
+				2,
+			),
+		},
+	];
 }

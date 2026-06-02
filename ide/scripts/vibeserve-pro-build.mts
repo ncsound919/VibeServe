@@ -2,18 +2,23 @@
  * VibeServe MCP Professional UI Build — Uses vibe_build_pro for full pipeline.
  * Usage: npx tsx scripts/vibeserve-pro-build.mts
  */
-import { initVibeServeClient, callMcpTool, disconnectMcp } from '../src/server/mcpClient';
-import fs from 'fs';
-import path from 'path';
+
+import fs from "fs";
+import path from "path";
+import {
+	callMcpTool,
+	disconnectMcp,
+	initVibeServeClient,
+} from "../src/server/mcpClient";
 
 async function main() {
-  console.log('Connecting to VibeServe MCP...');
-  await initVibeServeClient();
+	console.log("Connecting to VibeServe MCP...");
+	await initVibeServeClient();
 
-  // vibe_build_pro: Full professional build: upgrade design -> architect -> code -> verify
-  console.log('\n─── Running vibe_build_pro ───');
+	// vibe_build_pro: Full professional build: upgrade design -> architect -> code -> verify
+	console.log("\n─── Running vibe_build_pro ───");
 
-  const spec = `Build a professional React+TypeScript UI for Nexus Alpha IDE with these exact components:
+	const spec = `Build a professional React+TypeScript UI for Nexus Alpha IDE with these exact components:
 
 1. PipelineSidebar (src/layout/PipelineSidebar.tsx):
    - 8 progressive pipeline steps: Architect(Lightbulb), Plan(ClipboardList), Build(Hammer), Review(Eye), Audit(Shield), Fix&Retest(Wrench), Verify(BadgeCheck), Deploy(Rocket)
@@ -55,94 +60,97 @@ async function main() {
    - .slider-knob with glow
 
 Use: React 18, TypeScript, Tailwind CSS v4, framer-motion, lucide-react icons, Zustand stores.`;
-  
-  try {
-    const result = await callMcpTool('vibe_build_pro', {
-      intent: spec,
-      design_system: 'dark-minimal',
-      target_stack: 'react typescript tailwind',
-    });
 
-    console.log('Result type:', typeof result);
-    console.log('Result keys:', Object.keys(result));
-    
-    const text = JSON.stringify(result);
-    console.log('Result length:', text.length);
-    console.log('\nFirst 3000 chars:');
-    console.log(text.substring(0, 3000));
+	try {
+		const result = await callMcpTool("vibe_build_pro", {
+			intent: spec,
+			design_system: "dark-minimal",
+			target_stack: "react typescript tailwind",
+		});
 
-    // Save full result
-    const outDir = path.resolve(process.cwd(), '.planning');
-    fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(path.join(outDir, 'vibeserve-pro-output.json'), text);
-    console.log(`\nSaved full output (${text.length} chars) to .planning/vibeserve-pro-output.json`);
+		console.log("Result type:", typeof result);
+		console.log("Result keys:", Object.keys(result));
 
-    // Try to extract code
-    extractCodeFiles(result, text);
-  } catch (err: any) {
-    console.error('vibe_build_pro failed:', err.message);
-  }
+		const text = JSON.stringify(result);
+		console.log("Result length:", text.length);
+		console.log("\nFirst 3000 chars:");
+		console.log(text.substring(0, 3000));
 
-  await disconnectMcp();
-  console.log('\nDone.');
+		// Save full result
+		const outDir = path.resolve(process.cwd(), ".planning");
+		fs.mkdirSync(outDir, { recursive: true });
+		fs.writeFileSync(path.join(outDir, "vibeserve-pro-output.json"), text);
+		console.log(
+			`\nSaved full output (${text.length} chars) to .planning/vibeserve-pro-output.json`,
+		);
+
+		// Try to extract code
+		extractCodeFiles(result, text);
+	} catch (err: any) {
+		console.error("vibe_build_pro failed:", err.message);
+	}
+
+	await disconnectMcp();
+	console.log("\nDone.");
 }
 
 function extractCodeFiles(result: any, raw: string) {
-  let fileCount = 0;
+	let fileCount = 0;
 
-  // Check for files array in result
-  if (result?.files && Array.isArray(result.files)) {
-    for (const file of result.files) {
-      if (file.path && file.content) {
-        writeFile(file.path, file.content);
-        fileCount++;
-      }
-    }
-  }
+	// Check for files array in result
+	if (result?.files && Array.isArray(result.files)) {
+		for (const file of result.files) {
+			if (file.path && file.content) {
+				writeFile(file.path, file.content);
+				fileCount++;
+			}
+		}
+	}
 
-  // Check content array (MCP format)
-  if (result?.content && Array.isArray(result.content)) {
-    for (const item of result.content) {
-      if (item.type === 'text' && typeof item.text === 'string') {
-        const extracted = extractFromText(item.text);
-        fileCount += extracted;
-      }
-    }
-  }
+	// Check content array (MCP format)
+	if (result?.content && Array.isArray(result.content)) {
+		for (const item of result.content) {
+			if (item.type === "text" && typeof item.text === "string") {
+				const extracted = extractFromText(item.text);
+				fileCount += extracted;
+			}
+		}
+	}
 
-  // Check for embedded files in raw text
-  if (fileCount === 0) {
-    const extracted = extractFromText(raw);
-    fileCount += extracted;
-  }
+	// Check for embedded files in raw text
+	if (fileCount === 0) {
+		const extracted = extractFromText(raw);
+		fileCount += extracted;
+	}
 
-  if (fileCount === 0) {
-    console.log('No structured files found in output. Raw output saved.');
-  }
+	if (fileCount === 0) {
+		console.log("No structured files found in output. Raw output saved.");
+	}
 }
 
 function extractFromText(text: string): number {
-  let count = 0;
-  // Match ```tsx:path/to/file.tsx or ```typescript:path
-  const regex = /```(?:tsx|typescript|css)(?::\s*([^\n\r]+))?\s*\n([\s\S]*?)```/g;
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    const filePath = match[1]?.trim();
-    const code = match[2];
-    if (filePath && code && code.length > 50) {
-      writeFile(filePath, code);
-      count++;
-    }
-  }
-  return count;
+	let count = 0;
+	// Match ```tsx:path/to/file.tsx or ```typescript:path
+	const regex =
+		/```(?:tsx|typescript|css)(?::\s*([^\n\r]+))?\s*\n([\s\S]*?)```/g;
+	let match;
+	while ((match = regex.exec(text)) !== null) {
+		const filePath = match[1]?.trim();
+		const code = match[2];
+		if (filePath && code && code.length > 50) {
+			writeFile(filePath, code);
+			count++;
+		}
+	}
+	return count;
 }
 
 function writeFile(relativePath: string, content: string) {
-  const fullPath = path.resolve(process.cwd(), relativePath);
-  const dir = path.dirname(fullPath);
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(fullPath, content);
-  console.log(`  ✓ Wrote ${relativePath} (${content.length} chars)`);
+	const fullPath = path.resolve(process.cwd(), relativePath);
+	const dir = path.dirname(fullPath);
+	fs.mkdirSync(dir, { recursive: true });
+	fs.writeFileSync(fullPath, content);
+	console.log(`  ✓ Wrote ${relativePath} (${content.length} chars)`);
 }
 
 main().catch(console.error);

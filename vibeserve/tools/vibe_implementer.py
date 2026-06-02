@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from vibeserve.models import CodeFile, VibePlan
 from vibeserve.tools.config import CONFIG
 from vibeserve.tools._llm_mixin import LLMCallMixin
+from vibeserve.tools.vibe_architect import parse_json_robust
 
 DEFAULT_DESIGN_SYSTEM = {
     "tokens": {
@@ -55,32 +56,33 @@ class VibeImplementer(LLMCallMixin):
     async def implement(self, plan: VibePlan, intent: str, constraints: List[str] = None,
                         target_language: str = "typescript") -> List[CodeFile]:
         constraints = constraints or []
-        ds_tokens = json.dumps(self.design_system.get("tokens", {}), indent=2)[:2000]
-        from vibeserve.tools.vibe_architect import CONTENT_GUIDELINES
-        prompt = f"""Generate production-ready code from this plan. Enforce constraints. Include full accessibility.
-
-{CONTENT_GUIDELINES}
+        decisions_json = json.dumps([asdict(d) for d in plan.decisions], indent=2)[:1000]
+        ds_tokens = json.dumps(self.design_system.get("tokens", {}), indent=2)[:1000]
+        prompt = f"""Generate code files. Return ONLY a JSON array.
 
 INTENT: {intent}
-DECISIONS: {json.dumps([asdict(d) for d in plan.decisions], indent=2)[:2000]}
-COMPONENTS: {json.dumps(plan.component_tree, indent=2)[:1000]}
-FILES: {json.dumps(plan.file_structure)}
-STACK: {json.dumps(plan.recommended_stack)}
+DECISIONS: {decisions_json}
+COMPONENTS: {json.dumps(plan.component_tree, indent=2)[:500]}
+FILES: {json.dumps(plan.file_structure)[:500]}
 CONSTRAINTS: {chr(10).join(f'- {c}' for c in constraints)}
-DESIGN TOKENS: {ds_tokens}
+DESIGN: {ds_tokens}
 TARGET: {target_language}
 
-Return a JSON array of files: [{{"path":"...","content":"...","language":"tsx","purpose":"...","accessibility_notes":["..."]}}]"""
+Return JSON array: [{{"path":"...","content":"...","language":"tsx","purpose":"...","accessibility_notes":["..."]}}]"""
         response = await self._mcp_llm_call(prompt, temperature=CONFIG.temp_generator, ctx=self.ctx)
         if not response:
             return []
-        try:
-            data = json.loads(response)
-            if isinstance(data, list):
+        data = parse_json_robust(response)
+        if isinstance(data, dict):
+            for key in ("files", "code", "results", "data"):
+                if key in data and isinstance(data[key], list):
+                    data = data[key]
+                    break
+        if isinstance(data, list):
+            try:
                 return [CodeFile(**f) for f in data]
-            return []
-        except Exception as e:
-            import logging
-            log = logging.getLogger("VibeServe")
-            log.warning(f"[VibeImplementer] Failed to parse code files: {e}")
-            return []
+            except Exception as e:
+                import logging
+                log = logging.getLogger("VibeServe")
+                log.warning(f"[VibeImplementer] Failed to construct CodeFile: {e}")
+        return []

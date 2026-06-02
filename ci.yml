@@ -94,9 +94,52 @@ jobs:
         working-directory: ide
         run: npx playwright test --project=chromium
         env:
-          # FIX: replaced NEXUS_AUTH_BYPASS with properly seeded test tokens.
-          # Auth bypass is a security risk if NODE_ENV is accidentally set to
-          # development on a deployed instance. Use real test tokens instead.
           VIBESERVE_API_SECRET: "e2e-test-secret-not-used-in-production-32ch"
           NODE_ENV: test
           VIBESERVE_WORKSPACE: .
+
+  self-build:
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: pip install -e ".[dev]"
+
+      - name: Run pipeline smoke test
+        run: pytest tests/test_self_build_pipeline.py -v --tb=short
+        env:
+          DEFAULT_LLM_PROVIDER: "local"
+          VIBESERVE_API_SECRET: "self-build-test-secret-not-used-in-production"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Install Node deps + Playwright
+        working-directory: ide
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Serve generated artifact
+        run: npx serve tests/artifacts/self_build/generated -p 4999 &
+        working-directory: ide
+
+      - name: Run artifact + WCAG validation
+        working-directory: ide
+        run: npx playwright test -g "VibeServe Self-Build"
+
+      - name: Upload generated site as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vibeserve-self-built-site
+          path: tests/artifacts/self_build/generated/
+          retention-days: 30

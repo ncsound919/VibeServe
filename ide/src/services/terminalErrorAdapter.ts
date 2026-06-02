@@ -18,7 +18,7 @@
  * never intercepts input, and has zero effect on rendering.
  */
 
-import { ErrorContextService } from './errorContextService';
+import { ErrorContextService } from "./errorContextService";
 
 /**
  * Attach to an xterm.js Terminal instance.
@@ -26,12 +26,12 @@ import { ErrorContextService } from './errorContextService';
  *
  * @param terminal  The xterm Terminal object (ITerminal or Terminal)
  */
-export function attachTerminalErrorAdapter(
-  terminal: { onData: (cb: (data: string) => void) => { dispose: () => void } },
-): () => void {
-  const svc = ErrorContextService.getInstance();
-  const { dispose } = terminal.onData((chunk) => svc.ingestChunk(chunk));
-  return () => dispose();
+export function attachTerminalErrorAdapter(terminal: {
+	onData: (cb: (data: string) => void) => { dispose: () => void };
+}): () => void {
+	const svc = ErrorContextService.getInstance();
+	const { dispose } = terminal.onData((chunk) => svc.ingestChunk(chunk));
+	return () => dispose();
 }
 
 /**
@@ -41,7 +41,7 @@ export function attachTerminalErrorAdapter(
  * @param output  Raw terminal output string (ANSI codes are stripped internally)
  */
 export function ingestTerminalOutput(output: string): void {
-  ErrorContextService.getInstance().ingestChunk(output);
+	ErrorContextService.getInstance().ingestChunk(output);
 }
 
 /**
@@ -51,15 +51,16 @@ export function ingestTerminalOutput(output: string): void {
  * @param ws  An open WebSocket instance
  */
 export function attachWebSocketErrorAdapter(ws: WebSocket): () => void {
-  const svc = ErrorContextService.getInstance();
+	const svc = ErrorContextService.getInstance();
 
-  function onMessage(event: MessageEvent) {
-    const data = typeof event.data === 'string'
-      ? event.data
-      : new TextDecoder().decode(event.data as ArrayBuffer);
-    svc.ingestChunk(data);
-  }
+	function onMessage(event: MessageEvent) {
+		const data =
+			typeof event.data === "string"
+				? event.data
+				: new TextDecoder().decode(event.data as ArrayBuffer);
+		svc.ingestChunk(data);
+	}
 
-  ws.addEventListener('message', onMessage);
-  return () => ws.removeEventListener('message', onMessage);
+	ws.addEventListener("message", onMessage);
+	return () => ws.removeEventListener("message", onMessage);
 }

@@ -233,6 +233,20 @@ class Graphify:
 # ====================== BACKWARD-COMPAT RE-EXPORTS ======================
 # Migrated to vibeserve.telemetry and vibeserve.integrations.
 # These re-exports keep all existing `from vibeserve.utils import ...` working.
+def require_scope(scope: str):
+    """Decorator to enforce RBAC scope requirements on MCP tools.
+    
+    Args:
+        scope: Required scope (e.g., "mcp:write")
+    
+    Returns:
+        Decorator function
+    """
+    def decorator(func):
+        func._required_scope = scope
+        return func
+    return decorator
+
 from vibeserve.telemetry import StructuredLogger, SentryTracker  # noqa: E402, F401
 from vibeserve.integrations import (  # noqa: E402, F401
     Context7Provider,
