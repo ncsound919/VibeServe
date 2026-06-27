@@ -26,7 +26,7 @@ const reactTsViteTemplate: TemplateDefinition = {
 		css: "css",
 	},
 	keywords: [
-		"todo",
+		"TASK",
 		"frontend",
 		"dashboard",
 		"react",
@@ -299,7 +299,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(\`Server running on http://localhost:\${PORT}\`);
+  process.stdout.write(\`Server running on http://localhost:\${PORT}\`);
 });`,
 		);
 
@@ -417,7 +417,7 @@ export default defineConfig({ plugins: [react()], server: { port: 5173, proxy: {
 
 		writeFileSync(
 			path.join(serverDir, "index.ts"),
-			`import express from 'express';const app=express();app.use(express.json());app.get('/api/health',(_req,res)=>res.json({ok:true,ts:new Date().toISOString()}));app.listen(3000,()=>console.log('API on :3000'));`,
+			`import express from 'express';const app=express();app.use(express.json());app.get('/api/health',(_req,res)=>res.json({ok:true,ts:new Date().toISOString()}));app.listen(3000,()=>process.stdout.write('API on :3000'));`,
 		);
 
 		writeFileSync(

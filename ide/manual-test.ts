@@ -58,7 +58,7 @@ async function testTabs() {
 		allErrors.push({ tab: "GLOBAL", error: `PAGE ERROR: ${err.message}` });
 	});
 
-	console.log("🚀 Loading app...\n");
+	process.stdout.write("🚀 Loading app...\n");
 
 	await page.goto("http://localhost:3012/", { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(3000);
@@ -66,17 +66,17 @@ async function testTabs() {
 	// Check if loaded
 	const bodyText = await page.locator("body").innerText();
 	if (bodyText.length < 100) {
-		console.log(
+		process.stdout.write(
 			"❌ App failed to load - body text:",
 			bodyText.substring(0, 200),
 		);
 		await browser.close();
 		return;
 	}
-	console.log("✅ App loaded\n");
+	process.stdout.write("✅ App loaded\n");
 
 	for (const tab of TABS) {
-		console.log(`➡️  Clicking ${tab.name}...`);
+		process.stdout.write(`➡️  Clicking ${tab.name}...`);
 
 		const tabErrors: string[] = [];
 		const handler = (msg: any) => {
@@ -90,7 +90,7 @@ async function testTabs() {
 			const btn = page.locator(`#${tab.id}`);
 			const exists = await btn.count();
 			if (exists === 0) {
-				console.log(`   ⚠️  Button #${tab.id} not found`);
+				process.stdout.write(`   ⚠️  Button #${tab.id} not found`);
 				continue;
 			}
 			await btn.click();
@@ -102,29 +102,29 @@ async function testTabs() {
 				.innerText()
 				.catch(() => "");
 			if (mainText.length < 5) {
-				console.log(`   ❌ Empty main content after click`);
+				process.stdout.write(`   ❌ Empty main content after click`);
 			} else {
-				console.log(`   ✅ Content loaded (${mainText.length} chars)`);
+				process.stdout.write(`   ✅ Content loaded (${mainText.length} chars)`);
 			}
 		} catch (e: any) {
-			console.log(`   ❌ Error: ${e.message}`);
+			process.stdout.write(`   ❌ Error: ${e.message}`);
 		}
 
 		// Remove handler and collect errors
 		page.off("console", handler);
 		if (tabErrors.length > 0) {
-			console.log(`   ⚠️  Errors: ${tabErrors.join("; ")}`);
+			process.stdout.write(`   ⚠️  Errors: ${tabErrors.join("; ")}`);
 			allErrors.push(...tabErrors.map((e) => ({ tab: tab.name, error: e })));
 		}
 	}
 
-	console.log("\n=== SUMMARY ===\n");
+	process.stdout.write("\n=== SUMMARY ===\n");
 	if (allErrors.length === 0) {
-		console.log("✅ No errors found!");
+		process.stdout.write("✅ No errors found!");
 	} else {
-		console.log("❌ Errors found:");
+		process.stdout.write("❌ Errors found:");
 		for (const e of allErrors) {
-			console.log(`  - [${e.tab}] ${e.error.substring(0, 150)}`);
+			process.stdout.write(`  - [${e.tab}] ${e.error.substring(0, 150)}`);
 		}
 	}
 

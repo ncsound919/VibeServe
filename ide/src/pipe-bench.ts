@@ -6,7 +6,7 @@ import { runAutomatedPipeline } from "./services/pipelineService";
 import type { PipelineExecution } from "./types";
 
 async function main() {
-	console.log("═══ VibeServe Pipeline Benchmark ═══\n");
+	process.stdout.write("═══ VibeServe Pipeline Benchmark ═══\n");
 	const startTime = Date.now();
 
 	const steps: { phase: string; time: number; passed: boolean }[] = [];
@@ -32,21 +32,21 @@ async function main() {
 
 	const totalTime = Date.now() - startTime;
 
-	console.log("\n\n═══ RESULTS ═══");
-	console.log(`Status:        ${result.status.toUpperCase()}`);
-	console.log(`Duration:      ${(totalTime / 1000).toFixed(1)}s`);
-	console.log(
+	process.stdout.write("\n\n═══ RESULTS ═══");
+	process.stdout.write(`Status:        ${result.status.toUpperCase()}`);
+	process.stdout.write(`Duration:      ${(totalTime / 1000).toFixed(1)}s`);
+	process.stdout.write(
 		`Steps:         ${result.steps.filter((s) => s.status === "completed").length}/${result.steps.length} completed`,
 	);
-	console.log(
+	process.stdout.write(
 		`E2E Tests:     ${result.e2eResults.filter((r) => r.status === "passed").length}/${result.e2eResults.length || 0} passed`,
 	);
-	console.log(`Log Entries:   ${result.logs.length}`);
+	process.stdout.write(`Log Entries:   ${result.logs.length}`);
 
-	console.log("\nPhase Timings:");
+	process.stdout.write("\nPhase Timings:");
 	for (const s of steps) {
 		const icon = s.passed ? "✅" : "⚠️";
-		console.log(`  ${icon} ${s.phase.padEnd(28)} ${s.time}ms`);
+		process.stdout.write(`  ${icon} ${s.phase.padEnd(28)} ${s.time}ms`);
 	}
 
 	// Quality metrics
@@ -55,17 +55,17 @@ async function main() {
 	const securityPhase = result.logs.find((l) => l.includes("[SECURITY]"));
 	const e2ePhase = result.logs.find((l) => l.includes("[TEST]"));
 
-	console.log("\nQuality Signals:");
-	console.log(
+	process.stdout.write("\nQuality Signals:");
+	process.stdout.write(
 		`  Build:   ${buildPhase ? buildPhase.replace("[BUILD] ", "") : "not run"}`,
 	);
-	console.log(
+	process.stdout.write(
 		`  Lint:    ${lintPhase ? lintPhase.replace("[STATIC] ", "") : "passed"}`,
 	);
-	console.log(
+	process.stdout.write(
 		`  Security: ${securityPhase ? securityPhase.replace("[SECURITY] ", "") : "pending"}`,
 	);
-	console.log(
+	process.stdout.write(
 		`  Tests:   ${e2ePhase ? e2ePhase.replace("[TEST] ", "") : "pending"}`,
 	);
 
@@ -86,19 +86,19 @@ async function main() {
 		)
 		.slice(-15);
 
-	console.log("\nKey Logs:");
+	process.stdout.write("\nKey Logs:");
 	for (const l of keyLines) {
-		console.log(`  ${l}`);
+		process.stdout.write(`  ${l}`);
 	}
 
 	// Summary
 	const passRate =
 		result.steps.filter((s) => s.status === "completed").length /
 		result.steps.length;
-	console.log("\n═══ BENCHMARK SUMMARY ═══");
-	console.log(`  Pipeline Score: ${Math.round(passRate * 100)}%`);
-	console.log(`  Total Time:     ${(totalTime / 1000).toFixed(1)}s`);
-	console.log(`  Status:         ${result.status.toUpperCase()}`);
+	process.stdout.write("\n═══ BENCHMARK SUMMARY ═══");
+	process.stdout.write(`  Pipeline Score: ${Math.round(passRate * 100)}%`);
+	process.stdout.write(`  Total Time:     ${(totalTime / 1000).toFixed(1)}s`);
+	process.stdout.write(`  Status:         ${result.status.toUpperCase()}`);
 }
 
 main().catch((err) => {

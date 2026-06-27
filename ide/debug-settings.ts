@@ -31,8 +31,8 @@ async function debugSettings() {
 	await page.waitForTimeout(3000);
 
 	const content = await page.locator("main").innerText();
-	console.log("Content length:", content.length);
-	console.log("Content preview:", content.substring(0, 200));
+	process.stdout.write("Content length:", content.length);
+	process.stdout.write("Content preview:", content.substring(0, 200));
 
 	// Filter actual errors (not 500s)
 	const realErrors = allLogs.filter(
@@ -43,9 +43,9 @@ async function debugSettings() {
 			(l.includes("error") && !l.includes("500") && !l.includes("favicon")),
 	);
 
-	console.log("\n=== REAL ERRORS ===");
+	process.stdout.write("\n=== REAL ERRORS ===");
 	for (const e of realErrors.slice(0, 5)) {
-		console.log(e.substring(0, 150));
+		process.stdout.write(e.substring(0, 150));
 	}
 
 	await browser.close();

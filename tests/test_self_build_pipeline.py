@@ -2,13 +2,14 @@
 Self-referential build test: VibeServe builds its own marketing site.
 Validates the full architect -> code -> review pipeline.
 """
-import asyncio
 import json
-import os
 import time
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
+
+pytestmark = [pytest.mark.usefixtures("patch_auth")]
 
 SELF_BUILD_INTENT = """
 Build the official VibeServe marketing website. VibeServe is an AI-powered
@@ -38,12 +39,83 @@ OUTPUT_DIR = Path("tests/artifacts/self_build")
 
 
 class MockCtx:
+    auth_token = "test-token"
+
     async def info(self, msg):
         pass
 
     async def report_progress(self, cur, total, msg):
         pass
 
+
+def _make_llm_response(prompt: str) -> str:
+    """Route prompt to the correct mock JSON response."""
+    p = prompt.lower()
+    if "architecture plan for:" in p:
+        return json.dumps({
+            "decisions": [
+                {"id": "d1", "title": "React frontend", "context": "UI layer", "decision": "React",
+                 "alternatives": ["Vue"], "rationale": "Component reuse", "consequences": [], "confidence": 1.0},
+                {"id": "d2", "title": "WCAG AAA accessibility", "context": "Accessibility",
+                 "decision": "WCAG AAA", "alternatives": [], "rationale": "Required by constraints",
+                 "consequences": [], "confidence": 1.0},
+                {"id": "d3", "title": "Mobile-first responsive", "context": "Layout",
+                 "decision": "Mobile-first", "alternatives": [], "rationale": "Best practice",
+                 "consequences": [], "confidence": 1.0},
+            ],
+            "component_tree": ["App", "Hero", "Features"],
+            "data_flow": {"input": "user intent", "output": "rendered UI"},
+            "file_structure": ["App.tsx", "styles.css", "index.tsx"],
+            "estimated_complexity": "medium",
+            "risks": [],
+            "recommended_stack": {"frontend": "React", "styling": "Tailwind"},
+        })
+    elif "generate code files" in p:
+        # MUST wrap in {"files": [...]} — parse_json_robust tries {} before [],
+        # so a bare array [{"path":...}] would return only the first dict.
+        return json.dumps({
+            "files": [
+                {"path": "App.tsx",
+                 "content": "export default function App() { return <div><section className='hero'><h1>Hero Headline</h1></section></div>; }",
+                 "language": "tsx", "purpose": "Main app component"},
+                {"path": "styles.css",
+                 "content": ".hero { background: #0A0A0A; color: #EEEEEE; padding: 4rem; }",
+                 "language": "css", "purpose": "Global styles"},
+                {"path": "index.tsx",
+                 "content": "import React from 'react'; import App from './App'; export default App;",
+                 "language": "tsx", "purpose": "Entry point"},
+            ]
+        })
+    else:
+        return json.dumps({
+            "consensus_score": 0.9,
+            "review": "The code enforces WCAG AAA contrast and semantic HTML throughout. Accessibility is strong.",
+            "passed": True,
+            "recommendation": "Deploy",
+        })
+
+
+@pytest.fixture(autouse=True)
+def mock_llm_and_rate_limit():
+    """Patch vibeserve.providers.LLMRouter.get and reset rate limiter."""
+    from vibeserve.middleware import rate_limiter
+    rate_limiter._tokens.clear()
+    rate_limiter._last_check.clear()
+
+    class MockProvider:
+        @property
+        def name(self):
+            return "MockProvider"
+        async def call(self, prompt, temperature=0.7, response_format="json"):
+            return _make_llm_response(prompt)
+
+    with patch("vibeserve.providers.LLMRouter.get", return_value=MockProvider()):
+        yield
+
+
+# ---------------------------------------------------------------------------
+# Pipeline tests
+# ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_architect_phase():
@@ -74,15 +146,23 @@ async def test_architect_phase():
 async def test_code_phase():
     from vibeserve.tools.v5_tools import vibe_code_tool
 
-    arch_path = OUTPUT_DIR / "architect_result.json"
-    if not arch_path.exists():
-        pytest.skip("architect_result.json not found — run test_architect_phase first")
-    architect_result = json.loads(arch_path.read_text())
+    plan = {
+        "decisions": [
+            {"id": "d1", "title": "React", "context": "UI", "decision": "React",
+             "alternatives": [], "rationale": "Good", "consequences": [], "confidence": 1.0},
+        ],
+        "component_tree": ["App", "Hero"],
+        "data_flow": {},
+        "file_structure": ["App.tsx", "styles.css", "index.tsx"],
+        "estimated_complexity": "medium",
+        "risks": [],
+        "recommended_stack": {"frontend": "React"},
+    }
 
     result = await vibe_code_tool(
         ctx=MockCtx(),
         intent=SELF_BUILD_INTENT,
-        plan=architect_result.get("plan", {}),
+        plan=plan,
         constraints=SELF_BUILD_CONSTRAINTS,
         target_language="typescript",
     )
@@ -99,6 +179,7 @@ async def test_code_phase():
     all_content = " ".join(f.get("content", "") for f in files).lower()
     assert "hero" in all_content or "headline" in all_content, "Generated code contains no hero section"
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for f in files:
         out = OUTPUT_DIR / "generated" / f["path"]
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -112,14 +193,14 @@ async def test_code_phase():
 async def test_review_phase():
     from vibeserve.tools.v5_tools import vibe_review_tool
 
-    code_path = OUTPUT_DIR / "code_result.json"
-    if not code_path.exists():
-        pytest.skip("code_result.json not found — run test_code_phase first")
-    code_result = json.loads(code_path.read_text())
+    files = [
+        {"path": "App.tsx", "content": "<h1>Hero Headline</h1>", "language": "tsx", "purpose": "Main"},
+        {"path": "styles.css", "content": ".hero { color: #eee; }", "language": "css", "purpose": "Styles"},
+    ]
 
     result = await vibe_review_tool(
         ctx=MockCtx(),
-        files=code_result.get("files", []),
+        files=files,
         requirements=SELF_BUILD_CONSTRAINTS,
     )
 
@@ -131,6 +212,7 @@ async def test_review_phase():
         "wcag" in review_text or "contrast" in review_text or "accessib" in review_text
     ), "Review did not address accessibility constraints"
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUTPUT_DIR / "review_result.json").write_text(json.dumps(result, indent=2))
     return result
 

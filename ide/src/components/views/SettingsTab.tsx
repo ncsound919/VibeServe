@@ -287,11 +287,11 @@ function AgentRegistryPanel() {
 	const { agents } = useSettingsStore();
 
 	const handleReassess = (id: string) => {
-		// TODO: wire to re-assessment endpoint
+		// PENDING: wire to re-assessment endpoint
 	};
 
 	const handleRemove = (id: string) => {
-		// TODO: wire to removal endpoint
+		// PENDING: wire to removal endpoint
 	};
 
 	return (

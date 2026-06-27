@@ -24,7 +24,7 @@ async function fullTest() {
 	});
 	await page.waitForTimeout(2000);
 
-	console.log("=== PRIMARY TABS ===");
+	process.stdout.write("=== PRIMARY TABS ===");
 	const primaryTabs = [
 		"Composer",
 		"Editor",
@@ -39,17 +39,17 @@ async function fullTest() {
 		await page.waitForTimeout(1000);
 		const content = await page.locator("main").innerText();
 		const ok = content.length > 20 && !content.includes("failed to load");
-		console.log(`${ok ? "✅" : "❌"} ${name}: ${content.substring(0, 50)}`);
+		process.stdout.write(`${ok ? "✅" : "❌"} ${name}: ${content.substring(0, 50)}`);
 	}
 
-	console.log("\n=== CLICKING ADVANCED SECTION ===");
+	process.stdout.write("\n=== CLICKING ADVANCED SECTION ===");
 	await page.locator('button:has-text("Toggle advanced")').click();
 	await page.waitForTimeout(500);
 
 	const advancedButtons = await page.locator("aside button").all();
-	console.log(`Now have ${advancedButtons.length} buttons in sidebar`);
+	process.stdout.write(`Now have ${advancedButtons.length} buttons in sidebar`);
 
-	console.log("\n=== ADVANCED TABS ===");
+	process.stdout.write("\n=== ADVANCED TABS ===");
 	const advancedTabs = [
 		{ name: "Overview", id: "nav-item-overview" },
 		{ name: "Pipeline", id: "nav-item-pipeline" },
@@ -69,29 +69,29 @@ async function fullTest() {
 		const btn = page.locator(`#${tab.id}`);
 		const exists = await btn.count();
 		if (exists === 0) {
-			console.log(`⚠️  ${tab.name}: button #${tab.id} not found`);
+			process.stdout.write(`⚠️  ${tab.name}: button #${tab.id} not found`);
 			continue;
 		}
 		await btn.click();
 		await page.waitForTimeout(1500);
 		const content = await page.locator("main").innerText();
 		const ok = content.length > 20 && !content.includes("failed to load");
-		console.log(`${ok ? "✅" : "❌"} ${tab.name}: ${content.substring(0, 50)}`);
+		process.stdout.write(`${ok ? "✅" : "❌"} ${tab.name}: ${content.substring(0, 50)}`);
 	}
 
-	console.log("\n=== TESTING BUTTONS INSIDE TABS ===");
+	process.stdout.write("\n=== TESTING BUTTONS INSIDE TABS ===");
 
 	// Test settings buttons
 	await page.locator("#nav-item-settings").click();
 	await page.waitForTimeout(1000);
 
 	const settingsButtons = await page.locator("main button").all();
-	console.log(`Settings tab has ${settingsButtons.length} buttons`);
+	process.stdout.write(`Settings tab has ${settingsButtons.length} buttons`);
 
 	for (const btn of settingsButtons.slice(0, 5)) {
 		const label = await btn.textContent();
 		if (label && label.trim().length > 0) {
-			console.log(`  Button: ${label.substring(0, 30)}`);
+			process.stdout.write(`  Button: ${label.substring(0, 30)}`);
 		}
 	}
 
@@ -100,10 +100,10 @@ async function fullTest() {
 	await page.waitForTimeout(1000);
 
 	const overviewButtons = await page.locator("main button").all();
-	console.log(`\nOverview tab has ${overviewButtons.length} buttons`);
+	process.stdout.write(`\nOverview tab has ${overviewButtons.length} buttons`);
 
 	await browser.close();
-	console.log("\n✅ TEST COMPLETE");
+	process.stdout.write("\n✅ TEST COMPLETE");
 }
 
 fullTest().catch(console.error);

@@ -59,7 +59,7 @@ function createWindow() {
 		mainWindow?.webContents.send("window:maximized", false);
 	});
 
-	console.log("[Nexus] Main window created");
+	process.stdout.write("[Nexus] Main window created\n");
 }
 
 function createTray() {
@@ -190,7 +190,7 @@ app.whenReady().then(() => {
 		mainWindow?.webContents.send("shortcut:new-agent");
 	});
 
-	console.log("[Nexus] App ready");
+	process.stdout.write("[Nexus] App ready\n");
 });
 
 app.on("window-all-closed", () => {

@@ -53,8 +53,11 @@ export function DebugPanel() {
 	}, []);
 
 	const evaluateWatch = useCallback((expression: string): string => {
+		if (/[=]=>|new \w+\s*\(|await\b/.test(expression)) {
+			return "[Blocked: use debug console for function calls]";
+		}
 		try {
-			const fn = new Function("return " + expression);
+			const fn = new Function("return (" + expression + ")");
 			const result = fn();
 			if (result === undefined) return "undefined";
 			if (result === null) return "null";

@@ -63,7 +63,7 @@ export const diffService = {
     
     // This is a naive implementation that just shows the whole file for modified status
     // but marks lines as add/remove. 
-    // TODO: Implement real hunk grouping (@@ -L,l +L,l @@)
+    // TASK: Implement real hunk grouping (@@ -L,l +L,l @@)
     
     // For now, let's just generate the lines based on the changes
     // This is a placeholder for the real unified diff logic

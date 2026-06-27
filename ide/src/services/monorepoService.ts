@@ -208,7 +208,7 @@ export const useMonorepoStore = create<MonorepoStore>()((set, get) => ({
 			};
 
 			set({ config, isDetecting: false });
-			console.log(
+			process.stdout.write(
 				"[Monorepo] Detected:",
 				monorepoType,
 				"workspaces:",
@@ -250,16 +250,16 @@ export const useMonorepoStore = create<MonorepoStore>()((set, get) => ({
 
 		const taskScript = workspace.packageJson.scripts?.[task];
 		if (!taskScript) {
-			console.log(`[Monorepo] No script "${task}" in ${workspaceName}`);
+			process.stdout.write(`[Monorepo] No script "${task}" in ${workspaceName}`);
 			return { success: false, output: "No script found" };
 		}
 
 		const taskId = `${workspaceName}:${task}`;
 		const startTime = Date.now();
 
-		console.log(`[Monorepo] Running ${taskId}: ${taskScript}`);
+		process.stdout.write(`[Monorepo] Running ${taskId}: ${taskScript}`);
 
-		console.log(
+		process.stdout.write(
 			`[Monorepo] Completed ${taskId} in ${Date.now() - startTime}ms`,
 		);
 

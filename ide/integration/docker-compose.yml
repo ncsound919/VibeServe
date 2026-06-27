@@ -312,7 +312,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
     ports:
-      - "3030:3000"
+      - "3031:3000"
     depends_on:
       - prometheus
     networks:

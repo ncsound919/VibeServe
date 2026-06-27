@@ -1,11 +1,17 @@
 """VibeServe entry point — registers all tools."""
 
 from __future__ import annotations
+
+# CRITICAL: Must be set BEFORE any asyncio imports on Windows
+# to enable subprocess transport support
+import sys
 import asyncio
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 import json
 import logging
 import signal
-import sys
 # ruff: noqa: F405  # Star imports from tools are intentional for CLI demo mode
 from vibeserve.server import mcp_server
 from vibeserve.handlers.resources import *  # noqa: F403
@@ -17,6 +23,10 @@ from vibeserve.tools.pipeline_tools import *  # noqa: F403
 from vibeserve.tools.agenda import *  # noqa: F403
 from vibeserve.tools.repo_indexer import *  # noqa: F403
 from vibeserve.tools.github_sync import *  # noqa: F403
+from vibeserve.tools.opencode_execution import *  # noqa: F403
+import vibeserve.tools.hermes_integration as hermes_integration  # noqa: F403
+from vibeserve.tools.ecc_integration import *  # noqa: F403
+from vibeserve.tools.mutly_integration import *  # noqa: F403
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 log = logging.getLogger("VibeServe")

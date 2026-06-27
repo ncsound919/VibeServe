@@ -38,9 +38,9 @@ async function debugFail() {
 	await page.waitForTimeout(2000);
 
 	const content = await page.locator("main").innerText();
-	console.log("Command Center:");
-	console.log(content.substring(0, 200));
-	console.log(
+	process.stdout.write("Command Center:");
+	process.stdout.write(content.substring(0, 200));
+	process.stdout.write(
 		"\nErrors:",
 		errors.filter((e) => !e.includes("500")).slice(0, 3),
 	);

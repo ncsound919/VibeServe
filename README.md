@@ -117,3 +117,61 @@ VibeServe MCP Server (Python / FastMCP)
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Windows Bridge (TypeScript + Hono)
+
+The `vibeserve/ts_bridge/` directory contains a **TypeScript-native Hono HTTP bridge** that
+replaces the Python `http_bridge.py` on Windows, avoiding ProactorEventLoop issues with
+asyncio servers. It spawns `python -m vibeserve` as a child process and communicates with
+the Python MCP server via **stdin/stdout JSON-RPC** (the standard MCP stdio transport).
+
+### Quick Start
+
+```powershell
+cd vibeserve\ts_bridge
+npm install
+.\start-bridge.ps1
+```
+
+Or with custom settings:
+
+```powershell
+.\start-bridge.ps1 -Port 9000 -Python "python3.12" -Host "0.0.0.0"
+```
+
+### Architecture
+
+```
+Client (HTTP / WebSocket)
+       ↓
+ts_bridge (Hono + TypeScript)
+       ↓ stdin/stdout JSON-RPC
+python -m vibeserve (FastMCP stdio server)
+```
+
+### Endpoints
+
+| Method | Path          | Description                     |
+|--------|---------------|---------------------------------|
+| GET    | `/health`     | Health check                    |
+| POST   | `/tools/list` | List available MCP tools        |
+| POST   | `/tools/call` | Call an MCP tool by name        |
+| WS     | `/ws`         | WebSocket for streaming tool calls |
+
+### WebSocket Protocol
+
+Connect to `ws://host:port/ws` and send JSON messages:
+
+```json
+{ "type": "tool_call", "name": "vs_memory_get", "arguments": { "workspace_id": "demo" } }
+{ "type": "ping" }
+```
+
+### Testing
+
+```bash
+cd vibeserve\ts_bridge
+npm test
+```

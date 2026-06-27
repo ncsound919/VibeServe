@@ -14,8 +14,8 @@ RUN mkdir -p .aether_prime_cache .aether_prime_memory && chown -R vibeserve:vibe
 
 ENV DEFAULT_LLM_PROVIDER=local
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD python -c "import sys; sys.exit(0)"
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=15s \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 USER vibeserve
 

@@ -32,7 +32,7 @@ const execFileAsync = promisify(execFile);
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
 const CHEETAH_DIR = path.resolve(process.cwd(), "cheetah");
-const TASK_DIR = path.join(CHEETAH_DIR, "tasks");
+const TASK_DIR = path.join(CHEETAH_DIR, "TASKS");
 const OUT_DIR = path.join(CHEETAH_DIR, "out");
 const REPORTS_DIR = path.join(CHEETAH_DIR, "reports");
 const TEMPLATES_DIR = path.join(CHEETAH_DIR, "templates");
@@ -212,21 +212,21 @@ const ${camel}Routes = new Hono();
 
 ${opts.addDocs ? `/** GET /${camel} — list all ${camel}s */` : ""}
 ${camel}Routes.get('/', async (c) => {
-  // TODO: implement
+  // TASK: implement
   return c.json({ data: [] });
 });
 
 ${opts.addDocs ? `/** GET /${camel}/:id — get single ${camel} */` : ""}
 ${camel}Routes.get('/:id', async (c) => {
   const id = c.req.param('id');
-  // TODO: implement
+  // TASK: implement
   return c.json({ data: null });
 });
 
 ${opts.addDocs ? `/** POST /${camel} — create ${camel} */` : ""}
 ${camel}Routes.post('/', async (c) => {
   const body = await c.req.json();
-  // TODO: implement
+  // TASK: implement
   return c.json({ data: body }, 201);
 });
 
@@ -234,14 +234,14 @@ ${opts.addDocs ? `/** PUT /${camel}/:id — update ${camel} */` : ""}
 ${camel}Routes.put('/:id', async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
-  // TODO: implement
+  // TASK: implement
   return c.json({ data: { id, ...body } });
 });
 
 ${opts.addDocs ? `/** DELETE /${camel}/:id — delete ${camel} */` : ""}
 ${camel}Routes.delete('/:id', async (c) => {
   const id = c.req.param('id');
-  // TODO: implement
+  // TASK: implement
   return c.json({ deleted: id });
 });
 
@@ -289,7 +289,7 @@ interface ${pascal}Props {
 export function ${pascal}({ className }: ${pascal}Props) {
   return (
     <div className={className}>
-      {/* TODO: implement ${pascal} */}
+      {/* TASK: implement ${pascal} */}
     </div>
   );
 }
@@ -306,7 +306,7 @@ export function use${pascal}() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // TODO: implement fetch
+      // TASK: implement fetch
       setData(null);
     } catch (e) {
       setError(e as Error);
@@ -394,7 +394,7 @@ describe('${pascal}', () => {
   });
 
   it('should have correct structure', () => {
-    // TODO: add specific assertions
+    // TASK: add specific assertions
     expect(true).toBe(true);
   });
 });
@@ -405,7 +405,7 @@ describe('${pascal}', () => {
 
 export async function ${camel}Middleware(c: Context, next: Next) {
   try {
-    // TODO: implement middleware logic
+    // TASK: implement middleware logic
     const canProceed = true;
     if (!canProceed) {
       return c.json({ error: 'Access denied' }, 403);
@@ -622,13 +622,13 @@ export async function getCheetahStatus(): Promise<{
 	scriptPath?: string;
 	taskDir: string;
 	outDir: string;
-	pendingTasks: number;
-	completedTasks: number;
+	pendingTASKS: number;
+	completedTASKS: number;
 }> {
 	const { available, scriptPath } = await detectPythonEngine();
 	ensureDirs();
 
-	const tasks = existsSync(TASK_DIR)
+	const TASKS = existsSync(TASK_DIR)
 		? readdirSync(TASK_DIR).filter((f) => f.endsWith(".yaml"))
 		: [];
 	const done = existsSync(TASK_DIR)
@@ -640,7 +640,7 @@ export async function getCheetahStatus(): Promise<{
 		scriptPath,
 		taskDir: TASK_DIR,
 		outDir: OUT_DIR,
-		pendingTasks: tasks.length - done.length,
-		completedTasks: done.length,
+		pendingTASKS: TASKS.length - done.length,
+		completedTASKS: done.length,
 	};
 }

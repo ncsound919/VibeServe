@@ -1,0 +1,8 @@
+# VibeServe — Requirements
+#
+# Install core:   pip install -e .
+# Install dev:    pip install -e ".[dev]"
+# Install all:    pip install -e ".[dev,docs,mem0,nanobot,big-homie]"
+#
+# See pyproject.toml for dependency groups.
+-e .

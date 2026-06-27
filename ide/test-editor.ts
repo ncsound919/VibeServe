@@ -26,7 +26,7 @@ async function testEditorTab() {
 		consoleErrors.push(`PAGE ERROR: ${err.message}`),
 	);
 
-	console.log("Loading app...");
+	process.stdout.write("Loading app...");
 	await page.goto("http://localhost:3000/", { waitUntil: "domcontentloaded" });
 
 	const TABS = [
@@ -40,7 +40,7 @@ async function testEditorTab() {
 	await page.waitForTimeout(3000);
 
 	// Click Memory first
-	console.log("\n=== Testing All Tabs ===\n");
+	process.stdout.write("\n=== Testing All Tabs ===\n");
 
 	for (const tab of TABS) {
 		const tabErrors: string[] = [];
@@ -49,7 +49,7 @@ async function testEditorTab() {
 		};
 		page.on("console", handler);
 
-		console.log(`Clicking ${tab.name}...`);
+		process.stdout.write(`Clicking ${tab.name}...`);
 		await page.locator(`#${tab.id}`).click();
 		await page.waitForTimeout(1500);
 
@@ -70,21 +70,21 @@ async function testEditorTab() {
 		);
 
 		if (criticalErrors.length > 0) {
-			console.log(`  ❌ Errors: ${criticalErrors.length}`);
+			process.stdout.write(`  ❌ Errors: ${criticalErrors.length}`);
 			for (const e of criticalErrors.slice(0, 2)) {
-				console.log(`     - ${e.substring(0, 100)}`);
+				process.stdout.write(`     - ${e.substring(0, 100)}`);
 			}
 		} else if (!hasContent) {
-			console.log(`  ⚠️  No content`);
+			process.stdout.write(`  ⚠️  No content`);
 		} else {
-			console.log(`  ✅ OK (${content.length} chars)`);
+			process.stdout.write(`  ✅ OK (${content.length} chars)`);
 		}
 	}
 
-	console.log("\n=== Console Errors after clicking Editor ===");
+	process.stdout.write("\n=== Console Errors after clicking Editor ===");
 	for (const e of consoleErrors) {
 		if (!e.includes("favicon") && !e.includes("ERR_BLOCKED")) {
-			console.log("- ", e.substring(0, 200));
+			process.stdout.write("- ", e.substring(0, 200));
 		}
 	}
 

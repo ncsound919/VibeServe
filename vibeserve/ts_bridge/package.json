@@ -1,0 +1,26 @@
+{
+  "name": "vibeserve-ts-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript-native Hono HTTP bridge for VibeServe MCP server (Windows-compatible alternative to Python HTTP bridge)",
+  "engines": { "node": ">=18.0.0" },
+  "scripts": {
+    "dev": "tsx bridge.ts",
+    "build": "tsc",
+    "start": "node dist/bridge.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.14",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8",
+    "tsx": "^4.19.2"
+  }
+}

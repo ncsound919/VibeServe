@@ -147,9 +147,9 @@ function vibeCheck(iter: number): {
 	}
 }
 
-console.log("=== RECURSIVE SELF-IMPROVEMENT — 5 ITERATIONS ===\n");
-console.log("Building: Nexus Alpha $20 Sales Website");
-console.log("Goal: Improve quality score each iteration\n");
+process.stdout.write("=== RECURSIVE SELF-IMPROVEMENT — 5 ITERATIONS ===\n");
+process.stdout.write("Building: Nexus Alpha $20 Sales Website");
+process.stdout.write("Goal: Improve quality score each iteration\n");
 
 const history: Array<{
 	iter: number;
@@ -159,12 +159,12 @@ const history: Array<{
 }> = [];
 
 // ─── ITERATION 1: BASELINE ───
-console.log("─── ITERATION 1: BASELINE ───");
+process.stdout.write("─── ITERATION 1: BASELINE ───");
 let score = vibeCheck(1);
 if (score) {
-	console.log(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
+	process.stdout.write(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
 	for (const g of score.gates) {
-		console.log(
+		process.stdout.write(
 			`    ${g.gate}: ${g.score}/${g.maxScore}${g.warnings.length > 0 ? " ⚠" : ""}`,
 		);
 	}
@@ -178,12 +178,12 @@ if (score) {
 	// Learn from iteration 1
 	const structGate = score.gates.find((g) => g.gate === "Project Structure");
 	if (structGate && structGate.warnings.length > 0) {
-		console.log("  → Learning: Missing project files detected");
+		process.stdout.write("  → Learning: Missing project files detected");
 	}
 }
 
 // ─── ITERATION 2: ADD .GITIGNORE + README ───
-console.log("\n─── ITERATION 2: ADD .GITIGNORE + README ───");
+process.stdout.write("\n─── ITERATION 2: ADD .GITIGNORE + README ───");
 writeFileSync(
 	join(cwd, "src", "sales", ".gitignore"),
 	"node_modules/\ndist/\n.env*\n*.log\n",
@@ -192,12 +192,12 @@ writeFileSync(
 	join(cwd, "src", "sales", "README.md"),
 	"# Nexus Alpha $20 Sales Page\n\nAutonomous build pipeline sales landing page.\n\n## Files\n- `index.html` - Landing page\n- `styles.css` - Styling\n- `.gitignore` - Ignored files\n",
 );
-console.log("  Created: .gitignore + README.md");
+process.stdout.write("  Created: .gitignore + README.md");
 score = vibeCheck(2);
 if (score) {
-	console.log(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
+	process.stdout.write(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
 	for (const g of score.gates) {
-		console.log(
+		process.stdout.write(
 			`    ${g.gate}: ${g.score}/${g.maxScore}${g.warnings.length > 0 ? " ⚠" : ""}`,
 		);
 	}
@@ -210,7 +210,7 @@ if (score) {
 }
 
 // ─── ITERATION 3: SEMANTIC HTML + META TAGS ───
-console.log("\n─── ITERATION 3: SEMANTIC HTML + META TAGS ───");
+process.stdout.write("\n─── ITERATION 3: SEMANTIC HTML + META TAGS ───");
 let html = readFileSync(join(cwd, "src", "sales", "index.html"), "utf-8");
 if (!html.includes('<meta name="description"')) {
 	html = html.replace(
@@ -238,12 +238,12 @@ if (!html.includes("<main>")) {
 	html = html.replace("</footer>", "  </main>\n</footer>");
 }
 writeFileSync(join(cwd, "src", "sales", "index.html"), html);
-console.log("  Added: meta description, keywords, aria labels, semantic main");
+process.stdout.write("  Added: meta description, keywords, aria labels, semantic main");
 score = vibeCheck(3);
 if (score) {
-	console.log(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
+	process.stdout.write(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
 	for (const g of score.gates) {
-		console.log(
+		process.stdout.write(
 			`    ${g.gate}: ${g.score}/${g.maxScore}${g.warnings.length > 0 ? " ⚠" : ""}`,
 		);
 	}
@@ -256,7 +256,7 @@ if (score) {
 }
 
 // ─── ITERATION 4: CSS OPTIMIZATION + FAVICON ───
-console.log("\n─── ITERATION 4: CSS OPTIMIZATION + FAVICON ───");
+process.stdout.write("\n─── ITERATION 4: CSS OPTIMIZATION + FAVICON ───");
 let css = readFileSync(join(cwd, "src", "sales", "styles.css"), "utf-8");
 css = css.replace(/\/\*[\s\S]*?\*\//g, ""); // Remove comments
 writeFileSync(join(cwd, "src", "sales", "styles.css"), css);
@@ -268,15 +268,15 @@ if (!html.includes('<link rel="icon"')) {
 }
 html = html.replace(
 	"</body>",
-	'  <script>\n    console.log("Nexus Alpha Sales Page — Built by its own pipeline");\n  </script>\n</body>',
+	'  <script>\n    process.stdout.write("Nexus Alpha Sales Page — Built by its own pipeline");\n  </script>\n</body>',
 );
 writeFileSync(join(cwd, "src", "sales", "index.html"), html);
-console.log("  Added: favicon, CSS optimized, analytics placeholder");
+process.stdout.write("  Added: favicon, CSS optimized, analytics placeholder");
 score = vibeCheck(4);
 if (score) {
-	console.log(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
+	process.stdout.write(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
 	for (const g of score.gates) {
-		console.log(
+		process.stdout.write(
 			`    ${g.gate}: ${g.score}/${g.maxScore}${g.warnings.length > 0 ? " ⚠" : ""}`,
 		);
 	}
@@ -289,7 +289,7 @@ if (score) {
 }
 
 // ─── ITERATION 5: STRUCTURED DATA + FINAL POLISH ───
-console.log("\n─── ITERATION 5: STRUCTURED DATA + FINAL POLISH ───");
+process.stdout.write("\n─── ITERATION 5: STRUCTURED DATA + FINAL POLISH ───");
 if (!html.includes("application/ld+json")) {
 	const ldJson = `  <script type="application/ld+json">
   {
@@ -313,12 +313,12 @@ if (!html.includes("og:title")) {
 	html = html.replace('<link rel="icon"', `${ogTags}\n  <link rel="icon"`);
 }
 writeFileSync(join(cwd, "src", "sales", "index.html"), html);
-console.log("  Added: JSON-LD structured data, Open Graph tags");
+process.stdout.write("  Added: JSON-LD structured data, Open Graph tags");
 score = vibeCheck(5);
 if (score) {
-	console.log(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
+	process.stdout.write(`  Score: ${score.letter} (${score.total}/${score.maxTotal})`);
 	for (const g of score.gates) {
-		console.log(
+		process.stdout.write(
 			`    ${g.gate}: ${g.score}/${g.maxScore}${g.warnings.length > 0 ? " ⚠" : ""}`,
 		);
 	}
@@ -331,14 +331,14 @@ if (score) {
 }
 
 // ─── TREND REPORT ───
-console.log("\n══════════════════════════════════════════════");
-console.log("         5-ITERATION TREND REPORT              ");
-console.log("══════════════════════════════════════════════\n");
+process.stdout.write("\n══════════════════════════════════════════════");
+process.stdout.write("         5-ITERATION TREND REPORT              ");
+process.stdout.write("══════════════════════════════════════════════\n");
 for (const h of history) {
 	const bar = "█".repeat(Math.min(25, Math.round(h.total / 3)));
-	console.log(`  Iter ${h.iter}: ${h.letter}  ${bar.padEnd(25)} ${h.total}`);
+	process.stdout.write(`  Iter ${h.iter}: ${h.letter}  ${bar.padEnd(25)} ${h.total}`);
 	if (h.improvements.length > 0) {
-		console.log(`    + ${h.improvements.join(", ")}`);
+		process.stdout.write(`    + ${h.improvements.join(", ")}`);
 	}
 }
 
@@ -346,15 +346,15 @@ const first = history[0];
 const last = history[history.length - 1];
 if (first && last) {
 	const change = last.total - first.total;
-	console.log(
+	process.stdout.write(
 		`\n  ${change > 0 ? "▲" : change < 0 ? "▼" : "●"} ${first.total} → ${last.total} (${change >= 0 ? "+" : ""}${change})`,
 	);
 	if (change > 0) {
-		console.log("  ✓ RECURSIVE SELF-IMPROVEMENT PROVEN");
-		console.log(
+		process.stdout.write("  ✓ RECURSIVE SELF-IMPROVEMENT PROVEN");
+		process.stdout.write(
 			"  The system learned from each iteration and improved automatically.\n",
 		);
 	} else if (change === 0) {
-		console.log("  → Score maintained — system is stable across iterations\n");
+		process.stdout.write("  → Score maintained — system is stable across iterations\n");
 	}
 }

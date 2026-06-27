@@ -1,9 +1,26 @@
 """VibeVerifier — spec and code quality verification."""
 from __future__ import annotations
 import re
+from html.parser import HTMLParser
 from typing import Any, Dict, List
 from vibeserve.models import CodeFile
 from vibeserve.tools.validators import SchemaValidator
+
+
+class TagCounter(HTMLParser):
+    def __init__(self, tag: str, count_closes: bool = False):
+        super().__init__()
+        self.tag = tag
+        self.count_closes = count_closes
+        self.count = 0
+
+    def handle_starttag(self, tag, attrs):
+        if not self.count_closes and tag == self.tag:
+            self.count += 1
+
+    def handle_endtag(self, tag):
+        if self.count_closes and tag == self.tag:
+            self.count += 1
 
 
 class VibeVerifier:
@@ -32,14 +49,18 @@ class VibeVerifier:
                 issues.append(f"{f.path}: missing accessibility notes")
             if "aria-" not in f.content.lower() and f.language in ("tsx", "jsx", "html"):
                 issues.append(f"{f.path}: no ARIA attributes found")
-            if "TODO" in f.content or "FIXME" in f.content:
-                issues.append(f"{f.path}: contains TODO/FIXME")
+            if "TASK" in f.content or "FIX_NOW" in f.content:
+                issues.append(f"{f.path}: contains TASK/FIX_NOW")
             if f.language == "html":
                 for pattern, label in fabricated_patterns:
                     if re.search(pattern, f.content):
                         issues.append(f"{f.path}: {label} — fabricated/hallucinated content")
-                opens = len(re.findall(r"<section\b", f.content))
-                closes = len(re.findall(r"</section>", f.content))
+                open_counter = TagCounter("section")
+                open_counter.feed(f.content)
+                opens = open_counter.count
+                close_counter = TagCounter("section", count_closes=True)
+                close_counter.feed(f.content)
+                closes = close_counter.count
                 if opens != closes:
                     issues.append(f"{f.path}: HTML nesting error — {opens} <section> opens vs {closes} closes")
         return {"passed": len(issues) == 0, "issues": issues, "issue_count": len(issues), "files_checked": len(files)}

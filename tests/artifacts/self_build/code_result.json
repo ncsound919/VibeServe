@@ -1,0 +1,40 @@
+{
+  "status": "success",
+  "files": [
+    {
+      "path": "App.tsx",
+      "content": "export default function App() { return <div><section className='hero'><h1>Hero Headline</h1></section></div>; }",
+      "language": "tsx",
+      "purpose": "Main app component",
+      "accessibility_notes": []
+    },
+    {
+      "path": "styles.css",
+      "content": ".hero { background: #0A0A0A; color: #EEEEEE; padding: 4rem; }",
+      "language": "css",
+      "purpose": "Global styles",
+      "accessibility_notes": []
+    },
+    {
+      "path": "index.tsx",
+      "content": "import React from 'react'; import App from './App'; export default App;",
+      "language": "tsx",
+      "purpose": "Entry point",
+      "accessibility_notes": []
+    }
+  ],
+  "file_count": 3,
+  "quality": {
+    "passed": false,
+    "issues": [
+      "App.tsx: missing accessibility notes",
+      "App.tsx: no ARIA attributes found",
+      "styles.css: missing accessibility notes",
+      "index.tsx: missing accessibility notes",
+      "index.tsx: no ARIA attributes found"
+    ],
+    "issue_count": 5,
+    "files_checked": 3
+  },
+  "total_lines": 3
+}

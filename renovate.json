@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    { "matchUpdateTypes": ["patch"], "automerge": true },
+    { "matchUpdateTypes": ["minor"], "groupName": "all minor Python deps" },
+    { "matchManagers": ["github-actions"], "groupName": "GitHub Actions" }
+  ],
+  "schedule": ["before 9am on Monday"],
+  "timezone": "America/Chicago"
+}

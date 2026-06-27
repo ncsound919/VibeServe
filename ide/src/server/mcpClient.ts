@@ -53,7 +53,7 @@ export async function initVibeServeClient(): Promise<Client | null> {
 				),
 			),
 		]);
-		console.log(`[MCP Client] Connected to VibeServe MCP via ${pythonCmd}`);
+		process.stdout.write(`[MCP Client] Connected to VibeServe MCP via ${pythonCmd}`);
 		return vibeServeClient;
 	} catch (err) {
 		console.error("[MCP Client] Failed to connect:", (err as Error).message);

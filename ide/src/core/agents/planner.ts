@@ -43,7 +43,7 @@ export async function generatePlan(spec: AppSpec): Promise<ArchitecturePlan> {
 					{
 						path: "src/index.ts",
 						content:
-							"import express from 'express';const app=express();app.use(express.json());app.get('/health',(_,r)=>r.json({ok:true}));app.listen(3000,()=>console.log('on :3000'));",
+							"import express from 'express';const app=express();app.use(express.json());app.get('/health',(_,r)=>r.json({ok:true}));app.listen(3000,()=>process.stdout.write('on :3000'));",
 					},
 					{
 						path: "src/routes/health.ts",

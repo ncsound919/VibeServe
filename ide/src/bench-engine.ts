@@ -66,11 +66,11 @@ interface BenchmarkReport {
 // ─── PHASE 1: Pipeline Loop Benchmark ──────────────────────────────────────────
 
 async function benchmarkPipelineLoops(): Promise<RunResult[]> {
-	console.log("\n═══ PIPELINE LOOP BENCHMARK ═══");
+	process.stdout.write("\n═══ PIPELINE LOOP BENCHMARK ═══");
 	const results: RunResult[] = [];
 
 	for (let run = 1; run <= LOOPS; run++) {
-		console.log(`\n--- Run ${run}/${LOOPS} ---`);
+		process.stdout.write(`\n--- Run ${run}/${LOOPS} ---`);
 		const phases: { phase: string; time: number; passed: boolean }[] = [];
 		let lastPhase = "";
 		let lastTime = Date.now();
@@ -108,7 +108,7 @@ async function benchmarkPipelineLoops(): Promise<RunResult[]> {
 		}
 
 		const duration = Date.now() - startTime;
-		console.log("");
+		process.stdout.write("");
 
 		if (!exec) {
 			throw new Error(`Pipeline run ${run} returned null`);
@@ -131,7 +131,7 @@ async function benchmarkPipelineLoops(): Promise<RunResult[]> {
 			errors,
 		});
 
-		console.log(
+		process.stdout.write(
 			`  Done: ${(duration / 1000).toFixed(1)}s | Status: ${exec.status.toUpperCase()} | Quality: ${quality.overall}% (${quality.overallGrade})`,
 		);
 	}
@@ -142,23 +142,23 @@ async function benchmarkPipelineLoops(): Promise<RunResult[]> {
 // ─── PHASE 2: MCP Tool Reliability ─────────────────────────────────────────────
 
 async function benchmarkMcpTools(): Promise<McpToolStats[]> {
-	console.log("\n═══ MCP TOOL BENCHMARK ═══");
+	process.stdout.write("\n═══ MCP TOOL BENCHMARK ═══");
 	const stats: McpToolStats[] = [];
 
 	const connected = await isMcpConnected();
-	console.log(`  MCP Connected: ${connected}`);
+	process.stdout.write(`  MCP Connected: ${connected}`);
 
 	if (!connected) {
-		console.log("  Skipping MCP tool tests (not connected)");
+		process.stdout.write("  Skipping MCP tool tests (not connected)");
 		return stats;
 	}
 
 	let tools: Array<{ name: string }> = [];
 	try {
 		tools = await listMcpTools();
-		console.log(`  Tools available: ${tools.length}`);
+		process.stdout.write(`  Tools available: ${tools.length}`);
 	} catch {
-		console.log("  Could not list tools — testing known tools only");
+		process.stdout.write("  Could not list tools — testing known tools only");
 	}
 
 	// Test tool names to benchmark
@@ -225,14 +225,14 @@ async function benchmarkMcpTools(): Promise<McpToolStats[]> {
 
 	// Print summary
 	const available = stats.filter((s) => s.available);
-	console.log(`  Results: ${available.length}/${stats.length} available`);
+	process.stdout.write(`  Results: ${available.length}/${stats.length} available`);
 
 	for (const s of stats) {
 		const icon = s.available ? "✅" : "❌";
 		const time = s.available
 			? `${s.responseTime}ms`
 			: (s.error ?? "unavailable");
-		console.log(`  ${icon} ${s.name.padEnd(22)} ${time}`);
+		process.stdout.write(`  ${icon} ${s.name.padEnd(22)} ${time}`);
 	}
 
 	return stats;
@@ -241,7 +241,7 @@ async function benchmarkMcpTools(): Promise<McpToolStats[]> {
 // ─── PHASE 3: API Endpoint Health ──────────────────────────────────────────────
 
 async function benchmarkApiEndpoints(): Promise<ApiEndpointStats[]> {
-	console.log("\n═══ API ENDPOINT BENCHMARK ═══");
+	process.stdout.write("\n═══ API ENDPOINT BENCHMARK ═══");
 	const baseUrl = "http://localhost:3002";
 	const stats: ApiEndpointStats[] = [];
 
@@ -291,13 +291,13 @@ async function benchmarkApiEndpoints(): Promise<ApiEndpointStats[]> {
 	// Print summary
 	const passed = stats.filter((s) => s.statusCode >= 200 && s.statusCode < 400);
 	const failed = stats.filter((s) => s.statusCode === 0 || s.statusCode >= 400);
-	console.log(
+	process.stdout.write(
 		`  Results: ${passed.length}/${stats.length} OK, ${failed.length} failed`,
 	);
 
 	for (const s of stats) {
 		const icon = s.statusCode >= 200 && s.statusCode < 400 ? "✅" : "❌";
-		console.log(
+		process.stdout.write(
 			`  ${icon} ${s.method.padEnd(4)} ${s.endpoint.padEnd(32)} ${s.statusCode} | ${s.responseTime}ms | ${s.bodySize}B`,
 		);
 	}
@@ -437,12 +437,12 @@ function analyzeResults(
 // ─── MAIN ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-	console.log("╔════════════════════════════════════════════════════════╗");
-	console.log("║   VibeServe Multi-Facet Benchmark Engine              ║");
-	console.log(
+	process.stdout.write("╔════════════════════════════════════════════════════════╗");
+	process.stdout.write("║   VibeServe Multi-Facet Benchmark Engine              ║");
+	process.stdout.write(
 		`║   Loops: ${LOOPS} | Mode: ${QUICK ? "quick" : "full (MCP + API)"}                        ║`,
 	);
-	console.log("╚════════════════════════════════════════════════════════╝");
+	process.stdout.write("╚════════════════════════════════════════════════════════╝");
 
 	const engineStart = Date.now();
 
@@ -469,16 +469,16 @@ async function main() {
 
 	// ─── PRINT REPORT ─────────────────────────────────────────────────────────
 
-	console.log("\n\n════════════════════════════════════════════════════════");
-	console.log("  BENCHMARK REPORT");
-	console.log("════════════════════════════════════════════════════════");
+	process.stdout.write("\n\n════════════════════════════════════════════════════════");
+	process.stdout.write("  BENCHMARK REPORT");
+	process.stdout.write("════════════════════════════════════════════════════════");
 
-	console.log("\n📊 Pipeline Runs:");
-	console.log("─".repeat(70));
-	console.log(`  Run | Time   | Status  | Quality | E2E    | Build`);
-	console.log("─".repeat(70));
+	process.stdout.write("\n📊 Pipeline Runs:");
+	process.stdout.write("─".repeat(70));
+	process.stdout.write(`  Run | Time   | Status  | Quality | E2E    | Build`);
+	process.stdout.write("─".repeat(70));
 	for (const r of pipelineRuns) {
-		console.log(
+		process.stdout.write(
 			`  ${String(r.run).padEnd(4)} | ${(r.duration / 1000).toFixed(1).padEnd(6)}s | ${r.status.padEnd(7)} | ${String(r.quality.overall).padEnd(3)}% (${r.quality.overallGrade}) | ${Math.round(
 				r.e2ePassRate * 100,
 			)
@@ -486,34 +486,34 @@ async function main() {
 				.padEnd(3)}%  | ${r.buildPassed ? "✅" : "❌"}`,
 		);
 	}
-	console.log("─".repeat(70));
+	process.stdout.write("─".repeat(70));
 
-	console.log("\n📈 Quality Trends:");
+	process.stdout.write("\n📈 Quality Trends:");
 	const qt = qualityTrends;
-	console.log(
+	process.stdout.write(
 		`  Pipeline: ${qt.pipelineTrend} | Review: ${qt.reviewTrend} | Audit: ${qt.auditTrend}`,
 	);
-	console.log(`  Average: ${qt.averageScore}% over ${qt.runCount} runs`);
+	process.stdout.write(`  Average: ${qt.averageScore}% over ${qt.runCount} runs`);
 
-	console.log("\n🔌 MCP Tools:");
+	process.stdout.write("\n🔌 MCP Tools:");
 	const mcpOk = mcpTools.filter((t) => t.available);
 	const mcpFail = mcpTools.filter((t) => !t.available);
-	console.log(`  Working: ${mcpOk.length}/${mcpTools.length}`);
+	process.stdout.write(`  Working: ${mcpOk.length}/${mcpTools.length}`);
 	if (mcpFail.length > 0) {
-		console.log(`  Failed: ${mcpFail.map((t) => t.name).join(", ")}`);
+		process.stdout.write(`  Failed: ${mcpFail.map((t) => t.name).join(", ")}`);
 	}
 
-	console.log("\n🌐 API Health:");
+	process.stdout.write("\n🌐 API Health:");
 	const apiOk = apiEndpoints.filter(
 		(e) => e.statusCode >= 200 && e.statusCode < 400,
 	);
 	const apiFail = apiEndpoints.filter(
 		(e) => e.statusCode < 200 || e.statusCode >= 400,
 	);
-	console.log(`  Healthy: ${apiOk.length}/${apiEndpoints.length}`);
+	process.stdout.write(`  Healthy: ${apiOk.length}/${apiEndpoints.length}`);
 	if (apiFail.length > 0) {
 		for (const f of apiFail) {
-			console.log(`  ❌ ${f.method} ${f.endpoint} → ${f.statusCode}`);
+			process.stdout.write(`  ❌ ${f.method} ${f.endpoint} → ${f.statusCode}`);
 		}
 	}
 
@@ -526,24 +526,24 @@ async function main() {
 		}
 	}
 
-	console.log("\n⏱ Phase Performance (avg):");
+	process.stdout.write("\n⏱ Phase Performance (avg):");
 	for (const [phase, times] of allPhases) {
 		const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
 		const bar = "█".repeat(Math.min(30, Math.round(avg / 100)));
-		console.log(`  ${phase.padEnd(28)} ${String(avg).padEnd(5)}ms ${bar}`);
+		process.stdout.write(`  ${phase.padEnd(28)} ${String(avg).padEnd(5)}ms ${bar}`);
 	}
 
-	console.log("\n🔍 Insights:");
+	process.stdout.write("\n🔍 Insights:");
 	for (const ins of insights) {
-		console.log(`  • ${ins}`);
+		process.stdout.write(`  • ${ins}`);
 	}
 
-	console.log("\n💡 Recommendations:");
+	process.stdout.write("\n💡 Recommendations:");
 	for (const rec of recommendations) {
-		console.log(`  • ${rec}`);
+		process.stdout.write(`  • ${rec}`);
 	}
 
-	console.log(`\n⏱ Total benchmark duration: ${totalDuration.toFixed(1)}s`);
+	process.stdout.write(`\n⏱ Total benchmark duration: ${totalDuration.toFixed(1)}s`);
 
 	// Generate report JSON
 	const report: BenchmarkReport = {
@@ -560,20 +560,20 @@ async function main() {
 	};
 
 	// Print quality scorecard
-	console.log("\n═══ QUALITY SCORECARD ═══");
+	process.stdout.write("\n═══ QUALITY SCORECARD ═══");
 	const lastRun = pipelineRuns[pipelineRuns.length - 1];
 	const q = lastRun.quality;
-	console.log(
+	process.stdout.write(
 		`  Pipeline:  ${q.pipeline.score}% (${q.pipeline.grade})  Completion: ${q.pipeline.dimensions.completion}%`,
 	);
-	console.log(
+	process.stdout.write(
 		`  Review:    ${q.review.score}% (${q.review.grade})    Coverage: ${q.review.dimensions.coverage}%`,
 	);
-	console.log(
+	process.stdout.write(
 		`  Audit:     ${q.audit.score}% (${q.audit.grade})       Security: ${q.audit.dimensions.securityPass}%`,
 	);
-	console.log(`  ──────────────────────────`);
-	console.log(`  OVERALL:   ${q.overall}% (${q.overallGrade})`);
+	process.stdout.write(`  ──────────────────────────`);
+	process.stdout.write(`  OVERALL:   ${q.overall}% (${q.overallGrade})`);
 }
 
 main().catch((err) => {

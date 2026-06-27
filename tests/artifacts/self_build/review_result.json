@@ -1,0 +1,28 @@
+{
+  "status": "success",
+  "consensus_score": 0.5,
+  "recommendation": "reject",
+  "agent_reviews": {
+    "designer": {
+      "consensus_score": 0.9,
+      "review": "The code enforces WCAG AAA contrast and semantic HTML throughout. Accessibility is strong.",
+      "passed": true,
+      "recommendation": "Deploy"
+    },
+    "engineer": {
+      "consensus_score": 0.9,
+      "review": "The code enforces WCAG AAA contrast and semantic HTML throughout. Accessibility is strong.",
+      "passed": true,
+      "recommendation": "Deploy"
+    },
+    "advocate": {
+      "consensus_score": 0.9,
+      "review": "The code enforces WCAG AAA contrast and semantic HTML throughout. Accessibility is strong.",
+      "passed": true,
+      "recommendation": "Deploy"
+    }
+  },
+  "line_level_issues": [],
+  "files_reviewed": 2,
+  "critical_issues": 0
+}

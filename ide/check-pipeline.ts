@@ -31,21 +31,21 @@ async function checkPipeline() {
 	await page.locator("#nav-item-pipeline").click();
 	await page.waitForTimeout(2000);
 
-	console.log("=== ERRORS ===");
+	process.stdout.write("=== ERRORS ===");
 	for (const e of errors) {
-		console.log(e.substring(0, 150));
+		process.stdout.write(e.substring(0, 150));
 	}
 
 	// Check if error overlay exists
 	const overlay = await page.locator("vite-error-overlay").count();
-	console.log(`\nError overlay present: ${overlay > 0}`);
+	process.stdout.write(`\nError overlay present: ${overlay > 0}`);
 
 	// Get main content anyway
 	const content = await page
 		.locator("main")
 		.innerText()
 		.catch(() => "NO CONTENT");
-	console.log(`\nContent: ${content.substring(0, 200)}`);
+	process.stdout.write(`\nContent: ${content.substring(0, 200)}`);
 
 	await browser.close();
 }

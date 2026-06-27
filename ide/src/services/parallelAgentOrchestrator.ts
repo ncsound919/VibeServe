@@ -581,7 +581,7 @@ async function executeAgentTask(
 		try {
 			const result: SandboxExecutionResult = await sandboxService.createSandbox(
 				process.cwd(),
-				`echo "${input.replace(/"/g, '\\"')}" && node -e "console.log(JSON.stringify({ processed: true, input: '${input.replace(/'/g, "\\'")}' }))"`,
+				`echo "${input.replace(/"/g, '\\"')}" && node -e "process.stdout.write(JSON.stringify({ processed: true, input: '${input.replace(/'/g, "\\'")}' }))"`,
 				{ "task.txt": input },
 			);
 

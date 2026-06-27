@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 from vibeserve.models import ArchitectureDecision, VibePlan
 from vibeserve.tools._llm_mixin import LLMCallMixin
 
+# CONTENT_GUIDELINES — referenced by _tool_deps, core_logic, __init__ modules
 CONTENT_GUIDELINES = """
 CRITICAL CONTENT RULES:
 
@@ -35,9 +36,12 @@ A clean honest page showing the real product is better than a fabricated marketi
 
 
 class VibeArchitect(LLMCallMixin):
-    def __init__(self, provider=None, ctx: Any = None):
+    def __init__(self, provider_name: str = None, ctx: Any = None):
         from vibeserve.providers import router
-        self.provider = provider or router.get()
+        try:
+            self.provider = router.get(provider_name, allow_fallback=False)
+        except ValueError:
+            self.provider = router.get()
         self.ctx = ctx
 
     async def plan(self, intent: str, constraints: List[str] = None,
@@ -49,29 +53,70 @@ class VibeArchitect(LLMCallMixin):
 Constraints: {constraints_str}
 Stack: {target_stack}
 
-Return only valid JSON with these exact keys:
-- decisions: array of objects with id (str), title (str), context (str), decision (str), alternatives (str array), rationale (str), consequences (str array), confidence (0-1)
-- component_tree: array
-- data_flow: object
-- file_structure: string array
-- estimated_complexity: "low", "medium", or "high"
-- risks: string array
-- recommended_stack: object"""
+Return a valid JSON object with the following keys. No markdown, no commentary:
+{{
+  "decisions": [
+    {{
+      "id": "string",
+      "title": "string",
+      "context": "string",
+      "decision": "string",
+      "alternatives": ["string"],
+      "rationale": "string",
+      "consequences": ["string"],
+      "confidence": 0.5
+    }}
+  ],
+  "component_tree": [],
+  "data_flow": {{}},
+  "file_structure": ["string"],
+  "estimated_complexity": "low|medium|high",
+  "risks": ["string"],
+  "recommended_stack": {{"key": "value"}}
+}}"""
         response = await self._mcp_llm_call(prompt, temperature=0.3, ctx=self.ctx)
         if not response:
             return VibePlan(intent=intent, risks=["Failed to generate plan"])
-
+        
         data = self._parse_json(response)
         if data is None:
             return VibePlan(intent=intent, risks=["Failed to parse LLM response as JSON"])
-        return VibePlan(intent=intent,
-            decisions=[ArchitectureDecision(**d) for d in data.get("decisions", [])],
-            component_tree=data.get("component_tree", []),
-            data_flow=data.get("data_flow", {}),
-            file_structure=data.get("file_structure", []),
-            estimated_complexity=data.get("estimated_complexity", "medium"),
-            risks=data.get("risks", []),
-            recommended_stack=data.get("recommended_stack", {}))
+        
+        # Normalize and validate
+        def _normalize(data: dict) -> dict:
+            return {
+                "decisions": [
+                    {
+                        "id": d.get("id") or f"d-{i}",
+                        "title": d.get("title") or "Untitled",
+                        "context": d.get("context") or "",
+                        "decision": d.get("decision") or "",
+                        "alternatives": d.get("alternatives") or [],
+                        "rationale": d.get("rationale") or "",
+                        "consequences": d.get("consequences") or [],
+                        "confidence": float(d.get("confidence") or 0.5)
+                    } for i, d in enumerate(data.get("decisions", []))
+                ],
+                "component_tree": data.get("component_tree") or [],
+                "data_flow": data.get("data_flow") or {},
+                "file_structure": data.get("file_structure") or [],
+                "estimated_complexity": data.get("estimated_complexity") or "medium",
+                "risks": data.get("risks") or [],
+                "recommended_stack": data.get("recommended_stack") or {}
+            }
+
+        clean_data = _normalize(data)
+        
+        return VibePlan(
+            intent=intent,
+            decisions=[ArchitectureDecision(**d) for d in clean_data["decisions"]],
+            component_tree=clean_data["component_tree"],
+            data_flow=clean_data["data_flow"],
+            file_structure=clean_data["file_structure"],
+            estimated_complexity=clean_data["estimated_complexity"],
+            risks=clean_data["risks"],
+            recommended_stack=clean_data["recommended_stack"]
+        )
 
     @staticmethod
     def _parse_json(text: str) -> dict | None:
@@ -81,7 +126,12 @@ Return only valid JSON with these exact keys:
 def parse_json_robust(text: str) -> dict | list | None:
     """Extract and parse the first complete JSON object or array from text."""
     text = re.sub(r"<\|[^|]+\|>", "", text)
-    for start_char, end_char in [("{", "}"), ("[", "]")]:
+    first_brace = text.find("{")
+    first_bracket = text.find("[")
+    pairs = [("{", "}"), ("[", "]")]
+    if first_bracket != -1 and (first_brace == -1 or first_bracket < first_brace):
+        pairs = [("[", "]"), ("{", "}")]
+    for start_char, end_char in pairs:
         depth = 0
         start = -1
         for i, ch in enumerate(text):

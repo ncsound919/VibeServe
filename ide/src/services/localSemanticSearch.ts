@@ -300,7 +300,7 @@ export const useSemanticSearch = create<SemanticSearchStore>()(
 						isIndexing: false,
 					});
 
-					console.log("[SemanticSearch] Indexed:", get().stats);
+					process.stdout.write("[SemanticSearch] Indexed:", get().stats);
 				} catch (error) {
 					console.error("[SemanticSearch] Index error:", error);
 					set({ isIndexing: false });

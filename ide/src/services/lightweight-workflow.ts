@@ -171,7 +171,7 @@ export const agentWorkflow = createWorkflow("agent-task", [
 	{
 		name: "analyze",
 		fn: async (ctx) => {
-			console.log("[Workflow] Analyzing task:", ctx.event);
+			process.stdout.write("[Workflow] Analyzing task:", ctx.event);
 			await ctx.sleep(100);
 			return { analysis: "Task analyzed" };
 		},
@@ -180,7 +180,7 @@ export const agentWorkflow = createWorkflow("agent-task", [
 	{
 		name: "execute",
 		fn: async (ctx) => {
-			console.log("[Workflow] Executing task");
+			process.stdout.write("[Workflow] Executing task");
 			await ctx.sleep(100);
 			return { result: "Task executed" };
 		},
@@ -189,7 +189,7 @@ export const agentWorkflow = createWorkflow("agent-task", [
 	{
 		name: "verify",
 		fn: async (ctx) => {
-			console.log("[Workflow] Verifying result");
+			process.stdout.write("[Workflow] Verifying result");
 			return { verified: true };
 		},
 	},

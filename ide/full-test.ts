@@ -62,7 +62,7 @@ async function testAllTabs() {
 		allErrors.push({ tab: "GLOBAL", error: `PAGE ERROR: ${err.message}` });
 	});
 
-	console.log("Loading app...\n");
+	process.stdout.write("Loading app...\n");
 
 	await page.goto("http://localhost:3000/", {
 		waitUntil: "networkidle",
@@ -72,14 +72,14 @@ async function testAllTabs() {
 
 	const bodyText = await page.locator("body").innerText();
 	if (bodyText.length < 50) {
-		console.log("❌ App failed to load");
-		console.log("Body:", bodyText);
+		process.stdout.write("❌ App failed to load");
+		process.stdout.write("Body:", bodyText);
 		await browser.close();
 		return;
 	}
-	console.log("✅ App loaded\n");
+	process.stdout.write("✅ App loaded\n");
 
-	console.log("=== TESTING ALL TABS ===\n");
+	process.stdout.write("=== TESTING ALL TABS ===\n");
 
 	const results: {
 		tab: string;
@@ -108,13 +108,13 @@ async function testAllTabs() {
 		};
 		page.on("console", handler);
 
-		console.log(`Testing ${tab.name}...`);
+		process.stdout.write(`Testing ${tab.name}...`);
 
 		const btn = page.locator(`#${tab.id}`);
 		const exists = await btn.count();
 
 		if (exists === 0) {
-			console.log(`  ⚠️  Button not found: #${tab.id}`);
+			process.stdout.write(`  ⚠️  Button not found: #${tab.id}`);
 			results.push({
 				tab: tab.name,
 				status: "BUTTON NOT FOUND",
@@ -140,7 +140,7 @@ async function testAllTabs() {
 		page.off("console", handler);
 
 		if (!hasContent || hasError) {
-			console.log(`  ❌ No content or error`);
+			process.stdout.write(`  ❌ No content or error`);
 			results.push({
 				tab: tab.name,
 				status: "FAILED",
@@ -148,7 +148,7 @@ async function testAllTabs() {
 				errors: tabErrors,
 			});
 		} else {
-			console.log(`  ✅ OK (${mainContent.length} chars)`);
+			process.stdout.write(`  ✅ OK (${mainContent.length} chars)`);
 			results.push({
 				tab: tab.name,
 				status: "OK",
@@ -158,26 +158,26 @@ async function testAllTabs() {
 		}
 	}
 
-	console.log("\n=== RESULTS ===\n");
+	process.stdout.write("\n=== RESULTS ===\n");
 
 	const failed = results.filter((r) => r.status !== "OK");
 
 	if (failed.length === 0) {
-		console.log("🎉 ALL TABS WORK!");
+		process.stdout.write("🎉 ALL TABS WORK!");
 	} else {
-		console.log(`❌ ${failed.length} tabs failed:\n`);
+		process.stdout.write(`❌ ${failed.length} tabs failed:\n`);
 		for (const f of failed) {
-			console.log(`- ${f.tab}: ${f.status}`);
+			process.stdout.write(`- ${f.tab}: ${f.status}`);
 			if (f.errors.length > 0) {
-				console.log(`  Errors: ${f.errors[0].substring(0, 80)}`);
+				process.stdout.write(`  Errors: ${f.errors[0].substring(0, 80)}`);
 			}
 		}
 	}
 
-	console.log("\n=== ALL ERRORS ===\n");
+	process.stdout.write("\n=== ALL ERRORS ===\n");
 	const uniqueErrors = [...new Set(allErrors.map((e) => e.error))];
 	for (const e of uniqueErrors.slice(0, 10)) {
-		console.log(`- ${e.substring(0, 150)}`);
+		process.stdout.write(`- ${e.substring(0, 150)}`);
 	}
 
 	await browser.close();

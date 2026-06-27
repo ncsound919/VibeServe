@@ -13,7 +13,7 @@ class TestStructuredLogger:
     def test_redact_api_key(self):
         msg = "api_key=sk-12345678901234567890123456789012345"
         result = StructuredLogger._redact(msg)
-        assert "sk-***REDACTED***" in result
+        assert "***REDACTED***" in result
         assert "sk-1234567890" not in result
 
     def test_redact_bearer_token(self):

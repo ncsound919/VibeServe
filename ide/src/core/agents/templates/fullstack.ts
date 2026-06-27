@@ -201,7 +201,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.listen(port, () => {
-  console.log(\`Server listening on http://localhost:\${port}\`)
+  process.stdout.write(\`Server listening on http://localhost:\${port}\`)
 })
 `,
 		},

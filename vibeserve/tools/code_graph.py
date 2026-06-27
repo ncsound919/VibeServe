@@ -187,6 +187,19 @@ def _parse_ts_heritage(content: str, file_path: str) -> List[Dict[str, Any]]:
     return heritage
 
 
+def _find_enclosing_function(tree: Any, node: Any) -> str:
+    """Find the name of the function that encloses *node* in *tree*."""
+    import ast as py_ast
+    for parent in py_ast.walk(tree):
+        if isinstance(parent, (py_ast.FunctionDef, py_ast.AsyncFunctionDef)):
+            if parent.lineno <= node.lineno and (
+                not hasattr(parent, 'end_lineno') or
+                (parent.end_lineno and node.lineno <= parent.end_lineno)
+            ):
+                return parent.name
+    return "unknown"
+
+
 def _parse_python_calls(content: str, file_path: str) -> List[Dict[str, Any]]:
     """Extract function/method calls from Python (simple regex, AST for precision)."""
     calls = []
@@ -201,15 +214,8 @@ def _parse_python_calls(content: str, file_path: str) -> List[Dict[str, Any]]:
                 elif isinstance(node.func, py_ast.Attribute):
                     callee = node.func.attr
                 if callee:
-                    # Find enclosing function/class context
-                    caller = f"unknown@{file_path}"
-                    for parent in py_ast.walk(tree):
-                        if isinstance(parent, (py_ast.FunctionDef, py_ast.AsyncFunctionDef)):
-                            if parent.lineno <= node.lineno and (
-                                not hasattr(parent, 'end_lineno') or
-                                (parent.end_lineno and node.lineno <= parent.end_lineno)
-                            ):
-                                caller = f"{parent.name}@{file_path}"
+                    caller_name = _find_enclosing_function(tree, node)
+                    caller = f"{caller_name}@{file_path}"
                     calls.append({
                         "caller": caller,
                         "callee_name": callee,

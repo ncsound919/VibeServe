@@ -55,7 +55,7 @@ export function TrajectorySidebar() {
 	const handleIntervene = (step: string) => {
 		// High-priority WebSocket or API call to Orchestrator to pause
 		setIsPaused(true);
-		console.log(`[Slider of Autonomy] Intervening at step: ${step}`);
+		process.stdout.write(`[Slider of Autonomy] Intervening at step: ${step}`);
 		// In a full implementation, this sends a CRDT update or REST call to CodeNexus
 	};
 

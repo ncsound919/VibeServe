@@ -76,7 +76,7 @@ const registry: Tpl[] = [
 			{
 				path: "src/index.ts",
 				content:
-					"import express from 'express';const app=express();app.use(express.json());app.get('/health',(_,r)=>r.json({ok:true}));app.listen(3000,()=>console.log('on :3000'));",
+					"import express from 'express';const app=express();app.use(express.json());app.get('/health',(_,r)=>r.json({ok:true}));app.listen(3000,()=>process.stdout.write('on :3000'));",
 			},
 			{
 				path: "src/routes/health.ts",
@@ -118,7 +118,7 @@ const registry: Tpl[] = [
 			start: "node dist/index.js",
 		},
 		files: [
-			{ path: "src/index.ts", content: "console.log('Hello Nexus Alpha');" },
+			{ path: "src/index.ts", content: "process.stdout.write('Hello Nexus Alpha');" },
 		],
 	},
 	{
@@ -135,7 +135,7 @@ const registry: Tpl[] = [
 			start: "node dist/index.js",
 		},
 		files: [
-			{ path: "src/index.ts", content: "console.log('Hello Nexus Alpha');" },
+			{ path: "src/index.ts", content: "process.stdout.write('Hello Nexus Alpha');" },
 		],
 	},
 ];

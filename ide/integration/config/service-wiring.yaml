@@ -254,7 +254,7 @@ env_templates:
   development:
     # All services local, verbose logging
     LOG_LEVEL: debug
-    DATABASE_URL: postgresql://nexus:dev@localhost:5432/nexus_alpha
+    DATABASE_URL: postgresql://nexus:${DEV_DB_PASSWORD}@localhost:5432/nexus_alpha
     QDRANT_URL: http://localhost:6333
 
   staging:

@@ -21,7 +21,7 @@ class Context7Provider:
             api_key = os.getenv("CONTEXT7_API_KEY", "")
             headers = {"Content-Type": "application/json"}
             if api_key:
-                headers["CONTEXT7_API_KEY"] = api_key
+                headers["Authorization"] = f"Bearer {api_key}"
             async with httpx.AsyncClient(timeout=15) as c:
                 resp = await c.post(
                     Context7Provider.BASE,

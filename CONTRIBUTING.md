@@ -55,17 +55,58 @@ Brief description of the design philosophy, inspiration, and target use case.
 1. Fork the repo
 2. Create a feature branch
 3. Make changes
-4. Run tests: `pytest test_aether_nexus.py test_integration_v5.py -v`
-5. Run lint: `ruff check vibeserve.py`
+4. Run tests: `pytest tests/ -v`
+5. Run lint: `ruff check vibeserve/`
 6. Submit a PR
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/ncsound919/AetherNexus-MCP
-cd AetherNexus-MCP
+git clone https://github.com/ncsound919/VibeServe
+cd VibeServe
 pip install -e ".[dev]"
 cp .env.example .env
+```
+
+## Release Process
+
+### Version Bumping
+
+1. Update the `version` field in `pyproject.toml`
+2. Add a new `## [X.Y.Z]` section at the top of `CHANGELOG.md` describing the changes
+3. Commit with message `release: bump to vX.Y.Z`
+4. Push to `main` — CI will run tests, lint, security scan, and changelog verification automatically
+
+### Publishing to PyPI
+
+Publishing uses **Trusted Publishing (OIDC)** — no API tokens required.
+
+1. Tag the release commit: `git tag vX.Y.Z`
+2. Push the tag: `git push origin vX.Y.Z`
+3. Create a GitHub Release from the tag at https://github.com/ncsound919/VibeServe/releases/new
+4. The `Publish to PyPI` workflow triggers automatically on release, running:
+   - **test**: pytest with 80% coverage across Python 3.10–3.12
+   - **lint**: ruff + mypy
+   - **security**: bandit
+   - **changelog**: verifies an entry exists for the current version
+   - **build**: `python -m build` + `twine check`
+   - **publish**: OIDC upload to PyPI (only on release event)
+
+The `publish` job has `concurrency: publish` set at the workflow level to prevent parallel publishes.
+
+### Manual Local Publish (Fallback)
+
+If the GitHub Actions pipeline is unavailable:
+
+```bash
+bash scripts/publish.sh        # builds + verifies
+python -m twine upload dist/*  # uploads to PyPI (requires ~/.pypirc or __token__)
+```
+
+### Prerequisites for Publishing
+
+```bash
+pip install build twine
 ```
 
 ## Community

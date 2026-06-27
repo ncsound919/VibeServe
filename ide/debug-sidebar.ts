@@ -30,29 +30,29 @@ async function testMemoryAndAdvanced() {
 	});
 	await page.waitForTimeout(2000);
 
-	console.log("=== CHECKING ACTUAL BUTTON IDs ===\n");
+	process.stdout.write("=== CHECKING ACTUAL BUTTON IDs ===\n");
 
 	// Get all buttons in sidebar
 	const sidebarButtons = await page.locator("aside button").all();
-	console.log(`Found ${sidebarButtons.length} buttons in sidebar`);
+	process.stdout.write(`Found ${sidebarButtons.length} buttons in sidebar`);
 
 	for (const btn of sidebarButtons.slice(0, 20)) {
 		const id = await btn.getAttribute("id");
 		const label =
 			(await btn.getAttribute("aria-label")) || (await btn.textContent());
-		console.log(`  ID: ${id}, Label: ${label?.substring(0, 30)}`);
+		process.stdout.write(`  ID: ${id}, Label: ${label?.substring(0, 30)}`);
 	}
 
-	console.log("\n=== CLICKING MEMORY ===");
+	process.stdout.write("\n=== CLICKING MEMORY ===");
 	await page.locator("#nav-item-memory").click();
 	await page.waitForTimeout(2000);
 
 	const memoryContent = await page.locator("main").innerText();
-	console.log(
+	process.stdout.write(
 		`Memory content (first 300 chars): ${memoryContent.substring(0, 300)}`,
 	);
 
-	console.log(
+	process.stdout.write(
 		"\nErrors:",
 		errors
 			.filter(

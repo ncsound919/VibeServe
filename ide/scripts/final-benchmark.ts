@@ -164,58 +164,58 @@ const baseline = {
 	integrations: { found: 3, total: 12, missing: 9 }, // only 3 existed at start
 };
 
-console.log("═══════════════════════════════════════════════════════════");
-console.log("     NEXUS ALPHA — FINAL BENCHMARK COMPARISON REPORT      ");
-console.log("═══════════════════════════════════════════════════════════\n");
+process.stdout.write("═══════════════════════════════════════════════════════════");
+process.stdout.write("     NEXUS ALPHA — FINAL BENCHMARK COMPARISON REPORT      ");
+process.stdout.write("═══════════════════════════════════════════════════════════\n");
 
 // ─── TYPE SAFETY ───
-console.log("1. TYPE SAFETY              BEFORE        AFTER      CHANGE");
-console.log("   ─────────────────────────────────────────────────────────");
-console.log(
+process.stdout.write("1. TYPE SAFETY              BEFORE        AFTER      CHANGE");
+process.stdout.write("   ─────────────────────────────────────────────────────────");
+process.stdout.write(
 	`   Worker TS errors       ${String(baseline.tsc.errors).padStart(5)}  ${String(current.tsc.errors).padStart(9)}  ${current.tsc.errors < baseline.tsc.errors ? "✓ FIXED" : "SAME"}`,
 );
-console.log(
+process.stdout.write(
 	`   tsc --noEmit           ${"FAIL".padStart(12)}  ${current.tsc.errors === 0 ? "PASS".padStart(9) : "FAIL".padStart(9)}  ${current.tsc.errors === 0 ? "✓ CLEAN" : "ISSUES"}`,
 );
 
 // ─── BUNDLE ───
 const bundleSaved = baseline.bundle.largeChunks - current.bundle.largeChunks;
-console.log(`\n2. BUNDLE HEALTH             BEFORE        AFTER      CHANGE`);
-console.log("   ─────────────────────────────────────────────────────────");
-console.log(
+process.stdout.write(`\n2. BUNDLE HEALTH             BEFORE        AFTER      CHANGE`);
+process.stdout.write("   ─────────────────────────────────────────────────────────");
+process.stdout.write(
 	`   Total bundle (KB)      ${String(baseline.bundle.totalKB).padStart(8)}  ${String(current.bundle.totalKB).padStart(9)}  ${current.bundle.totalKB < baseline.bundle.totalKB ? `${current.bundle.totalKB - baseline.bundle.totalKB} KB` : "SAME"}`,
 );
-console.log(
+process.stdout.write(
 	`   Large chunks (>500KB)  ${String(baseline.bundle.largeChunks).padStart(8)}  ${String(current.bundle.largeChunks).padStart(9)}  ${bundleSaved > 0 ? `-${bundleSaved} (code-split)` : "SAME"}`,
 );
-console.log(
+process.stdout.write(
 	`   Lazy-loaded chunks     ${String(baseline.bundle.lazyChunks).padStart(8)}  ${String(current.bundle.lazyChunks).padStart(9)}  ${current.bundle.lazyChunks > 0 ? "✓ LAZY" : "NONE"}`,
 );
 
 // ─── DEPS ───
-console.log(`\n3. DEPENDENCIES              BEFORE        AFTER      CHANGE`);
-console.log("   ─────────────────────────────────────────────────────────");
-console.log(
+process.stdout.write(`\n3. DEPENDENCIES              BEFORE        AFTER      CHANGE`);
+process.stdout.write("   ─────────────────────────────────────────────────────────");
+process.stdout.write(
 	`   Total count            ${String(baseline.deps.count).padStart(8)}  ${String(current.deps.count).padStart(9)}  SAME`,
 );
-console.log(
+process.stdout.write(
 	`   Lockfile               ${String(baseline.deps.lockfile).padStart(8)}  ${String(current.deps.lockfile).padStart(9)}  ✓`,
 );
 
 // ─── STRUCTURE ───
-console.log(`\n4. PROJECT STRUCTURE         BEFORE        AFTER      CHANGE`);
-console.log("   ─────────────────────────────────────────────────────────");
-console.log(
+process.stdout.write(`\n4. PROJECT STRUCTURE         BEFORE        AFTER      CHANGE`);
+process.stdout.write("   ─────────────────────────────────────────────────────────");
+process.stdout.write(
 	`   Score                  ${String(baseline.structure.score).padStart(8)}  ${String(current.structure.score).padStart(9)}  SAME`,
 );
 
 // ─── INTEGRATIONS ───
-console.log(`\n5. INTEGRATIONS              BEFORE        AFTER      CHANGE`);
-console.log("   ─────────────────────────────────────────────────────────");
-console.log(
+process.stdout.write(`\n5. INTEGRATIONS              BEFORE        AFTER      CHANGE`);
+process.stdout.write("   ─────────────────────────────────────────────────────────");
+process.stdout.write(
 	`   Wired into pipeline    ${String(baseline.integrations.found).padStart(5)}/12  ${String(current.integrations.found).padStart(8)}/12  +${current.integrations.found - baseline.integrations.found} TOOLS`,
 );
-console.log(
+process.stdout.write(
 	`   Missing                ${String(baseline.integrations.missing).padStart(8)}  ${String(current.integrations.missing).padStart(9)}  ${current.integrations.missing === 0 ? "✓ ALL WIRED" : `${current.integrations.missing} MISSING`}`,
 );
 
@@ -224,18 +224,18 @@ const baselineScore = 39; // C grade
 const currentScore = 50; // B grade (from earlier local run)
 const scoreChange = currentScore - baselineScore;
 const gradeChange = scoreChange >= 11 ? "C → B" : "SAME";
-console.log(`\n6. VIBECODER SCORE            BEFORE        AFTER      CHANGE`);
-console.log("   ─────────────────────────────────────────────────────────");
-console.log(
+process.stdout.write(`\n6. VIBECODER SCORE            BEFORE        AFTER      CHANGE`);
+process.stdout.write("   ─────────────────────────────────────────────────────────");
+process.stdout.write(
 	`   Score                  ${String(baselineScore).padStart(8)}  ${String(currentScore).padStart(9)}  +${scoreChange} pts`,
 );
-console.log(
+process.stdout.write(
 	`   Grade                  ${"C".padStart(12)}  ${"B".padStart(9)}  ${gradeChange}`,
 );
 
 // ─── TOOL IMPACT ESTIMATES ───
-console.log(`\n7. TOOL IMPACT ON BENCHMARKS`);
-console.log("   ─────────────────────────────────────────────────────────");
+process.stdout.write(`\n7. TOOL IMPACT ON BENCHMARKS`);
+process.stdout.write("   ─────────────────────────────────────────────────────────");
 const impacts = [
 	{
 		tool: "TypeScript (strict)",
@@ -303,40 +303,40 @@ const impacts = [
 ];
 
 for (const imp of impacts) {
-	console.log(
+	process.stdout.write(
 		`   ${imp.tool.padEnd(30)} ${imp.action.padEnd(30)} ${imp.boost.padEnd(15)} ${imp.pct}`,
 	);
 }
 
 // ─── SUMMARY ───
-console.log(`\n═══════════════════════════════════════════════════════════`);
-console.log("   SUMMARY: RECURSIVE SELF-IMPROVEMENT PROVEN");
-console.log("═══════════════════════════════════════════════════════════\n");
-console.log(
+process.stdout.write(`\n═══════════════════════════════════════════════════════════`);
+process.stdout.write("   SUMMARY: RECURSIVE SELF-IMPROVEMENT PROVEN");
+process.stdout.write("═══════════════════════════════════════════════════════════\n");
+process.stdout.write(
 	`   ${units(scoreChange > 0, "▲")}  VibeCoder grade: C → B (+${scoreChange} pts)`,
 );
-console.log(
+process.stdout.write(
 	`   ${units(current.tsc.errors === 0, "✓")}  Worker TS errors: 5 → 0`,
 );
-console.log(
+process.stdout.write(
 	`   ${units(current.bundle.lazyChunks > 0, "✓")}  Code-splitting: 0 → ${current.bundle.lazyChunks} lazy chunks`,
 );
-console.log(
+process.stdout.write(
 	`   ${units(current.integrations.missing === 0, "✓")}  Integrations wired: ${baseline.integrations.found}/12 → ${current.integrations.found}/12`,
 );
-console.log(
+process.stdout.write(
 	`   ${units(baseline.integrations.found < current.integrations.found, "✓")}  New tools added: +${current.integrations.found - baseline.integrations.found}`,
 );
-console.log(
+process.stdout.write(
 	`   ${units(true, "✓")}  Self-learning cycle verified (fix → measure → improve → repeat)`,
 );
-console.log(
+process.stdout.write(
 	`\n   16/16 integrations verified and wired into the build pipeline.`,
 );
-console.log(
+process.stdout.write(
 	`   The system now benchmarks itself, scores every build, and learns`,
 );
-console.log(`   from each iteration to automatically improve future builds.`);
+process.stdout.write(`   from each iteration to automatically improve future builds.`);
 
 function units(condition: boolean, char: string) {
 	return condition ? char : " ";

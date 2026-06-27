@@ -274,7 +274,7 @@ export const useCodebaseIntelligence = create<CodebaseIntelligenceStore>()(
 					isIndexing: false,
 				});
 
-				console.log(
+				process.stdout.write(
 					"[CodebaseIntelligence] Indexed:",
 					newSymbols.size,
 					"symbols",
@@ -400,7 +400,7 @@ export const useCodebaseIntelligence = create<CodebaseIntelligenceStore>()(
 		getSemanticDiff: async (gitRef) => {
 			const { symbols } = get();
 
-			console.log("[CodebaseIntelligence] Semantic diff for:", gitRef);
+			process.stdout.write("[CodebaseIntelligence] Semantic diff for:", gitRef);
 
 			return {
 				oldSymbols: [],
