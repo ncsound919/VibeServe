@@ -8,6 +8,21 @@ import os
 import signal
 import sys
 from dotenv import load_dotenv
+
+# Startup env validation
+def _assert_env():
+    required = ["VIBESERVE_API_SECRET"]
+    recommended = ["DEFAULT_LLM_PROVIDER", "OPENAI_API_KEY", "DEEPSEEK_API_KEY"]
+    missing_req = [k for k in required if not os.environ.get(k)]
+    missing_rec = [k for k in recommended if not os.environ.get(k)]
+    if missing_req:
+        print(f"[FATAL] VibeServe: Missing required env vars: {', '.join(missing_req)}", file=sys.stderr)
+        sys.exit(1)
+    if missing_rec:
+        print(f"[WARN] VibeServe: Missing recommended env vars: {', '.join(missing_rec)}", file=sys.stderr)
+
+_assert_env()
+
 from vibeserve.server import mcp_server
 from vibeserve.tools.v4_tools import *  # noqa: F403
 from vibeserve.tools.v5_tools import *  # noqa: F403
