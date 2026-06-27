@@ -1,4 +1,4 @@
-FROM python:3.12-slim@sha256:1127090f9fff0b9ec338f3b6fe80437ada404d465085fe996d5f8cfd8fe6c123
+FROM python:3.14-slim@sha256:63a4c7f612a00f92042cbdcc7cdc6a306f38485af0a200b9c89de7d9b1607d15
 # digest for python:3.12-slim as of 2025-05
 
 WORKDIR /app
