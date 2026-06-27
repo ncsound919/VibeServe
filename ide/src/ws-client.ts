@@ -39,7 +39,7 @@ export class WSClient {
 
 		this.ws.onopen = () => {
 			this.reconnectAttempts = 0;
-			console.log("Connected to Orchestrator WebSocket");
+			process.stdout.write("Connected to Orchestrator WebSocket");
 		};
 
 		this.ws.onmessage = (event) => {
@@ -58,7 +58,7 @@ export class WSClient {
 		};
 
 		this.ws.onclose = () => {
-			console.log("Disconnected from Orchestrator WebSocket");
+			process.stdout.write("Disconnected from Orchestrator WebSocket");
 			if (this.destroyed) return;
 			if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
 			if (this.reconnectAttempts >= this.maxReconnectAttempts) {

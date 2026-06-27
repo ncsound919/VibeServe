@@ -11,7 +11,7 @@ export async function runHook(
 		hook.script ||
 		hook.condition ||
 		'echo "no command configured"';
-	console.log(`[HOOK] Executing: ${hook.name} (${hook.phase})`);
+	process.stdout.write(`[HOOK] Executing: ${hook.name} (${hook.phase})`);
 
 	try {
 		const result = await runShellCommand(cmd, process.cwd(), 30000);

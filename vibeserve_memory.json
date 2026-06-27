@@ -1,0 +1,50 @@
+{
+  "corrections": [
+    {
+      "id": "cor_67a7cb66a9554637",
+      "pattern": "use OAuth2",
+      "correction": "Always use PKCE flow for public clients",
+      "context": "auth refactor",
+      "count": 5,
+      "ts": 1781013669.4855556
+    }
+  ],
+  "contexts": [
+    {
+      "id": "ctx_282f49b7f3bc49bd",
+      "session_id": "ses_test_001",
+      "task": "refactor the auth module to use OAuth2 with PKCE",
+      "outcome": "success",
+      "files": [
+        "auth.ts",
+        "oauth.ts"
+      ],
+      "ts": 1781013630.9952898
+    },
+    {
+      "id": "ctx_a6604cb4f1e741c7",
+      "session_id": "ses_test_001",
+      "task": "refactor the auth module to use OAuth2 with PKCE",
+      "outcome": "success",
+      "files": [
+        "auth.ts",
+        "oauth.ts"
+      ],
+      "ts": 1781013648.189522
+    },
+    {
+      "id": "ctx_ca0c959f4257439d",
+      "session_id": "ses_test_001",
+      "task": "refactor the auth module to use OAuth2 with PKCE",
+      "outcome": "success",
+      "files": [
+        "auth.ts",
+        "oauth.ts"
+      ],
+      "ts": 1781013669.4227233
+    }
+  ],
+  "shared": {
+    "team_default_model": "deepseek-chat"
+  }
+}

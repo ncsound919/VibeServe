@@ -189,7 +189,7 @@ export const ComposerTab = () => {
 						type="text"
 						value={name}
 						onChange={(e) => setName(e.target.value)}
-						placeholder="What should I build? (e.g. Build a secure todo app)"
+						placeholder="What should I build? (e.g. Build a secure task app)"
 						className="flex-1 bg-transparent border-b border-indigo-500/30 outline-none p-2 text-white font-mono text-sm placeholder:text-gray-600 focus:border-indigo-400 transition-colors"
 					/>
 				</div>

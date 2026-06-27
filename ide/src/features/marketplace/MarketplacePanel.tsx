@@ -128,7 +128,7 @@ export function MarketplacePanel() {
 		const mockCode = `
       // Some safe extension code
       function init() {
-        console.log("Extension initialized");
+        process.stdout.write("Extension initialized");
       }
     `;
 		const manifest = { name: id, version: "1.0.0", permissions: [] };
@@ -159,7 +159,7 @@ export function MarketplacePanel() {
 				prev.map((e) => (e.id === id ? { ...e, installed: true } : e)),
 			);
 
-			console.log(`[Marketplace] Installing ${id}`);
+			process.stdout.write(`[Marketplace] Installing ${id}`);
 			extensionHost.loadExtension({
 				name: id,
 				version: "1.0.0",

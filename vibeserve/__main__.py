@@ -1,30 +1,38 @@
-"""VibeServe entry point — registers all tools."""
+"""VibeServe entry point — registers all tools and delegates to entrypoint.py."""
 
 from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import signal
 import sys
+from dotenv import load_dotenv
 from vibeserve.server import mcp_server
 from vibeserve.tools.v4_tools import *  # noqa: F403
 from vibeserve.tools.v5_tools import *  # noqa: F403
+from vibeserve.tools import mutly_integration  # noqa: F401 — registers vs_* tools
 from vibeserve.handlers.resources import *  # noqa: F403
+from vibeserve.mcp_integrations.big_homie_mcp import *  # noqa: F403
+from vibeserve.mcp_integrations.mem0_mcp import *  # noqa: F403
+from vibeserve.mcp_integrations.nanobot_mcp import *  # noqa: F403
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 log = logging.getLogger("VibeServe")
 
 def _cleanup():
-    """Clean shutdown handler."""
     try:
         logging.getLogger("VibeServe").info("Shutting down gracefully...")
     except Exception:
         pass
 
-signal.signal(signal.SIGINT, lambda s, f: (_cleanup(), sys.exit(0)))
-signal.signal(signal.SIGTERM, lambda s, f: (_cleanup(), sys.exit(0)))
+def _handle_signal(signum, frame):
+    _cleanup()
+    sys.exit(0)
 
-# ====================== DEMO FUNCTIONS ======================
+signal.signal(signal.SIGINT, _handle_signal)
+signal.signal(signal.SIGTERM, _handle_signal)
+
 async def demo():
     print("\n[v4] VibeServe Legacy -- Direct Execution Demo")
 
@@ -52,14 +60,55 @@ async def vibe_demo():
         print(f"  Plan: {plan_result['decision_count']} decisions")
 
 def main():
-    import sys
+    _pkg_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    load_dotenv(os.path.join(_pkg_root, ".env"))
+
     if "--vibe-demo" in sys.argv:
         asyncio.run(vibe_demo())
     elif "--demo" in sys.argv:
         asyncio.run(demo())
     elif "--interactive" in sys.argv:
         asyncio.run(_interactive_loop())
+    elif "--http" in sys.argv:
+        from vibeserve.auth import validate_secret_on_startup
+        try:
+            validate_secret_on_startup()
+        except RuntimeError as e:
+            log.error(f"Startup validation failed: {e}")
+            sys.exit(1)
+
+        from vibeserve.http_bridge import run_http_server
+        port = int(os.getenv("VIBESERVE_HTTP_PORT", "8000"))
+        host = os.getenv("VIBESERVE_HTTP_HOST", "127.0.0.1")
+        log.info("Starting VibeServe Mutly HTTP bridge on %s:%s", host, port)
+
+        async def _http_plus_ws():
+            from vibeserve.agent_ws import run_agent_ws_server
+            ws_host = host
+            ws_port = int(os.getenv("AGENT_WS_PORT", "8001"))
+            ws_task = asyncio.create_task(run_agent_ws_server(ws_host, ws_port))
+            try:
+                await run_http_server(host, port)
+            finally:
+                ws_task.cancel()
+                try:
+                    await ws_task
+                except (asyncio.CancelledError, Exception):
+                    pass
+
+        try:
+            asyncio.run(_http_plus_ws())
+        except KeyboardInterrupt:
+            pass
+        return
     else:
+        from vibeserve.auth import validate_secret_on_startup
+        try:
+            validate_secret_on_startup()
+        except RuntimeError as e:
+            log.error(f"Startup validation failed: {e}")
+            sys.exit(1)
+
         log.info("Starting VibeServe MCP server...")
         mcp_server.build().run()
 

@@ -29,14 +29,14 @@ async function verifyAll() {
 		"Memory",
 		"Preview",
 	];
-	console.log("=== PRIMARY TABS ===");
+	process.stdout.write("=== PRIMARY TABS ===");
 	for (const name of primary) {
 		const id = `nav-item-${name.toLowerCase()}`;
 		await page.locator(`#${id}`).click();
 		await page.waitForTimeout(800);
 		const content = await page.locator("main").innerText();
 		const ok = content.length > 20;
-		console.log(`${ok ? "✅" : "❌"} ${name}`);
+		process.stdout.write(`${ok ? "✅" : "❌"} ${name}`);
 	}
 
 	// Advanced
@@ -57,12 +57,12 @@ async function verifyAll() {
 		"System",
 		"Agent Eval",
 	];
-	console.log("\n=== ADVANCED TABS ===");
+	process.stdout.write("\n=== ADVANCED TABS ===");
 	for (const name of advanced) {
 		const id = `nav-item-${name.toLowerCase().replace(" ", "-")}`;
 		const btn = page.locator(`#${id}`);
 		if ((await btn.count()) === 0) {
-			console.log(`⚠️  ${name} (not found)`);
+			process.stdout.write(`⚠️  ${name} (not found)`);
 			continue;
 		}
 		await btn.click();
@@ -71,7 +71,7 @@ async function verifyAll() {
 		// Check for actual error messages (not "failed to load" text)
 		const hasError =
 			content.toLowerCase().includes("failed to load") && content.length < 200;
-		console.log(`${!hasError ? "✅" : "❌"} ${name}`);
+		process.stdout.write(`${!hasError ? "✅" : "❌"} ${name}`);
 	}
 
 	await browser.close();

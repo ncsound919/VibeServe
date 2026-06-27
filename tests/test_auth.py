@@ -1,8 +1,12 @@
 """Tests for vibeserve.auth — JWT token creation, verification, and scope enforcement."""
 
 import os
+import sys
 import pytest
+from unittest.mock import patch
 from vibeserve.auth import create_token, verify_token, is_auth_enabled, require_scope
+
+import vibeserve.auth as _auth_mod
 
 SECRET = "test-secret-12345"
 
@@ -10,7 +14,12 @@ SECRET = "test-secret-12345"
 @pytest.fixture(autouse=True)
 def set_secret():
     os.environ["VIBESERVE_API_SECRET"] = SECRET
-    yield
+    orig = _auth_mod._ORIG_VERIFY
+    this_mod = sys.modules[__name__]
+    this_mod.verify_token = orig
+    with patch("vibeserve.auth.verify_token", side_effect=orig):
+        yield
+    this_mod.verify_token = verify_token
     os.environ.pop("VIBESERVE_API_SECRET", None)
 
 
@@ -22,7 +31,7 @@ class TestCreateToken:
 
     def test_fails_without_secret(self):
         os.environ.pop("VIBESERVE_API_SECRET", None)
-        with pytest.raises(RuntimeError, match="VIBESERVE_API_SECRET not set"):
+        with pytest.raises(RuntimeError, match="VIBESERVE_API_SECRET is not set"):
             create_token()
 
 
@@ -40,10 +49,10 @@ class TestVerifyToken:
         with pytest.raises(PermissionError, match="Invalid token"):
             verify_token(tampered)
 
-    def test_anonymous_when_auth_disabled(self):
+    def test_fails_closed_when_secret_missing(self):
         os.environ.pop("VIBESERVE_API_SECRET", None)
-        claims = verify_token("any-garbage-token")
-        assert claims["sub"] == "anonymous"
+        with pytest.raises(RuntimeError, match="VIBESERVE_API_SECRET is not set"):
+            verify_token("any-garbage-token")
 
 
 class TestIsAuthEnabled:
@@ -95,7 +104,8 @@ class TestRequireScope:
         assert result["status"] == "error"
         assert result["code"] == "FORBIDDEN"
 
-    async def test_skips_when_auth_disabled(self):
+    async def test_denies_when_secret_missing(self):
+        """Fail-closed: missing secret does NOT bypass auth checks."""
         os.environ.pop("VIBESERVE_API_SECRET", None)
 
         class MockCtx:
@@ -106,7 +116,8 @@ class TestRequireScope:
             return {"status": "success"}
 
         result = await handler(MockCtx())
-        assert result == {"status": "success"}
+        assert result["status"] == "error"
+        assert result["code"] == "UNAUTHORIZED"
 
     async def test_invalid_token(self):
         class MockCtx:

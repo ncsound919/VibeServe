@@ -42,7 +42,7 @@ async function checkAuditChanges() {
 		const content = await page.locator("main").innerText();
 		const hasContent =
 			content.length > 30 && !content.includes("failed to load");
-		console.log(
+		process.stdout.write(
 			`${tabId}: ${hasContent ? "OK" : "FAIL"} - ${errors[0]?.substring(0, 60) || content.substring(0, 50)}`,
 		);
 	}

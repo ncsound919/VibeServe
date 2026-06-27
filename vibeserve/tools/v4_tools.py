@@ -48,7 +48,7 @@ async def generate_ui_spec_tool(ctx, page_type: str, requirements: List[str],
         sel = result.get("selected", {})
         score = sel.get("_score", 0)
         if score > CONFIG.min_score_to_store:
-            store_successful_spec(page_type, sel, score)
+            await store_successful_spec(page_type, sel, score)
         response = SpecResponse(
             page_type=page_type,
             selected_specification=_clip(sel),
@@ -105,3 +105,4 @@ async def list_design_systems_tool(ctx) -> Dict[str, Any]:
 async def memory_stats_tool(ctx) -> Dict[str, Any]:
     await ctx.info("[memory] Gathering stats...")
     return memory_store.stats()
+

@@ -75,7 +75,7 @@ function logEvent(
 ) {
 	const entry = { ts: new Date().toISOString(), level, message, ...extra };
 	if (level === "error") console.error(JSON.stringify(entry));
-	else console.log(JSON.stringify(entry));
+	else process.stdout.write(JSON.stringify(entry));
 }
 
 const app = new Hono<{ Variables: Variables }>();

@@ -7,7 +7,7 @@ import {
 	Clock,
 	Cpu,
 	Info,
-	ListTodo,
+	ClipboardList,
 	MemoryStick,
 	Network,
 	Pause,

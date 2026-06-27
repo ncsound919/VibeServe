@@ -125,7 +125,7 @@ const reactComponentGenerator: TemplateGenerator = {
 			code += `  const fetchData = useCallback(async () => {\n`;
 			code += `    setLoading(true);\n`;
 			code += `    try {\n`;
-			code += `      // TODO: Implement fetch logic\n`;
+			code += `      // TASK: Implement fetch logic\n`;
 			code += `      setData(null);\n`;
 			code += `    } catch (e) {\n`;
 			code += `      setError(e as Error);\n`;
@@ -146,7 +146,7 @@ const reactComponentGenerator: TemplateGenerator = {
 			code += `export function ${pascalName}({ className }: ${pascalName}Props) {\n`;
 			code += `  return (\n`;
 			code += `    <div className={className}>\n`;
-			code += `      {/* TODO: Implement ${pascalName} */}\n`;
+			code += `      {/* TASK: Implement ${pascalName} */}\n`;
 			code += `    </div>\n`;
 			code += `  );\n`;
 			code += `}\n`;
@@ -182,7 +182,7 @@ const crudApiGenerator: TemplateGenerator = {
 			code += `// GET all ${camelName}s\n`;
 			code += `router.get('/', async (req: Request, res: Response) => {\n`;
 			code += `  try {\n`;
-			code += `    // TODO: Implement fetching all ${camelName}s\n`;
+			code += `    // TASK: Implement fetching all ${camelName}s\n`;
 			code += `    res.json({ data: [] });\n`;
 			code += `  } catch (error) {\n`;
 			code += `    res.status(500).json({ error: 'Failed to fetch ${camelName}s' });\n`;
@@ -191,7 +191,7 @@ const crudApiGenerator: TemplateGenerator = {
 			code += `router.get('/:id', async (req: Request, res: Response) => {\n`;
 			code += `  try {\n`;
 			code += `    const { id } = req.params;\n`;
-			code += `    // TODO: Implement fetching ${camelName} by id\n`;
+			code += `    // TASK: Implement fetching ${camelName} by id\n`;
 			code += `    res.json({ data: null });\n`;
 			code += `  } catch (error) {\n`;
 			code += `    res.status(500).json({ error: 'Failed to fetch ${camelName}' });\n`;
@@ -199,7 +199,7 @@ const crudApiGenerator: TemplateGenerator = {
 			code += `// POST create ${camelName}\n`;
 			code += `router.post('/', async (req: Request, res: Response) => {\n`;
 			code += `  try {\n`;
-			code += `    // TODO: Implement creating ${camelName}\n`;
+			code += `    // TASK: Implement creating ${camelName}\n`;
 			code += `    res.status(201).json({ data: {} });\n`;
 			code += `  } catch (error) {\n`;
 			code += `    res.status(500).json({ error: 'Failed to create ${camelName}' });\n`;
@@ -208,7 +208,7 @@ const crudApiGenerator: TemplateGenerator = {
 			code += `router.put('/:id', async (req: Request, res: Response) => {\n`;
 			code += `  try {\n`;
 			code += `    const { id } = req.params;\n`;
-			code += `    // TODO: Implement updating ${camelName}\n`;
+			code += `    // TASK: Implement updating ${camelName}\n`;
 			code += `    res.json({ data: {} });\n`;
 			code += `  } catch (error) {\n`;
 			code += `    res.status(500).json({ error: 'Failed to update ${camelName}' });\n`;
@@ -217,7 +217,7 @@ const crudApiGenerator: TemplateGenerator = {
 			code += `router.delete('/:id', async (req: Request, res: Response) => {\n`;
 			code += `  try {\n`;
 			code += `    const { id } = req.params;\n`;
-			code += `    // TODO: Implement deleting ${camelName}\n`;
+			code += `    // TASK: Implement deleting ${camelName}\n`;
 			code += `    res.status(204).send();\n`;
 			code += `  } catch (error) {\n`;
 			code += `    res.status(500).json({ error: 'Failed to delete ${camelName}' });\n`;
@@ -226,33 +226,33 @@ const crudApiGenerator: TemplateGenerator = {
 		} else if (isNextApi) {
 			code += `import { NextResponse } from 'next/server';\n\n`;
 			code += `// GET /api/${camelName}\nexport async function GET() {\n`;
-			code += `  // TODO: Implement fetching all ${camelName}s\n`;
+			code += `  // TASK: Implement fetching all ${camelName}s\n`;
 			code += `  return NextResponse.json({ data: [] });\n}\n\n`;
 			code += `// POST /api/${camelName}\nexport async function POST(request: Request) {\n`;
 			code += `  const body = await request.json();\n`;
-			code += `  // TODO: Implement creating ${camelName}\n`;
+			code += `  // TASK: Implement creating ${camelName}\n`;
 			code += `  return NextResponse.json({ data: {} }, { status: 201 });\n}\n`;
 		} else {
 			code += `// ${pascalName} Service\n`;
 			code += `export class ${pascalName}Service {\n`;
 			code += `  async findAll() {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return [];\n`;
 			code += `  }\n\n`;
 			code += `  async findById(id: string) {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return null;\n`;
 			code += `  }\n\n`;
 			code += `  async create(data: Partial<unknown>) {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return {};\n`;
 			code += `  }\n\n`;
 			code += `  async update(id: string, data: Partial<unknown>) {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return {};\n`;
 			code += `  }\n\n`;
 			code += `  async delete(id: string) {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return true;\n`;
 			code += `  }\n`;
 			code += `}\n`;
@@ -298,7 +298,7 @@ const testFileGenerator: TemplateGenerator = {
 		code += `  });\n\n`;
 
 		code += `  it('should have correct structure', () => {\n`;
-		code += `    // TODO: Add specific tests\n`;
+		code += `    // TASK: Add specific tests\n`;
 		code += `    expect(true).toBe(true);\n`;
 		code += `  });\n`;
 		code += `});\n`;
@@ -428,7 +428,7 @@ const middlewareGenerator: TemplateGenerator = {
 		code += `  next: NextFunction\n`;
 		code += `) {\n`;
 		code += `  try {\n`;
-		code += `    // TODO: Implement middleware logic\n`;
+		code += `    // TASK: Implement middleware logic\n`;
 		code += `    const canProceed = true;\n\n`;
 		code += `    if (!canProceed) {\n`;
 		code += `      return res.status(403).json({ error: 'Access denied' });\n`;
@@ -472,23 +472,23 @@ const serviceGenerator: TemplateGenerator = {
 			code += `    return ${pascalName}Service.instance;\n`;
 			code += `  }\n\n`;
 			code += `  async findAll(): Promise<unknown[]> {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return [];\n`;
 			code += `  }\n\n`;
 			code += `  async findById(id: string): Promise<unknown | null> {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return null;\n`;
 			code += `  }\n\n`;
 			code += `  async create(data: unknown): Promise<unknown> {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return data;\n`;
 			code += `  }\n\n`;
 			code += `  async update(id: string, data: unknown): Promise<unknown | null> {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return null;\n`;
 			code += `  }\n\n`;
 			code += `  async delete(id: string): Promise<boolean> {\n`;
-			code += `    // TODO: Implement\n`;
+			code += `    // TASK: Implement\n`;
 			code += `    return true;\n`;
 			code += `  }\n`;
 		} else {

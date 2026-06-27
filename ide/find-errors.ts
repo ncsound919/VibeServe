@@ -52,10 +52,10 @@ async function findErrors() {
 		const hasContent =
 			content.length > 30 && !content.includes("failed to load");
 
-		console.log(`${tab.name}: ${hasContent ? "OK" : "FAIL"}`);
+		process.stdout.write(`${tab.name}: ${hasContent ? "OK" : "FAIL"}`);
 		if (errors.length > 0) {
 			for (const e of errors) {
-				console.log(`  ERROR: ${e.error.substring(0, 80)}`);
+				process.stdout.write(`  ERROR: ${e.error.substring(0, 80)}`);
 			}
 		}
 	}

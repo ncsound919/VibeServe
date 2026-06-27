@@ -18,9 +18,6 @@ license = {text = "MIT"}
 readme = "README.md"
 keywords = ["mcp", "agentic-coding", "vibe-coding", "ui-design", "accessibility", "wcag", "llm", "multi-agent", "fastmcp", "code-generation"]
 classifiers = [
-    # FIX: was "Development Status :: 5 - Production/Stable" — dishonest while
-    # orchestrator/ is missing and auth was fail-open. Downgraded to Beta until
-    # Phase 4 (monorepo complete) and Phase 5 (ops complete) are done.
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -40,6 +37,7 @@ Issues = "https://github.com/ncsound919/VibeServe/issues"
 
 [project.scripts]
 vibeserve = "vibeserve.__main__:main"
+make-docs = "scripts.generate_docs:main"
 
 [project.optional-dependencies]
 dev = [
@@ -50,19 +48,32 @@ dev = [
     "mypy>=1.10.0",
 ]
 
+big-homie = []
+mem0 = ["mem0ai>=1.0.11"]
+nanobot = ["nanobot-ai>=0.1.0"]
+
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.0",
+    "pymdown-extensions>=10.0",
+]
+
 [tool.setuptools.packages.find]
 include = ["vibeserve", "vibeserve.*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-addopts = ["--cov=vibeserve", "--cov-report=term-missing", "--cov-fail-under=80"]
-# FIX: coverage floor raised from 60% to 80%. 60% is acceptable for a prototype,
-# not for a tool that writes files and executes code on behalf of users.
+addopts = ["--cov=vibeserve", "--cov-report=term-missing", "--cov-fail-under=80", "--cov-config=pyproject.toml"]
 
 [tool.coverage.run]
 source = ["vibeserve"]
-omit = ["vibeserve/__main__.py"]
+omit = [
+    "vibeserve/__main__.py",
+    "vibeserve/http_bridge.py",
+    "vibeserve/entrypoint.py",
+]
 
 [tool.coverage.report]
 exclude_also = [

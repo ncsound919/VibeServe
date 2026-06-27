@@ -1,0 +1,1 @@
+export default function App() { return <div><section className='hero'><h1>Hero Headline</h1></section></div>; }

@@ -35,9 +35,9 @@ async function debug() {
 	const filtered = logs.filter(
 		(l) => l.includes("Cannot read") || l.includes("undefined"),
 	);
-	console.log("=== ERRORS ===");
+	process.stdout.write("=== ERRORS ===");
 	for (const l of filtered) {
-		console.log(l);
+		process.stdout.write(l);
 	}
 
 	await browser.close();

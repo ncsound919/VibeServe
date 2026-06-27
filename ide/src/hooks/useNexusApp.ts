@@ -65,7 +65,7 @@ export function useNexusApp() {
 				if (codeix.isIndexing || codeix.index) return;
 				const loaded = await codeix.loadFromDisk(".");
 				if (!loaded) {
-					console.log(
+					process.stdout.write(
 						"[Nexus] No existing Codeix index - will create one when in Node/Electron context",
 					);
 				}

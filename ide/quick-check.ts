@@ -38,13 +38,13 @@ async function check() {
 		const content = await page.locator("main").innerText();
 		const hasRealError =
 			content.toLowerCase().includes("failed to load") && content.length < 200;
-		console.log(
+		process.stdout.write(
 			`${tabId}: ${content.substring(0, 80)} (len=${content.length})`,
 		);
 	}
 
-	console.log("\n=== JS ERRORS ===");
-	console.log(errors);
+	process.stdout.write("\n=== JS ERRORS ===");
+	process.stdout.write(errors);
 
 	await browser.close();
 }

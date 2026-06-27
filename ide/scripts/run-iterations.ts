@@ -44,10 +44,10 @@ interface History {
 }
 
 async function main() {
-	console.log("=== NEXUS ALPHA RECURSIVE SELF-IMPROVEMENT ===\n");
-	console.log("Building: Nexus Alpha $20 Sales Website");
-	console.log("Pipeline: 10-phase build pipeline + VibeCoder quality gates");
-	console.log(
+	process.stdout.write("=== NEXUS ALPHA RECURSIVE SELF-IMPROVEMENT ===\n");
+	process.stdout.write("Building: Nexus Alpha $20 Sales Website");
+	process.stdout.write("Pipeline: 10-phase build pipeline + VibeCoder quality gates");
+	process.stdout.write(
 		"Goal: Improve score across 5 iterations using self-learning insights\n",
 	);
 
@@ -59,7 +59,7 @@ async function main() {
 	}> = [];
 
 	for (let iter = 1; iter <= 5; iter++) {
-		console.log(`\n─── ITERATION ${iter}/5 ───`);
+		process.stdout.write(`\n─── ITERATION ${iter}/5 ───`);
 		const startMs = Date.now();
 
 		try {
@@ -76,52 +76,52 @@ async function main() {
 				insights: score.insights,
 			});
 
-			console.log(
+			process.stdout.write(
 				`  Score: ${score.letter} (${score.total}/${score.maxTotal})`,
 			);
-			console.log("  Gates:");
+			process.stdout.write("  Gates:");
 			for (const gate of score.gates) {
 				const status = gate.passed ? "✓" : "✗";
-				console.log(
+				process.stdout.write(
 					`    ${status} ${gate.gate}: ${gate.score}/${gate.maxScore}`,
 				);
 				if (gate.warnings.length > 0) {
 					for (const w of gate.warnings.slice(0, 2)) {
-						console.log(`      ⚠ ${w}`);
+						process.stdout.write(`      ⚠ ${w}`);
 					}
 				}
 			}
 
 			if (score.insights.length > 0) {
-				console.log("  Insights:");
+				process.stdout.write("  Insights:");
 				for (const ins of score.insights.slice(0, 3)) {
-					console.log(`    💡 ${ins}`);
+					process.stdout.write(`    💡 ${ins}`);
 				}
 			}
 
-			console.log(`  Duration: ${duration}ms`);
+			process.stdout.write(`  Duration: ${duration}ms`);
 		} catch (e: any) {
-			console.log(`  ERROR: ${e.message}`);
+			process.stdout.write(`  ERROR: ${e.message}`);
 			scores.push({ iter, total: 0, letter: "ERR", insights: [e.message] });
 		}
 
 		if (iter < 5) {
-			console.log(`  Applying learnings for next iteration...`);
+			process.stdout.write(`  Applying learnings for next iteration...`);
 		}
 	}
 
 	// Show trend
-	console.log("\n─── IMPROVEMENT TREND ───");
+	process.stdout.write("\n─── IMPROVEMENT TREND ───");
 	const history: History = await apiCall("GET", "/api/vibe/history");
-	console.log(
+	process.stdout.write(
 		`  Best: ${history.bestScore} | Average: ${history.averageScore} | Total: ${history.totalBuilds} builds`,
 	);
-	console.log(`  Streak: ${history.streak}x (best: ${history.longestStreak}x)`);
+	process.stdout.write(`  Streak: ${history.streak}x (best: ${history.longestStreak}x)`);
 
-	console.log("\n  Iteration Trend:");
+	process.stdout.write("\n  Iteration Trend:");
 	for (const s of scores) {
 		const bar = "=".repeat(Math.round(s.total / 3));
-		console.log(
+		process.stdout.write(
 			`    ${s.iter}: ${s.letter} [${bar}${" ".repeat(25 - bar.length)}] ${s.total}`,
 		);
 	}
@@ -130,17 +130,17 @@ async function main() {
 	const first = scores[0];
 	const last = scores[scores.length - 1];
 	if (last.total > first.total) {
-		console.log(
+		process.stdout.write(
 			`\n  ✓ IMPROVED: +${last.total - first.total} points (${first.total} → ${last.total})`,
 		);
 	} else if (last.total === first.total) {
-		console.log("\n  → STABLE: Score held at same level");
+		process.stdout.write("\n  → STABLE: Score held at same level");
 	} else {
-		console.log(`\n  ⚠ Regression: ${last.total - first.total} points`);
+		process.stdout.write(`\n  ⚠ Regression: ${last.total - first.total} points`);
 	}
 
-	console.log("\n─── VIBECODER HISTORY ───");
-	console.log(
+	process.stdout.write("\n─── VIBECODER HISTORY ───");
+	process.stdout.write(
 		JSON.stringify(
 			{
 				trends: history.trends.slice(-5),

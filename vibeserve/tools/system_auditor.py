@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 from typing import Any, Dict, List
 from vibeserve.models import CodeFile
 from vibeserve.tools.design_agent import DesignAgent
@@ -26,7 +27,7 @@ class SystemAuditor:
             provider=os.getenv("DESIGNER_PROVIDER"))
 
     async def audit(self, files: List[CodeFile], requirements: List[str]) -> Dict[str, Any]:
-        code_summary = [{"path": f.path, "language": f.language, "purpose": f.purpose, "content_preview": f.content[:500]} for f in files]
+        code_summary = [{"path": f.path, "language": f.language, "purpose": f.purpose, "content_preview": f.content[:8000] if len(f.content) > 8000 else f.content} for f in files]
         schema = {"files": code_summary, "requirements": requirements}
         critiques = await asyncio.gather(
             self.backend.critique(schema, requirements),
@@ -39,10 +40,21 @@ class SystemAuditor:
         for c in critiques:
             if isinstance(c, dict):
                 for w in c.get("weaknesses", []):
+                    severity_patterns = {
+                        "high": [r'\b(security|vulnerability|exposure|injection|crash|sql\s*injection)\b'],
+                        "medium": [r'\b(dependency|obsolete|deprecated|unused|hardcoded)\b'],
+                    }
+                    text = str(w).lower()
+                    if any(re.search(p, text) for p in severity_patterns["high"]):
+                        sev = "high"
+                    elif any(re.search(p, text) for p in severity_patterns["medium"]):
+                        sev = "medium"
+                    else:
+                        sev = "medium"
                     line_level.append({
                         "agent": c.get("role", "?"),
                         "issue": w,
-                        "severity": "high" if any(kw in str(w).lower() for kw in ["security", "vulnerability", "exposure", "injection", "crash", "sql"]) else "medium"
+                        "severity": sev
                     })
         return {
             "consensus_score": round(avg_score, 2),

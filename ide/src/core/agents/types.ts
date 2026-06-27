@@ -5,7 +5,7 @@ export type AppType =
 	| "ecommerce"
 	| "api"
 	| "dashboard"
-	| "todo"
+	| "TASK"
 	| "custom";
 
 export interface TechStack {
@@ -69,7 +69,7 @@ export const APP_TYPE_LABELS: Record<AppType, string> = {
 	ecommerce: "E-commerce Store",
 	api: "API Server",
 	dashboard: "Dashboard",
-	todo: "Todo App",
+	TASK: "TASK App",
 	custom: "Custom Application",
 };
 

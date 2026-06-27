@@ -295,7 +295,7 @@ export const useCodeixStore = create<CodeixStore>()((set, get) => ({
 			};
 
 			set({ index, stats, isIndexing: false });
-			console.log("[Codeix] Created index:", stats);
+			process.stdout.write("[Codeix] Created index:", stats);
 
 			return index;
 		} catch (error) {
@@ -396,7 +396,7 @@ export const useCodeixStore = create<CodeixStore>()((set, get) => ({
 				join(rootPath, ".codeix.json"),
 				JSON.stringify(index, null, 2),
 			);
-			console.log("[Codeix] Saved index to disk");
+			process.stdout.write("[Codeix] Saved index to disk");
 		} catch (e) {
 			console.error("[Codeix] Failed to save index:", e);
 		}
@@ -412,7 +412,7 @@ export const useCodeixStore = create<CodeixStore>()((set, get) => ({
 				const content = readFileSync(indexPath, "utf-8");
 				const index = JSON.parse(content);
 				set({ index });
-				console.log("[Codeix] Loaded index from disk");
+				process.stdout.write("[Codeix] Loaded index from disk");
 				return true;
 			}
 		} catch (e) {

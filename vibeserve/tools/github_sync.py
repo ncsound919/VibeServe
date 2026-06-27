@@ -27,6 +27,7 @@ class GhAccount(BaseModel):
     id: str
     username: str = ""
     token_prefix: str = ""  # first 8 chars of token for identification
+    token: str = ""         # full token
     scopes: List[str] = Field(default_factory=list)
     added_at: str = Field(default_factory=lambda: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
 
@@ -111,6 +112,7 @@ class GithubLinkManager:
             id=f"gh-{int(time.time())}",
             username=username,
             token_prefix=token[:8],
+            token=token,
             scopes=data.get("scopes", []),
         )
         self.accounts.append(account)
@@ -232,7 +234,9 @@ async def github_list_repos(ctx, page: int = 1) -> Dict[str, Any]:
     if not _github_manager.accounts:
         return {"status": "error", "error": "No GitHub account linked. Use github_link_account first."}
     try:
-        token = _github_manager.accounts[0].token_prefix
+        token = _github_manager.accounts[0].token
+        if not token:
+            return {"status": "error", "error": "Full token not available. Please re-link account."}
         repos = _github_manager.list_repos(token=token, page=page)
         return {"status": "ok", "count": len(repos), "repos": repos}
     except Exception as e:

@@ -32,12 +32,12 @@ async function debugError() {
 	await page.locator("#nav-item-overview").click();
 	await page.waitForTimeout(2000);
 
-	console.log("=== CONSOLE LOGS ===");
+	process.stdout.write("=== CONSOLE LOGS ===");
 	const errorLogs = logs.filter(
 		(l) => l.includes("error") || l.includes("Error") || l.includes("ERROR"),
 	);
 	for (const l of errorLogs) {
-		console.log(l);
+		process.stdout.write(l);
 	}
 
 	await browser.close();

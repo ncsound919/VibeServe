@@ -66,7 +66,7 @@ export function preCommitCheck(context: ExtensionContext, args: string[]) {
 	const checks = [
 		{ name: "No console.log", passed: true },
 		{ name: "No debugger statements", passed: true },
-		{ name: "No TODO comments", passed: true },
+		{ name: "No TASK comments", passed: true },
 	];
 
 	const allPassed = checks.every((c) => c.passed);

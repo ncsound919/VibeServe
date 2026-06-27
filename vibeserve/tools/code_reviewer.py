@@ -23,7 +23,7 @@ class VibeCodeReviewer:
             provider=os.getenv("ADVOCATE_PROVIDER"))
 
     async def review_code(self, files: List[CodeFile], requirements: List[str]) -> Dict[str, Any]:
-        code_summary = [{"path": f.path, "language": f.language, "purpose": f.purpose, "content_preview": f.content[:500]} for f in files]
+        code_summary = [{"path": f.path, "language": f.language, "purpose": f.purpose, "content_preview": f.content[:8000] if len(f.content) > 8000 else f.content} for f in files]
         schema_for_review = {"files": code_summary, "requirements": requirements}
         critiques = await asyncio.gather(
             self.designer.critique(schema_for_review, requirements),
@@ -39,6 +39,6 @@ class VibeCodeReviewer:
             "line_level_issues": [{
                 "agent": c.get("role", "?"), "issue": w,
                 "severity": "high" if "crash" in str(w).lower() else "medium"
-            } for c in critiques for w in c.get("weaknesses", [])],
+            } for c in critiques if not isinstance(c, Exception) for w in c.get("weaknesses", [])],
             "files_reviewed": len(files), "critical_issues": 0
         }

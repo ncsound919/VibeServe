@@ -2,7 +2,7 @@
 import asyncio
 import os
 from vibeserve.tools.v5_tools import vibe_architect_tool
-os.environ["DEEPSEEK_API_KEY"] = "sk-d11b338d040441deaefdb552b80275ab"
+os.environ.setdefault("DEEPSEEK_API_KEY", "CHANGE_ME")
 os.environ["PYTHONPATH"] = "."
 os.environ["DEFAULT_LLM_PROVIDER"] = "deepseek"
 

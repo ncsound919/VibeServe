@@ -377,15 +377,25 @@ class LLMRouter:
     def default_name(self) -> str:
         return os.getenv("DEFAULT_LLM_PROVIDER", "openai")
 
-    def get(self, name: Optional[str] = None) -> LLMProvider:
+    def get(self, name: Optional[str] = None, allow_fallback: bool = True) -> LLMProvider:
         self._ensure_init()
         if name and name in self.providers:
             return self.providers[name]
+        if name and not allow_fallback:
+            raise ValueError(
+                f"Provider '{name}' not configured. "
+                f"Set the required API key or pass allow_fallback=True."
+            )
         default = self.default_name
         if default in self.providers:
             return self.providers[default]
         if self.providers:
             fallback = list(self.providers.values())[0]
+            if not allow_fallback and getattr(fallback, 'name', '') in ('Local',):
+                raise ValueError(
+                    f"Provider '{name or default}' not configured and fallback to Local is not allowed. "
+                    f"Set a provider API key or pass allow_fallback=True."
+                )
             log.warning(
                 f"[LLMRouter] Requested provider '{name or default}' not available, "
                 f"falling back to {fallback.name}"

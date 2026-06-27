@@ -19,6 +19,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
+from vibeserve.auth import require_scope
 from vibeserve.server import mcp_server
 from vibeserve.middleware import audit_tool
 
@@ -318,7 +319,20 @@ class CrossRepoIndex:
         return symbols
 
     def _parse_js(self, full_path: str, content: str, rel: str) -> List[Symbol]:
-        return self._parse_ts(full_path, content, rel)
+        symbols = self._parse_ts(full_path, content, rel)
+        for m in re.finditer(r'module\.exports\s*=\s*', content):
+            symbols.append(Symbol(name="module.exports", kind="export", file_path=rel,
+                                  repo_key="", line=content[:m.start()].count('\n') + 1,
+                                  exported=True))
+        for m in re.finditer(r'module\.exports\.(\w+)\s*=\s*', content):
+            symbols.append(Symbol(name=m.group(1), kind="export", file_path=rel,
+                                  repo_key="", line=content[:m.start()].count('\n') + 1,
+                                  exported=True))
+        for m in re.finditer(r'exports\.(\w+)\s*=\s*', content):
+            symbols.append(Symbol(name=m.group(1), kind="export", file_path=rel,
+                                  repo_key="", line=content[:m.start()].count('\n') + 1,
+                                  exported=True))
+        return symbols
 
     def _parse_jsx(self, full_path: str, content: str, rel: str) -> List[Symbol]:
         return self._parse_tsx(full_path, content, rel)
@@ -375,6 +389,7 @@ _cross_repo = CrossRepoIndex()
 
 @mcp_server.tool(name="index_repo", description="Index a local repository — parses source files for symbols, components, tests, and dependencies.")
 @audit_tool
+@require_scope("mcp:write")
 async def index_repo(ctx, repo_path: str, repo_key: str = "",
                      repo_name: str = "") -> Dict[str, Any]:
     ri = _cross_repo.index_repo(repo_path=repo_path, repo_key=repo_key, repo_name=repo_name)
@@ -392,6 +407,7 @@ async def index_repo(ctx, repo_path: str, repo_key: str = "",
 
 @mcp_server.tool(name="search_repo", description="Search indexed symbols across all repos, or within a specific repo.")
 @audit_tool
+@require_scope("mcp:read")
 async def search_repo(ctx, query: str, repo_key: str = "") -> Dict[str, Any]:
     results = _cross_repo.search_symbols(query=query, repo_key=repo_key)
     return {"status": "ok", "query": query, "count": len(results), "results": results}
@@ -399,6 +415,7 @@ async def search_repo(ctx, query: str, repo_key: str = "") -> Dict[str, Any]:
 
 @mcp_server.tool(name="cross_repo_suggest", description="Find reusable components/symbols from other repos that could help the current repo.")
 @audit_tool
+@require_scope("mcp:read")
 async def cross_repo_suggest(ctx, source_repo: str = "") -> Dict[str, Any]:
     suggestions = _cross_repo.cross_repo_suggestions(source_repo=source_repo)
     return {"status": "ok", "count": len(suggestions), "suggestions": suggestions}
@@ -406,6 +423,7 @@ async def cross_repo_suggest(ctx, source_repo: str = "") -> Dict[str, Any]:
 
 @mcp_server.tool(name="find_test_gaps", description="Find source files and symbols that have no corresponding tests.")
 @audit_tool
+@require_scope("mcp:read")
 async def find_test_gaps(ctx, repo_key: str = "") -> Dict[str, Any]:
     gaps = _cross_repo.find_test_gaps(repo_key=repo_key)
     return {"status": "ok", "count": len(gaps), "gaps": gaps}
@@ -413,6 +431,7 @@ async def find_test_gaps(ctx, repo_key: str = "") -> Dict[str, Any]:
 
 @mcp_server.tool(name="find_refactors", description="Find refactor candidates: large files, duplicated symbols, dead code hints.")
 @audit_tool
+@require_scope("mcp:read")
 async def find_refactors(ctx, repo_key: str = "") -> Dict[str, Any]:
     targets = _cross_repo.find_refactor_targets(repo_key=repo_key)
     return {"status": "ok", "count": len(targets), "targets": targets}
@@ -420,6 +439,7 @@ async def find_refactors(ctx, repo_key: str = "") -> Dict[str, Any]:
 
 @mcp_server.tool(name="list_indexed_repos", description="List all repos that have been indexed.")
 @audit_tool
+@require_scope("mcp:read")
 async def list_indexed_repos(ctx) -> Dict[str, Any]:
     repos = []
     for rk, ri in _cross_repo.repos.items():

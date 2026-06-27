@@ -227,7 +227,7 @@ async def vibe_docs_tool(ctx, query: str, library=None) -> Dict[str, Any]:
 async def vibe_health_tool(ctx) -> Dict[str, Any]:
     from vibeserve.providers import router
     return {"status": "healthy", "providers_active": list(router.providers.keys()),
-            "provider_count": len(router.providers), "memory_specs": memory_store.stats().get("total_stored_specs",0),
+            "provider_count": len(router.providers), "memory_specs": (await memory_store.stats()).get("total_stored_specs", 0),
             "version": "2.0.0"}
 
 @mcp_server.tool(name="vibe_audit", description="Full system audit: backend code quality, security, performance.")

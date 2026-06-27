@@ -41,7 +41,7 @@ async function checkFailing() {
 		const content = await page.locator("main").innerText();
 		const hasError =
 			errors.length > 0 || content.toLowerCase().includes("failed");
-		console.log(
+		process.stdout.write(
 			`${tab.name}: ${hasError ? "FAIL" : "OK"} - ${errors[0]?.substring(0, 60) || content.substring(0, 40)}`,
 		);
 	}

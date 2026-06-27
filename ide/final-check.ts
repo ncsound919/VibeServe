@@ -40,9 +40,9 @@ async function finalCheck() {
 		await page.waitForTimeout(2000);
 		const content = await page.locator("main").innerText();
 		const isOk = content.length > 30 && !content.includes("failed");
-		console.log(`${tabId}: ${isOk ? "OK" : "FAIL"}`);
+		process.stdout.write(`${tabId}: ${isOk ? "OK" : "FAIL"}`);
 		if (jsErrors.length > 0) {
-			console.log(`  ERROR: ${jsErrors[0].substring(0, 80)}`);
+			process.stdout.write(`  ERROR: ${jsErrors[0].substring(0, 80)}`);
 		}
 	}
 

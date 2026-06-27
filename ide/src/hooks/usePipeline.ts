@@ -28,7 +28,7 @@ export function usePipeline() {
 				ws = new WebSocket(`${protocol}//localhost:${port}/ws/pipeline`);
 
 				ws.onopen = () => {
-					console.log("[Pipeline] WebSocket connected");
+					process.stdout.write("[Pipeline] WebSocket connected");
 				};
 
 				ws.onmessage = (event) => {
@@ -80,7 +80,7 @@ export function usePipeline() {
 								break;
 
 							default:
-								console.log("[Pipeline] Unknown message type:", data.type);
+								process.stdout.write("[Pipeline] Unknown message type:", data.type);
 						}
 					} catch (err) {
 						console.warn("[Pipeline] Failed to parse message:", err);
@@ -88,7 +88,7 @@ export function usePipeline() {
 				};
 
 				ws.onclose = () => {
-					console.log(
+					process.stdout.write(
 						"[Pipeline] WebSocket disconnected, reconnecting in 5s...",
 					);
 					reconnectTimer = setTimeout(connect, 5000);

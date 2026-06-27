@@ -59,7 +59,7 @@ class TestContext7Provider:
 
         assert result == "docs with key"
         call_headers = mock_ctx.post.call_args[1]["headers"]
-        assert call_headers.get("CONTEXT7_API_KEY") == "c7key-12345"
+        assert call_headers.get("Authorization") == "Bearer c7key-12345"
 
     @pytest.mark.asyncio
     async def test_fetch_docs_failure_returns_empty(self):

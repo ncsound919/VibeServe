@@ -37,9 +37,9 @@ async function debugFailures() {
 		await page.locator(tabId).click();
 		await page.waitForTimeout(2000);
 		const content = await page.locator("main").innerText();
-		console.log(`\n=== ${tabId} ===`);
-		console.log(`Content: ${content.substring(0, 100)}`);
-		console.log(
+		process.stdout.write(`\n=== ${tabId} ===`);
+		process.stdout.write(`Content: ${content.substring(0, 100)}`);
+		process.stdout.write(
 			`Errors: ${jsErrors.map((e) => e.substring(0, 60)).join(", ")}`,
 		);
 	}

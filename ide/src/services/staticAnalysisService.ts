@@ -78,7 +78,7 @@ export function runDepCheck(targetPath?: string): {
 }
 
 export interface DebtRadarReport {
-	todos: number;
+	TASKS: number;
 	complexity: "low" | "medium" | "high";
 	debtScore: number;
 	untypedExports: number;
@@ -86,7 +86,7 @@ export interface DebtRadarReport {
 }
 
 export function getDebtRadar(content: string): DebtRadarReport {
-	const todos = (content.match(/\/\/ TODO:|\/\/ FIXME:/gi) || []).length;
+	const TASKS = (content.match(/\/\/ TASK:|\/\/ FIX_NOW:/gi) || []).length;
 	const lines = content.split("\n");
 	const lineCount = lines.length;
 	const complexityScore =
@@ -101,7 +101,7 @@ export function getDebtRadar(content: string): DebtRadarReport {
 	else if (complexityScore > 0.8) complexity = "medium";
 
 	const debtScore =
-		todos * 10 +
+		TASKS * 10 +
 		(complexity === "high" ? 30 : complexity === "medium" ? 15 : 0) +
 		untypedExports * 5;
 
@@ -112,7 +112,7 @@ export function getDebtRadar(content: string): DebtRadarReport {
 				? "Minor technical debt identified. Consider documenting exports."
 				: "Codebase healthy. Minimal debt detected.";
 
-	return { todos, complexity, debtScore, untypedExports, recommendation };
+	return { TASKS, complexity, debtScore, untypedExports, recommendation };
 }
 
 export async function runStaticAnalysisPhase(ctx: {

@@ -26,25 +26,25 @@ async function checkAdvancedTab() {
 	await page.waitForTimeout(500);
 
 	// Check Overview
-	console.log("=== OVERVIEW TAB ===");
+	process.stdout.write("=== OVERVIEW TAB ===");
 	await page.locator("#nav-item-overview").click();
 	await page.waitForTimeout(1500);
 	const overview = await page.locator("main").innerText();
-	console.log(overview.substring(0, 300));
+	process.stdout.write(overview.substring(0, 300));
 
 	// Check Settings
-	console.log("\n=== SETTINGS TAB ===");
+	process.stdout.write("\n=== SETTINGS TAB ===");
 	await page.locator("#nav-item-settings").click();
 	await page.waitForTimeout(1500);
 	const settings = await page.locator("main").innerText();
-	console.log(settings.substring(0, 300));
+	process.stdout.write(settings.substring(0, 300));
 
 	// Check Pipeline
-	console.log("\n=== PIPELINE TAB ===");
+	process.stdout.write("\n=== PIPELINE TAB ===");
 	await page.locator("#nav-item-pipeline").click();
 	await page.waitForTimeout(1500);
 	const pipeline = await page.locator("main").innerText();
-	console.log(pipeline.substring(0, 300));
+	process.stdout.write(pipeline.substring(0, 300));
 
 	await browser.close();
 }

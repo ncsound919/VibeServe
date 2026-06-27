@@ -37,7 +37,7 @@ async function checkLastFour() {
 		const content = await page.locator("main").innerText();
 		const isOk =
 			content.length > 50 && !content.toLowerCase().includes("failed to load");
-		console.log(`${name}: ${content.length} chars, OK=${isOk}`);
+		process.stdout.write(`${name}: ${content.length} chars, OK=${isOk}`);
 	}
 
 	await browser.close();

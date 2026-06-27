@@ -1,0 +1,143 @@
+# AUTO-GENERATED — do not edit manually
+site_name: VibeServe
+site_description: Agentic coding orchestrator for MCP — Tool Reference
+repo_url: https://github.com/ncsound919/VibeServe
+repo_name: ncsound919/VibeServe
+
+theme:
+  name: material
+  palette:
+    primary: black
+    accent: amber
+  features:
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - tables
+
+exclude_docs: |
+  designs/*
+  marketing/*
+  superpowers/*
+
+nav:
+  - Home: index.md
+  - Reference:
+    - Setup Guide: reference/SETUP.md
+    - Architecture: reference/ARCHITECTURE.md
+    - Audit Report: reference/AUDIT.md
+    - Deployment Guide: reference/DEPLOYMENT_GUIDE.md
+    - Agent Config: reference/AGENTS.md
+  - Tools:
+    - Overview: tools/index.md
+    - Core:
+      - editor_config: tools/editor_config.md
+      - generate_ui_spec: tools/generate_ui_spec.md
+      - list_design_systems: tools/list_design_systems.md
+      - validate_ui_spec: tools/validate_ui_spec.md
+      - vibe_compress: tools/vibe_compress.md
+      - vibe_health: tools/vibe_health.md
+      - vs_ecc_health: tools/vs_ecc_health.md
+      - vs_schema_validate: tools/vs_schema_validate.md
+      - vs_validate_artifact: tools/vs_validate_artifact.md
+
+    - Code Generation:
+      - vibe_architect: tools/vibe_architect.md
+      - vibe_build_pro: tools/vibe_build_pro.md
+      - vibe_code: tools/vibe_code.md
+      - vibe_design: tools/vibe_design.md
+      - vibe_upgrade_design: tools/vibe_upgrade_design.md
+      - vs_generate_artifact: tools/vs_generate_artifact.md
+
+    - Code Review:
+      - vibe_audit: tools/vibe_audit.md
+      - vibe_review: tools/vibe_review.md
+      - vibe_verify: tools/vibe_verify.md
+      - vs_ecc_agent_shield: tools/vs_ecc_agent_shield.md
+      - vs_plan_review: tools/vs_plan_review.md
+
+    - Deployment:
+      - vibe_deploy: tools/vibe_deploy.md
+      - vibe_preview: tools/vibe_preview.md
+
+    - Memory:
+      - memory_stats: tools/memory_stats.md
+      - vs_memory_get: tools/vs_memory_get.md
+      - vs_memory_store: tools/vs_memory_store.md
+
+    - Integration:
+      - codegraph_build: tools/codegraph_build.md
+      - codegraph_context: tools/codegraph_context.md
+      - codegraph_impact: tools/codegraph_impact.md
+      - codegraph_query: tools/codegraph_query.md
+      - codegraph_stats: tools/codegraph_stats.md
+      - cross_repo_suggest: tools/cross_repo_suggest.md
+      - find_refactors: tools/find_refactors.md
+      - find_test_gaps: tools/find_test_gaps.md
+      - github_issues: tools/github_issues.md
+      - github_link_account: tools/github_link_account.md
+      - github_link_repo: tools/github_link_repo.md
+      - github_list_repos: tools/github_list_repos.md
+      - github_repo: tools/github_repo.md
+      - github_sync_all: tools/github_sync_all.md
+      - gitnexus_analyze: tools/gitnexus_analyze.md
+      - gitnexus_context: tools/gitnexus_context.md
+      - gitnexus_detect_changes: tools/gitnexus_detect_changes.md
+      - gitnexus_impact: tools/gitnexus_impact.md
+      - gitnexus_list_repos: tools/gitnexus_list_repos.md
+      - gitnexus_query: tools/gitnexus_query.md
+      - gitnexus_status: tools/gitnexus_status.md
+      - gitnexus_wiki: tools/gitnexus_wiki.md
+      - index_repo: tools/index_repo.md
+      - list_indexed_repos: tools/list_indexed_repos.md
+      - search_repo: tools/search_repo.md
+      - supabase_insert: tools/supabase_insert.md
+      - supabase_query: tools/supabase_query.md
+      - vercel_deployments: tools/vercel_deployments.md
+      - vs_ecc_skills_list: tools/vs_ecc_skills_list.md
+      - vs_opencode_execute: tools/vs_opencode_execute.md
+
+    - Pipeline:
+      - check_node_env: tools/check_node_env.md
+      - detect_package_manager: tools/detect_package_manager.md
+      - generate_plan: tools/generate_plan.md
+      - ingest_learning: tools/ingest_learning.md
+      - read_file: tools/read_file.md
+      - retrieve_context: tools/retrieve_context.md
+      - run_biome: tools/run_biome.md
+      - run_build: tools/run_build.md
+      - run_install: tools/run_install.md
+      - run_npm_audit: tools/run_npm_audit.md
+      - run_playwright: tools/run_playwright.md
+      - run_semgrep: tools/run_semgrep.md
+      - run_tsc: tools/run_tsc.md
+      - write_file: tools/write_file.md
+
+    - Assessment:
+      - vibe_benchmark: tools/vibe_benchmark.md
+      - vibe_iterate: tools/vibe_iterate.md
+      - vibe_test: tools/vibe_test.md
+
+    - Agenda:
+      - agenda_activate_goal: tools/agenda_activate_goal.md
+      - agenda_add_goal: tools/agenda_add_goal.md
+      - agenda_add_initiative: tools/agenda_add_initiative.md
+      - agenda_complete_goal: tools/agenda_complete_goal.md
+      - agenda_get_active_goals: tools/agenda_get_active_goals.md
+      - agenda_get_impact: tools/agenda_get_impact.md
+      - agenda_get_status: tools/agenda_get_status.md
+      - agenda_log_entry: tools/agenda_log_entry.md
+      - agenda_set_goals: tools/agenda_set_goals.md
+
+    - Documentation:
+      - vibe_docs: tools/vibe_docs.md
+

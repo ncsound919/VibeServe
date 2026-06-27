@@ -50,7 +50,7 @@ class FileWatcherService {
 			// Trigger re-index if needed
 			if (symbols.length > 0) {
 				// File is being tracked
-				console.log(`[FileWatcher] Checking ${path}...`);
+				process.stdout.write(`[FileWatcher] Checking ${path}...`);
 			}
 		});
 	}

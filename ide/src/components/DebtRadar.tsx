@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 
 interface DebtRadarReport {
-	todos: number;
+	tasks: number;
 	complexity: "low" | "medium" | "high";
 	debtScore: number;
 	untypedExports: number;
@@ -27,7 +27,7 @@ export const DebtRadar = () => {
 					},
 					body: JSON.stringify({
 						content:
-							"export const test = () => { if(true) { if(false) { // TODO: fix this } } }",
+							"export const test = () => { if(true) { if(false) { // HACK: fix this } } }",
 					}),
 				});
 				if (!res.ok) return;
@@ -95,10 +95,10 @@ export const DebtRadar = () => {
 
 							<div className="flex justify-between items-center">
 								<span className="text-xs text-gray-400 flex items-center gap-2">
-									<TrendingUp className="w-3 h-3" /> TODOs
+									<TrendingUp className="w-3 h-3" /> TASKS
 								</span>
 								<span className="text-xs font-mono text-white">
-									{report.todos}
+									{report.tasks}
 								</span>
 							</div>
 

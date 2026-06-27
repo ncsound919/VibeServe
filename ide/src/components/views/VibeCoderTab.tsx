@@ -17,7 +17,7 @@ interface PipelineResponse {
 
 const EXAMPLE_PROMPTS = [
 	"A landing page for my startup",
-	"A todo app with login",
+	"A task app with login",
 	"A blog with a CMS",
 	"An e-commerce store",
 	"A SaaS dashboard",
