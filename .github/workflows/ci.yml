@@ -55,7 +55,7 @@ jobs:
           OPENROUTER_API_KEY: ""
           DEFAULT_LLM_PROVIDER: "local"
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
