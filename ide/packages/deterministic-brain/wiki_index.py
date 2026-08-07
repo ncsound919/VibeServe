@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 # ── Frontmatter / markdown parsing ───────────────────────────────────────────
 
 _FM_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
+_WORD_KEY_RE = re.compile(r"^\w+\s*:\s+\S")
 
 def _parse_frontmatter(text: str) -> tuple[Dict[str, Any], str]:
     """Return (frontmatter dict, body) or ({}, text) when no frontmatter."""
@@ -38,12 +39,13 @@ def _parse_frontmatter(text: str) -> tuple[Dict[str, Any], str]:
                     if current_key not in data:
                         data[current_key] = []
                     # handle "key: value" inline pairs
-                    if ":" in item and not item.startswith("-"):
+                    if _WORD_KEY_RE.match(item):
                         k, _, v = item.partition(":")
                         data[current_key].append({k.strip(): v.strip()})
                     else:
                         data[current_key].append(item)
             continue
+        current_key = None
         if ":" not in line:
             continue
         key, _, value = line.partition(":")
@@ -138,7 +140,7 @@ def _score(page: Dict[str, Any], terms: List[str]) -> float:
 
 
 def search(idx: WikiIndex, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-    terms = [t for t in _tokens(query) if len(t) > 2]
+    terms = [t for t in _tokens(query) if len(t) > 1]
     if not terms:
         terms = [t for t in _tokens(query)]
     scored = [(p, _score(p, terms)) for p in idx.pages]
@@ -148,7 +150,7 @@ def search(idx: WikiIndex, query: str, max_results: int = 5) -> List[Dict[str, A
             for p, s in scored[:max_results] if s > 0]
 
 
-def load(idx: WikiIndex, topic: str, max_results: int = 3) -> List[Dict[str, Any]]:
+def load_blocks(idx: WikiIndex, topic: str, max_results: int = 3) -> List[Dict[str, Any]]:
     """Return content blocks for the top pages matching `topic`."""
     hits = search(idx, topic, max_results)
     blocks = []
@@ -168,6 +170,9 @@ def load(idx: WikiIndex, topic: str, max_results: int = 3) -> List[Dict[str, Any
             "content": excerpt,
         })
     return blocks
+
+
+load = load_blocks
 
 
 def namespaces(idx: WikiIndex) -> List[str]:

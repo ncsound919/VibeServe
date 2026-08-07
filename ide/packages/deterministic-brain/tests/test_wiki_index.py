@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from wiki_index import load_index, search, load, namespaces
+from wiki_index import load_index, search, load_blocks, namespaces, _parse_frontmatter
 
 
 def _write_wiki(tmp: Path):
@@ -56,10 +56,10 @@ def test_search_ranks_by_relevance(tmp_path):
     assert results[0]["score"] > 0
 
 
-def test_load_returns_blocks(tmp_path):
+def test_load_blocks_returns_blocks(tmp_path):
     _write_wiki(tmp_path)
     idx = load_index(str(tmp_path))
-    blocks = load(idx, "mission", max_results=1)
+    blocks = load_blocks(idx, "mission", max_results=1)
     assert len(blocks) == 1
     assert "Overlay365" in blocks[0]["content"]
     assert blocks[0]["title"] == "90-Day Mission"
@@ -69,3 +69,33 @@ def test_namespaces(tmp_path):
     _write_wiki(tmp_path)
     idx = load_index(str(tmp_path))
     assert "business" in namespaces(idx)
+
+
+def test_colon_in_list_item_stays_plain_string():
+    data, _ = _parse_frontmatter("---\nsources:\n  - C:\\src\\lib\\x.ts\n---\nbody\n")
+    assert data["sources"] == ["C:\\src\\lib\\x.ts"]
+
+
+def test_url_in_list_item_stays_plain_string():
+    data, _ = _parse_frontmatter("---\nsources:\n  - https://example.com/x\n---\nbody\n")
+    assert data["sources"] == ["https://example.com/x"]
+
+
+def test_word_key_pair_still_parses_as_dict():
+    data, _ = _parse_frontmatter("---\nsources:\n  - code: src/lib/draymond/seed.ts\n---\nbody\n")
+    assert data["sources"] == [{"code": "src/lib/draymond/seed.ts"}]
+
+
+def test_empty_value_key_then_scalar_does_not_leak():
+    data, _ = _parse_frontmatter("---\nfoo:\n  - a\nbar: hello\n  continued\n---\nbody\n")
+    assert data["foo"] == ["a"]
+    assert data["bar"] == "hello"
+    assert "continued" not in data["foo"]
+
+
+def test_search_short_term_mixed_ranks_deterministically(tmp_path):
+    _write_wiki(tmp_path)
+    idx = load_index(str(tmp_path))
+    results = search(idx, "ai guide mission", max_results=5)
+    scores = [r["score"] for r in results]
+    assert scores == sorted(scores, reverse=True)
