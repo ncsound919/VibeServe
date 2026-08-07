@@ -11,10 +11,8 @@ CLI contract (preserved for VibeServe's runDeterministicBrain):
 
 import argparse
 import json
-import os
 import sys
 import time
-from pathlib import Path
 
 from config import DEFAULT_BRAIN_CONFIG, WIKI_DIR, BRAIN_BOOKBRIDGE_URL
 from wiki_index import get_index, load
@@ -43,7 +41,7 @@ def _bookbridge_passages(topic: str, max_results: int = 2) -> list:
         out = []
         for r in body.get("results", [])[:max_results]:
             out.append({
-                "book": r.get("book_title") or r.get("book_id"),
+                "book": r.get("book_title") or r.get("book_id") or "unknown",
                 "passage": (r.get("text") or "")[:1200],
                 "score": r.get("score", 0),
             })
@@ -77,15 +75,14 @@ def _grounding_blocks(query: str) -> list:
             })
     except Exception:
         pass
-    for p in [b for b in blocks if b["kind"] == "wiki"]:
-        if any("bookbridge" in s for s in p["sources"]):
-            for passage in _bookbridge_passages(query):
-                blocks.append({
-                    "kind": "bookbridge",
-                    "title": passage["book"],
-                    "sources": [f"bookbridge:{passage['book']}"],
-                    "content": passage["passage"],
-                })
+    if any("bookbridge" in s for p in blocks for s in p.get("sources", [])):
+        for passage in _bookbridge_passages(query):
+            blocks.append({
+                "kind": "bookbridge",
+                "title": passage["book"],
+                "sources": [f"bookbridge:{passage['book']}"],
+                "content": passage["passage"],
+            })
     return blocks
 
 
@@ -97,7 +94,7 @@ def _render_context(blocks: list) -> str:
         kind = "wiki" if b["kind"] == "wiki" else "bookbridge"
         parts.append(
             f"[CONTEXT · {kind}] {b['title']}\n"
-            f"Sources: {', '.join(b['sources']) or 'none'}\n"
+            f"Sources: {', '.join(b['sources'])}\n"
             f"{b['content']}\n"
         )
     return "\n".join(parts)
@@ -128,6 +125,9 @@ def generate_brain_response(query: str, lane: str, verbose: bool) -> str:
 
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = argparse.ArgumentParser(description="Deterministic Brain Neuro-Symbolic AI Reasoning Engine")
     parser.add_argument("query", help="Query to process")
     parser.add_argument(

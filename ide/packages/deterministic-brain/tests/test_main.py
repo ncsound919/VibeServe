@@ -1,7 +1,7 @@
 import json
+import os
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 def _write_test_wiki(tmp: Path):
@@ -16,7 +16,9 @@ def run_brain(tmp, query, *extra):
     env = {"BRAIN_WIKI_DIR": str(tmp)}
     return subprocess.run(
         [sys.executable, "main.py", query, *extra],
-        capture_output=True, text=True, env={**__import__("os").environ, **env},
+        capture_output=True, text=True, encoding="utf-8",
+        env={**os.environ, **env},
+        cwd=str(Path(__file__).resolve().parent.parent),
     )
 
 def test_cli_non_verbose_outputs_grounded_response(tmp_path):
