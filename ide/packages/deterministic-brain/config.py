@@ -18,7 +18,7 @@ DEFAULT_LANES = {
     },
     "business_logic": {
         "provider": "openai",
-        "model": os.environ.get("BRAIN_LANE_BIZ_MODEL", "gpt-4o"),
+        "model": os.environ.get("BRAIN_LANE_BUSINESS_LOGIC_MODEL", "gpt-4o"),
         "enabled": True,
         "description": "Business logic and workflow analysis",
     },
@@ -54,5 +54,5 @@ DEFAULT_BRAIN_CONFIG = {
 WIKI_DIR = Path(os.environ.get("BRAIN_WIKI_DIR", str(Path(__file__).resolve().parent / "wiki")))
 WIKI_DIR.mkdir(parents=True, exist_ok=True)
 
-# BookBridge reference API (fast-fail when offline).
-BOOKBRIDGE_URL = os.environ.get("BOOKBRIDGE_URL", "http://127.0.0.1:8777")
+# BookBridge reference API.
+BRAIN_BOOKBRIDGE_URL = os.environ.get("BRAIN_BOOKBRIDGE_URL", "http://127.0.0.1:8777")
