@@ -17,11 +17,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from config import DEFAULT_BRAIN_CONFIG, WIKI_DIR
-from wiki_index import get_index, search
+from main import generate_brain_response
+from wiki_index import get_index, reload as reload_index, search
 
 app = FastAPI(title="Deterministic Brain", version="1.0.0")
-
-_wiki_index_cache = None
 
 
 class QueryRequest(BaseModel):
@@ -53,8 +52,6 @@ def lanes() -> dict:
 
 @app.post("/api/brain/query")
 def query(req: QueryRequest) -> dict:
-    from main import generate_brain_response
-
     if req.lane not in DEFAULT_BRAIN_CONFIG["lanes"]:
         raise HTTPException(status_code=400, detail=f"unknown lane: {req.lane}")
     start = time.time()
@@ -89,7 +86,9 @@ def update_config(payload: ConfigPayload) -> dict:
     if payload.lanes:
         for name, overrides in payload.lanes.items():
             if name in DEFAULT_BRAIN_CONFIG["lanes"]:
-                DEFAULT_BRAIN_CONFIG["lanes"][name].update({k: v for k, v in overrides.items() if v is not None})
+                DEFAULT_BRAIN_CONFIG["lanes"][name].update(
+                    {k: v for k, v in overrides.items() if v is not None}
+                )
     if payload.router_model:
         DEFAULT_BRAIN_CONFIG["router_model"] = payload.router_model
     return {"ok": True, "config": DEFAULT_BRAIN_CONFIG}
@@ -97,8 +96,5 @@ def update_config(payload: ConfigPayload) -> dict:
 
 @app.post("/reload")
 def reload_brain() -> dict:
-    from wiki_index import load_index as _load
-
-    global _wiki_index_cache
-    _wiki_index_cache = _load(str(WIKI_DIR))
-    return {"ok": True, "wiki_pages": len(_wiki_index_cache.pages)}
+    idx = reload_index(str(WIKI_DIR))
+    return {"ok": True, "wiki_pages": len(idx.pages)}

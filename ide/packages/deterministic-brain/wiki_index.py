@@ -19,13 +19,14 @@ from typing import Any, Dict, List, Optional
 _FM_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
 _WORD_KEY_RE = re.compile(r"^\w+\s*:\s+\S")
 
+
 def _parse_frontmatter(text: str) -> tuple[Dict[str, Any], str]:
     """Return (frontmatter dict, body) or ({}, text) when no frontmatter."""
     m = _FM_RE.match(text)
     if not m:
         return {}, text
     block = m.group(1)
-    body = text[m.end():]
+    body = text[m.end() :]
     data: Dict[str, Any] = {}
     current_key: Optional[str] = None
     for line in block.splitlines():
@@ -69,13 +70,17 @@ def _parse_frontmatter(text: str) -> tuple[Dict[str, Any], str]:
                 data[key] = value
     return data, body
 
+
 def _headings(body: str) -> List[str]:
     return [line.strip("#").strip().lower() for line in body.splitlines() if line.startswith("#")]
+
 
 def _tokens(text: str) -> List[str]:
     return [t for t in re.findall(r"[a-z0-9][a-z0-9\-_]{1,}", text.lower()) if len(t) > 1]
 
+
 # ── Index model ──────────────────────────────────────────────────────────────
+
 
 class WikiIndex:
     def __init__(self, pages: List[Dict[str, Any]]):
@@ -107,20 +112,23 @@ def load_index(wiki_dir: str) -> WikiIndex:
         namespace = fm.get("namespace") or (rel.parts[0] if len(rel.parts) > 1 else "root")
         tags = [str(t) for t in fm.get("tags", [])]
         sources = fm.get("sources", [])
-        pages.append({
-            "slug": slug,
-            "title": title,
-            "namespace": namespace,
-            "tags": tags,
-            "sources": sources if isinstance(sources, list) else [],
-            "content": body.strip(),
-            "headings": _headings(body),
-            "mtime": md.stat().st_mtime,
-        })
+        pages.append(
+            {
+                "slug": slug,
+                "title": title,
+                "namespace": namespace,
+                "tags": tags,
+                "sources": sources if isinstance(sources, list) else [],
+                "content": body.strip(),
+                "headings": _headings(body),
+                "mtime": md.stat().st_mtime,
+            }
+        )
     return WikiIndex(pages)
 
 
 # ── Search ───────────────────────────────────────────────────────────────────
+
 
 def _score(page: Dict[str, Any], terms: List[str]) -> float:
     score = 0.0
@@ -145,9 +153,17 @@ def search(idx: WikiIndex, query: str, max_results: int = 5) -> List[Dict[str, A
         terms = [t for t in _tokens(query)]
     scored = [(p, _score(p, terms)) for p in idx.pages]
     scored.sort(key=lambda x: x[1], reverse=True)
-    return [{"slug": p["slug"], "title": p["title"], "namespace": p["namespace"],
-             "tags": p["tags"], "score": round(s, 3)}
-            for p, s in scored[:max_results] if s > 0]
+    return [
+        {
+            "slug": p["slug"],
+            "title": p["title"],
+            "namespace": p["namespace"],
+            "tags": p["tags"],
+            "score": round(s, 3),
+        }
+        for p, s in scored[:max_results]
+        if s > 0
+    ]
 
 
 def load_blocks(idx: WikiIndex, topic: str, max_results: int = 3) -> List[Dict[str, Any]]:
@@ -161,14 +177,16 @@ def load_blocks(idx: WikiIndex, topic: str, max_results: int = 3) -> List[Dict[s
         excerpt = page["content"]
         if len(excerpt) > 3000:
             excerpt = excerpt[:3000] + "\n…[truncated]"
-        blocks.append({
-            "slug": page["slug"],
-            "title": page["title"],
-            "namespace": page["namespace"],
-            "tags": page["tags"],
-            "sources": page["sources"],
-            "content": excerpt,
-        })
+        blocks.append(
+            {
+                "slug": page["slug"],
+                "title": page["title"],
+                "namespace": page["namespace"],
+                "tags": page["tags"],
+                "sources": page["sources"],
+                "content": excerpt,
+            }
+        )
     return blocks
 
 
@@ -193,4 +211,15 @@ def get_index(wiki_dir: str) -> WikiIndex:
         if _index is None or _index_dir != wiki_dir:
             _index = load_index(wiki_dir)
             _index_dir = wiki_dir
+        return _index
+
+
+def reload(wiki_dir: str) -> WikiIndex:
+    """Force-rebuild the cached index for wiki_dir."""
+    global _index, _index_dir
+    with _index_lock:
+        _index = None
+        _index_dir = None
+        _index = load_index(wiki_dir)
+        _index_dir = wiki_dir
         return _index
