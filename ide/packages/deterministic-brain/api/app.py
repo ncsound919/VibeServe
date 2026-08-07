@@ -1,1 +1,104 @@
-[{'running': True, 'python_available': True, 'brain_dir': 'str(Path(__file__).parent.parent)', 'last_run': 'None', 'api_port': 'int(os.getenv(', '8000': ''}, {'status': 'ok', 'python_available': 'brain_status[', 'brain_dir': 'brain_status[', 'timestamp': "import__('time').time()"}, {'applied': True, 'brainApiUpdated': True}, ['last_run'], {'ok': True}, {'query': 'str', 'lane': 'str', 'verbose': 'bool'}, {'coding': 'f', 'Analyzing': {'assessment': 'Good\n• Security scan: Passed\n• Performance analysis: Optimizable\n• Recommendation: Add type hints and unit tests', 'business_logic': 'f', 'Evaluating': {'flow': 'Sound\n• Edge cases: Covered\n• Scalability: Horizontal scaling recommended\n• Recommendation: Implement event-driven architecture', 'agent_brain': 'f', 'analysis': {'coordination': 'Feasible\n• Resource allocation: Optimal\n• Risk assessment: Low-medium\n• Recommendation: Deploy with monitoring and fallback strategies', 'tool_calling': 'f', 'analysis': {'tools': 12, 'Compatibility': 'High\n• Rate limits: Within thresholds\n• Recommendation: Implement circuit breaker pattern', 'cross_domain': 'f', 'analysis': {'recognition': 'Strong\n• Innovation potential: High\n• Implementation complexity: Moderate\n• Recommendation: Proceed with prototype development'}, 'lane_responses["coding': 'if verbose:\n        return JSONResponse(content={', 'lane': 'lane', 'query': 'query', 'response': 'base_response', 'timestamp': "import__('time').time()", 'processing_time_ms': 100, 'confidence': 0.87}, 'else': 'return JSONResponse(content={', 'response': 'base_response'}, 'app.get("/api/brain/lanes': 'async def get_lanes():', 'Get available brain lanes."': 'return {', 'lanes': 'list(DEFAULT_LANES.keys())'}, '__main__': 'port = int(os.getenv(', '8000"))\n    uvicorn.run(': 'pi.app:app', 'log_level="info': ''}}]
+"""
+Deterministic Brain — FastAPI server.
+
+Exposes health, lane config, wiki search, and grounded query endpoints that
+share the same logic as the CLI (main.py).
+"""
+
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+from config import DEFAULT_BRAIN_CONFIG, WIKI_DIR
+from wiki_index import get_index, search
+
+app = FastAPI(title="Deterministic Brain", version="1.0.0")
+
+_wiki_index_cache = None
+
+
+class QueryRequest(BaseModel):
+    query: str
+    lane: str = "coding"
+    verbose: bool = False
+
+
+class ConfigPayload(BaseModel):
+    lanes: dict | None = None
+    router_model: str | None = None
+
+
+@app.get("/health")
+def health() -> dict:
+    return {
+        "status": "ok",
+        "wiki_pages": len(get_index(str(WIKI_DIR)).pages),
+        "lanes": list(DEFAULT_BRAIN_CONFIG["lanes"].keys()),
+        "wiki_dir": str(WIKI_DIR),
+        "timestamp": time.time(),
+    }
+
+
+@app.get("/api/brain/lanes")
+def lanes() -> dict:
+    return {"lanes": list(DEFAULT_BRAIN_CONFIG["lanes"].keys())}
+
+
+@app.post("/api/brain/query")
+def query(req: QueryRequest) -> dict:
+    from main import generate_brain_response
+
+    if req.lane not in DEFAULT_BRAIN_CONFIG["lanes"]:
+        raise HTTPException(status_code=400, detail=f"unknown lane: {req.lane}")
+    start = time.time()
+    response = generate_brain_response(req.query, req.lane, req.verbose)
+    return {
+        "lane": req.lane,
+        "query": req.query,
+        "response": response,
+        "timestamp": time.time(),
+        "processing_time_ms": int((time.time() - start) * 1000),
+    }
+
+
+@app.get("/api/wiki/search")
+def wiki_search(q: str, max_results: int = 5) -> dict:
+    idx = get_index(str(WIKI_DIR))
+    return {"results": search(idx, q, max_results)}
+
+
+@app.get("/api/wiki/page")
+def wiki_page(slug: str) -> dict:
+    idx = get_index(str(WIKI_DIR))
+    page = idx.get(slug)
+    if page is None:
+        raise HTTPException(status_code=404, detail=f"page not found: {slug}")
+    return page
+
+
+@app.post("/config")
+def update_config(payload: ConfigPayload) -> dict:
+    # Runtime config override is applied in-memory for this process.
+    if payload.lanes:
+        for name, overrides in payload.lanes.items():
+            if name in DEFAULT_BRAIN_CONFIG["lanes"]:
+                DEFAULT_BRAIN_CONFIG["lanes"][name].update({k: v for k, v in overrides.items() if v is not None})
+    if payload.router_model:
+        DEFAULT_BRAIN_CONFIG["router_model"] = payload.router_model
+    return {"ok": True, "config": DEFAULT_BRAIN_CONFIG}
+
+
+@app.post("/reload")
+def reload_brain() -> dict:
+    from wiki_index import load_index as _load
+
+    global _wiki_index_cache
+    _wiki_index_cache = _load(str(WIKI_DIR))
+    return {"ok": True, "wiki_pages": len(_wiki_index_cache.pages)}
