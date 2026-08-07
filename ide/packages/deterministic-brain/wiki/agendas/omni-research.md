@@ -1,10 +1,10 @@
 ---
 title: OmniResearch Pro Agenda
-tags: [agenda, omniresearch, research]
+tags: [agenda, omni-research, research]
 namespace: agendas
 sources:
   - code: src/lib/draymond/seed.ts
-aliases: [omniresearch pro, omniresearch]
+aliases: [omniresearch pro, omniresearch, omni research]
 ---
 # OmniResearch Pro Agenda
 

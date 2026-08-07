@@ -8,7 +8,7 @@ aliases: [megacode, mega code]
 ---
 # Megacode Agenda
 
-Multi-LLM coding assistant with provider routing.
+Multi-agent coding assistant with IDE bridges and provider routing.
 
 - Focus: code completion, review, multi-provider quality scoring.
 - Health URL: `http://localhost:9744/health`

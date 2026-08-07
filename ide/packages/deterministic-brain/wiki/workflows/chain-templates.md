@@ -9,5 +9,5 @@ aliases: [chain templates, chain builder]
 # Chain Templates
 
 `chain-builder.ts` builds chains from blueprints: name/slug, steps with
-`entity_slug`, `action`, `input_mapping` (JSONPath), `depends_on`, and
+`entitySlug`, `action`, `input_mapping` (JSONPath), `depends_on_indices`, and
 `parallel_group`. Validation catches unknown entities, missing deps, and cycles.

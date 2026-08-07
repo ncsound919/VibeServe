@@ -8,7 +8,7 @@ aliases: [sub team, cpu pipeline]
 ---
 # Sub Team Agenda
 
-Deterministic 4-agent CPU design pipeline.
+Full-spectrum agentic workforce retaining the deterministic 4-stage CPU RTL pipeline.
 
 - Focus: spec → microarchitecture → Verilog → formal verification.
 - Invocation: subprocess.
